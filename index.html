@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCAN3D — Browser Photogrammetry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">SCAN<span class="accent">3D</span></span>
+    </div>
+    <div class="header-meta">
+      <span class="status-dot" id="serverDot"></span>
+      <span class="status-label" id="serverStatus">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- Main App -->
+  <main class="app">
+
+    <!-- STEP 1: Camera -->
+    <section class="panel" id="panelCamera">
+      <div class="panel-label">01 — CAPTURE</div>
+      <div class="camera-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay" class="overlay"></canvas>
+        <div class="camera-hud">
+          <div class="hud-corner tl"></div>
+          <div class="hud-corner tr"></div>
+          <div class="hud-corner bl"></div>
+          <div class="hud-corner br"></div>
+          <div class="hud-scanline"></div>
+          <div class="hud-info">
+            <span id="hudResolution">—</span>
+            <span id="hudFrameCount">0 frames</span>
+          </div>
+        </div>
+        <div class="no-camera" id="noCameraMsg">
+          <span>⬡</span>
+          <p>Camera access required</p>
+          <button class="btn-primary" id="btnStartCamera">Enable Camera</button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="control-group">
+          <label class="ctrl-label">FRAMES TO CAPTURE</label>
+          <div class="slider-row">
+            <input type="range" id="frameCount" min="5" max="30" value="12" class="slider" />
+            <span class="slider-val" id="frameCountVal">12</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="ctrl-label">CAPTURE INTERVAL</label>
+          <div class="slider-row">
+            <input type="range" id="interval" min="500" max="3000" step="100" value="1000" class="slider" />
+            <span class="slider-val" id="intervalVal">1.0s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Capture Progress -->
+      <div class="capture-progress" id="captureProgress" style="display:none">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="captureBar"></div>
+        </div>
+        <div class="progress-labels">
+          <span id="captureLabel">Capturing…</span>
+          <span id="captureCount">0 / 0</span>
+        </div>
+        <div class="frame-strip" id="frameStrip"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="btn-row">
+        <button class="btn-primary" id="btnCapture" disabled>
+          <span class="btn-icon">◉</span> Start Scan
+        </button>
+        <button class="btn-secondary" id="btnReset" style="display:none">
+          <span class="btn-icon">↺</span> Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 2: Processing -->
+    <section class="panel panel-process" id="panelProcess" style="display:none">
+      <div class="panel-label">02 — PROCESSING</div>
+
+      <div class="pipeline-vis">
+        <div class="pipeline-stages" id="pipelineStages">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="process-info">
+        <div class="info-block">
+          <span class="info-key">STAGE</span>
+          <span class="info-val" id="procStage">—</span>
+        </div>
+        <div class="info-block">
+          <span class="info-key">PROGRESS</span>
+          <span class="info-val" id="procPct">0%</span>
+        </div>
+        <div class="info-block">
+          <span class="info-key">JOB ID</span>
+          <span class="info-val mono" id="procJobId">—</span>
+        </div>
+        <div class="info-block">
+          <span class="info-key">FRAMES</span>
+          <span class="info-val" id="procFrames">—</span>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrap large">
+        <div class="progress-bar animated" id="processBar"></div>
+      </div>
+
+      <div class="terminal" id="terminal">
+        <div class="terminal-line">$ Initializing photogrammetry pipeline…</div>
+      </div>
+    </section>
+
+    <!-- STEP 3: Viewer -->
+    <section class="panel panel-viewer" id="panelViewer" style="display:none">
+      <div class="panel-label">03 — 3D MODEL</div>
+
+      <div class="viewer-wrap">
+        <canvas id="threeCanvas"></canvas>
+        <div class="viewer-controls-hint">
+          <span>🖱 Drag to rotate · Scroll to zoom · Right-drag to pan</span>
+        </div>
+        <div class="viewer-stats" id="viewerStats">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="model-actions">
+        <button class="btn-primary" id="btnDownloadOBJ">⬇ Download OBJ</button>
+        <button class="btn-primary" id="btnDownloadGLB">⬇ Download GLB</button>
+        <button class="btn-secondary" id="btnNewScan">⬡ New Scan</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast notifications -->
+  <div class="toasts" id="toasts"></div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
