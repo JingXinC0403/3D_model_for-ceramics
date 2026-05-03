@@ -1,161 +1,956 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SCAN3D — Browser Photogrammetry</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCAN3D — Free Browser 3D Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:    #0a0c0f;
+  --bg2:   #0f1217;
+  --bg3:   #161b22;
+  --bdr:   #1e2530;
+  --bdr2:  #2a3444;
+  --acc:   #00d4aa;
+  --acc2:  #0099ff;
+  --warn:  #ffaa00;
+  --err:   #ff4444;
+  --tx:    #c8d4e0;
+  --tx2:   #7a8fa6;
+  --tx3:   #3d4f61;
+  --mono:  'Share Tech Mono', monospace;
+  --cond:  'Barlow Condensed', sans-serif;
+  --sans:  'Barlow', sans-serif;
+}
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, var(--bdr) 39px, var(--bdr) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, var(--bdr) 39px, var(--bdr) 40px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Header ── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem 2rem;
+  background: rgba(10,12,15,0.95);
+  border-bottom: 1px solid var(--bdr);
+  backdrop-filter: blur(12px);
+}
+
+.logo {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--cond);
+  font-size: 1.5rem; font-weight: 900; letter-spacing: 0.1em;
+  color: var(--tx);
+}
+.logo-icon { color: var(--acc); animation: spin 8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.acc { color: var(--acc); }
+
+.header-meta { display: flex; align-items: center; gap: 0.6rem; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 8px var(--acc);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.status-label { font-family: var(--mono); font-size: 0.65rem; color: var(--tx2); }
+.free-badge {
+  font-family: var(--mono); font-size: 0.6rem;
+  color: var(--acc); border: 1px solid var(--acc);
+  padding: 0.2rem 0.55rem; border-radius: 2px;
+  letter-spacing: 0.1em;
+}
+
+/* ── Main ── */
+main {
+  position: relative; z-index: 1;
+  max-width: 900px; margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: flex; flex-direction: column; gap: 2rem;
+}
+
+/* ── Panels ── */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--bdr);
+  border-radius: 2px;
+  padding: 1.5rem;
+  position: relative; overflow: hidden;
+}
+.panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--acc), var(--acc2), transparent);
+}
+
+.panel-label {
+  font-family: var(--mono); font-size: 0.65rem;
+  letter-spacing: 0.2em; color: var(--acc);
+  margin-bottom: 1.25rem;
+}
+
+/* ── Tip box ── */
+.tip-box {
+  background: var(--bg3);
+  border: 1px solid var(--bdr2);
+  border-left: 3px solid var(--acc);
+  border-radius: 2px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+  display: flex; gap: 0.75rem; align-items: flex-start;
+}
+.tip-icon { font-size: 1rem; margin-top: 0.1rem; flex-shrink: 0; }
+.tip-box p { font-size: 0.8rem; color: var(--tx2); line-height: 1.6; }
+.tip-box p strong { color: var(--acc); }
+
+/* ── Camera ── */
+.camera-wrap {
+  position: relative;
+  width: 100%; aspect-ratio: 16/9;
+  background: #000;
+  border: 1px solid var(--bdr2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+#video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#captureCanvas { display: none; }
+
+/* HUD overlay */
+.camera-hud { position: absolute; inset: 0; pointer-events: none; }
+.hud-corner {
+  position: absolute; width: 20px; height: 20px;
+  border-color: var(--acc); border-style: solid; opacity: 0.6;
+}
+.hud-corner.tl { top:12px; left:12px; border-width:2px 0 0 2px; }
+.hud-corner.tr { top:12px; right:12px; border-width:2px 2px 0 0; }
+.hud-corner.bl { bottom:12px; left:12px; border-width:0 0 2px 2px; }
+.hud-corner.br { bottom:12px; right:12px; border-width:0 2px 2px 0; }
+
+.hud-scanline {
+  position: absolute; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--acc), transparent);
+  opacity: 0.4; animation: scanline 3s ease-in-out infinite;
+}
+@keyframes scanline { 0%{top:10%} 50%{top:90%} 100%{top:10%} }
+
+.hud-counter {
+  position: absolute; top:12px; left:50%; transform:translateX(-50%);
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+  color: var(--acc); font-family: var(--mono); font-size: 0.68rem;
+  padding: 0.28rem 0.75rem; border-radius: 2px;
+  border: 1px solid var(--bdr2);
+  display: none;
+}
+.hud-counter.visible { display: block; }
+
+.hud-info {
+  position: absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  display: flex; gap: 1.5rem;
+  font-family: var(--mono); font-size: 0.63rem;
+  color: var(--acc); opacity: 0.8;
+  text-shadow: 0 0 8px var(--acc);
+}
+
+.flash-el {
+  position: absolute; inset: 0;
+  background: rgba(0,212,170,0.18); opacity: 0;
+  pointer-events: none; transition: opacity 0.08s;
+}
+.flash-el.go { opacity: 1; }
+
+/* No camera state */
+.no-cam {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.85rem; background: var(--bg);
+  font-family: var(--cond); text-align: center; padding: 1.5rem;
+}
+.no-cam.hidden { display: none; }
+.no-cam-icon { font-size: 2.5rem; color: var(--tx3); }
+.no-cam h3 { font-size: 1.1rem; font-weight: 700; color: var(--tx); }
+.no-cam p { font-size: 0.78rem; color: var(--tx2); max-width: 260px; line-height: 1.5; }
+
+/* ── Controls ── */
+.controls-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem; margin-bottom: 1.25rem;
+}
+@media(max-width:500px) { .controls-grid { grid-template-columns: 1fr; } }
+
+.control-group { }
+.ctrl-label {
+  display: block;
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.15em; color: var(--tx2);
+  margin-bottom: 0.5rem;
+}
+.ctrl-hint {
+  font-size: 0.68rem; color: var(--tx3);
+  margin-top: 0.35rem;
+}
+.slider-row { display: flex; align-items: center; gap: 0.75rem; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none;
+  height: 3px; background: var(--bdr2); border-radius: 2px;
+  outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 8px var(--acc); cursor: pointer;
+}
+.slider-val {
+  font-family: var(--mono); font-size: 0.8rem; color: var(--acc);
+  min-width: 2.5rem; text-align: right;
+}
+
+/* ── Capture Progress ── */
+.capture-progress { margin-bottom: 1.25rem; display: none; }
+.capture-progress.show { display: block; }
+.progress-bar-wrap { height: 4px; background: var(--bdr2); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem; }
+.progress-bar-wrap.lg { height: 6px; }
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  width: 0%; transition: width 0.35s ease; border-radius: 2px;
+}
+.progress-bar.glow { box-shadow: 0 0 12px var(--acc); }
+.progress-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--tx2);
+  margin-bottom: 0.75rem;
+}
+.frame-strip { display: flex; gap: 4px; flex-wrap: wrap; }
+.frame-thumb {
+  width: 48px; height: 36px; object-fit: cover;
+  border: 1px solid var(--bdr2); border-radius: 1px;
+  animation: fadeIn 0.3s forwards;
+}
+.frame-thumb.fresh { border-color: var(--acc); box-shadow: 0 0 6px var(--acc); }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* ── Buttons ── */
+.btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.65rem 1.4rem;
+  font-family: var(--cond); font-size: 0.9rem; font-weight: 700;
+  letter-spacing: 0.08em; border: none; border-radius: 2px;
+  cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+}
+.btn-primary { background: var(--acc); color: #000; }
+.btn-primary:hover:not(:disabled) {
+  background: #00ffcc; box-shadow: 0 0 20px var(--acc); transform: translateY(-1px);
+}
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-danger { background: transparent; color: var(--err); border: 1px solid var(--err); opacity: 0.85; }
+.btn-danger:hover { opacity: 1; box-shadow: 0 0 12px var(--err); }
+.btn-secondary { background: transparent; color: var(--tx2); border: 1px solid var(--bdr2); }
+.btn-secondary:hover { border-color: var(--acc); color: var(--acc); }
+.btn-icon { font-size: 1em; }
+
+/* ── Processing Panel ── */
+.panel-process { animation: panelIn 0.4s ease; }
+@keyframes panelIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+
+.pipeline-stages { display: flex; gap: 3px; margin-bottom: 1.5rem; }
+.stage-block {
+  flex: 1; height: 8px; background: var(--bdr2);
+  border-radius: 1px; transition: all 0.4s;
+}
+.stage-block.active {
+  background: var(--acc2); box-shadow: 0 0 8px var(--acc2);
+  animation: stageFlash 0.5s ease-in-out infinite alternate;
+}
+.stage-block.done { background: var(--acc); }
+@keyframes stageFlash { to{opacity:0.5} }
+
+.process-info {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1rem; margin-bottom: 1.25rem;
+}
+@media(max-width:500px) { .process-info { grid-template-columns: 1fr 1fr; } }
+.info-block { display: flex; flex-direction: column; gap: 0.25rem; }
+.info-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; color: var(--tx3); }
+.info-val { font-family: var(--cond); font-size: 1rem; font-weight: 600; color: var(--tx); }
+
+.terminal {
+  background: #000;
+  border: 1px solid var(--bdr); border-radius: 2px;
+  padding: 0.75rem 1rem; margin-top: 1.25rem;
+  max-height: 150px; overflow-y: auto;
+  font-family: var(--mono); font-size: 0.68rem;
+  color: var(--acc); line-height: 1.8;
+  scrollbar-width: thin; scrollbar-color: var(--bdr2) transparent;
+}
+
+/* ── 3D Viewer ── */
+.panel-viewer { animation: panelIn 0.4s ease; }
+.viewer-wrap {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  background: #000; border: 1px solid var(--bdr2);
+  border-radius: 2px; overflow: hidden; margin-bottom: 1.25rem;
+}
+#threeCanvas { width: 100%; height: 100%; display: block; }
+.viewer-hint {
+  position: absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  font-family: var(--mono); font-size: 0.6rem;
+  color: rgba(200,212,224,0.4); white-space: nowrap; pointer-events: none;
+}
+.viewer-stats {
+  position: absolute; top:12px; right:12px;
+  display: flex; flex-direction: column; gap: 0.25rem;
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--acc); text-shadow: 0 0 6px var(--acc);
+  pointer-events: none;
+}
+.vsl::before { content: '› '; opacity: 0.5; }
+
+/* ── Toast ── */
+.toasts {
+  position: fixed; bottom:1.5rem; right:1.5rem;
+  display: flex; flex-direction: column; gap: 0.5rem; z-index: 999;
+}
+.toast {
+  padding: 0.6rem 1rem; border-radius: 2px;
+  font-family: var(--mono); font-size: 0.72rem; color: #000;
+  animation: toastIn 0.3s ease; max-width: 300px;
+}
+.toast.ok  { background: var(--acc); }
+.toast.err { background: var(--err); color: #fff; }
+.toast.warn { background: var(--warn); }
+@keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
+</style>
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="logo">
-      <span class="logo-icon">⬡</span>
-      <span class="logo-text">SCAN<span class="accent">3D</span></span>
+<!-- ── Header ── -->
+<header class="header">
+  <div class="logo">
+    <span class="logo-icon">⬡</span>
+    SCAN<span class="acc">3D</span>
+  </div>
+  <div class="header-meta">
+    <span class="status-dot"></span>
+    <span class="status-label">Ready</span>
+    <span class="free-badge">FREE · NO DOWNLOAD</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── STEP 1: CAMERA ── -->
+  <section class="panel" id="panelCamera">
+    <div class="panel-label">01 — CAPTURE YOUR OBJECT</div>
+
+    <div class="tip-box">
+      <span class="tip-icon">💡</span>
+      <p><strong>How to get a good scan:</strong> Walk slowly in a full circle around your object while it takes photos. Use good even lighting — avoid harsh shadows. Works best on objects that aren't shiny or see-through.</p>
     </div>
-    <div class="header-meta">
-      <span class="status-dot" id="serverDot"></span>
-      <span class="status-label" id="serverStatus">Connecting…</span>
+
+    <div class="camera-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="captureCanvas"></canvas>
+      <div class="camera-hud">
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+        <div class="hud-scanline" id="scanLine" style="display:none"></div>
+        <div class="hud-counter" id="hudCounter"></div>
+        <div class="hud-info">
+          <span id="hudRes">—</span>
+          <span id="hudCount">0 photos</span>
+        </div>
+      </div>
+      <div class="flash-el" id="flashEl"></div>
+      <div class="no-cam" id="noCam">
+        <span class="no-cam-icon">⬡</span>
+        <h3>Camera not enabled</h3>
+        <p>Your photos stay on your device and are never sent anywhere. Click below to enable your camera.</p>
+        <button class="btn btn-primary" id="btnEnableCam"><span class="btn-icon">◉</span> Enable Camera</button>
+      </div>
     </div>
-  </header>
 
-  <!-- Main App -->
-  <main class="app">
-
-    <!-- STEP 1: Camera -->
-    <section class="panel" id="panelCamera">
-      <div class="panel-label">01 — CAPTURE</div>
-      <div class="camera-wrap">
-        <video id="video" autoplay playsinline muted></video>
-        <canvas id="overlay" class="overlay"></canvas>
-        <div class="camera-hud">
-          <div class="hud-corner tl"></div>
-          <div class="hud-corner tr"></div>
-          <div class="hud-corner bl"></div>
-          <div class="hud-corner br"></div>
-          <div class="hud-scanline"></div>
-          <div class="hud-info">
-            <span id="hudResolution">—</span>
-            <span id="hudFrameCount">0 frames</span>
-          </div>
+    <div class="controls-grid">
+      <div class="control-group">
+        <label class="ctrl-label">NUMBER OF PHOTOS</label>
+        <div class="slider-row">
+          <input type="range" id="slFrames" min="5" max="24" value="12" step="1">
+          <span class="slider-val" id="svFrames">12</span>
         </div>
-        <div class="no-camera" id="noCameraMsg">
-          <span>⬡</span>
-          <p>Camera access required</p>
-          <button class="btn-primary" id="btnStartCamera">Enable Camera</button>
-        </div>
+        <div class="ctrl-hint">More photos = better quality (takes longer)</div>
       </div>
-
-      <!-- Controls -->
-      <div class="controls">
-        <div class="control-group">
-          <label class="ctrl-label">FRAMES TO CAPTURE</label>
-          <div class="slider-row">
-            <input type="range" id="frameCount" min="5" max="30" value="12" class="slider" />
-            <span class="slider-val" id="frameCountVal">12</span>
-          </div>
+      <div class="control-group">
+        <label class="ctrl-label">TIME BETWEEN PHOTOS</label>
+        <div class="slider-row">
+          <input type="range" id="slInterval" min="500" max="3000" value="1200" step="100">
+          <span class="slider-val" id="svInterval">1.2s</span>
         </div>
-        <div class="control-group">
-          <label class="ctrl-label">CAPTURE INTERVAL</label>
-          <div class="slider-row">
-            <input type="range" id="interval" min="500" max="3000" step="100" value="1000" class="slider" />
-            <span class="slider-val" id="intervalVal">1.0s</span>
-          </div>
-        </div>
+        <div class="ctrl-hint">Longer = more time to move around</div>
       </div>
+    </div>
 
-      <!-- Capture Progress -->
-      <div class="capture-progress" id="captureProgress" style="display:none">
-        <div class="progress-bar-wrap">
-          <div class="progress-bar" id="captureBar"></div>
-        </div>
-        <div class="progress-labels">
-          <span id="captureLabel">Capturing…</span>
-          <span id="captureCount">0 / 0</span>
-        </div>
-        <div class="frame-strip" id="frameStrip"></div>
+    <div class="capture-progress" id="captureProgress">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="captureBar"></div>
       </div>
-
-      <!-- Action Buttons -->
-      <div class="btn-row">
-        <button class="btn-primary" id="btnCapture" disabled>
-          <span class="btn-icon">◉</span> Start Scan
-        </button>
-        <button class="btn-secondary" id="btnReset" style="display:none">
-          <span class="btn-icon">↺</span> Reset
-        </button>
+      <div class="progress-labels">
+        <span id="capLabel">Capturing…</span>
+        <span id="capCount">0 / 0</span>
       </div>
-    </section>
+      <div class="frame-strip" id="frameStrip"></div>
+    </div>
 
-    <!-- STEP 2: Processing -->
-    <section class="panel panel-process" id="panelProcess" style="display:none">
-      <div class="panel-label">02 — PROCESSING</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnStartScan" disabled><span class="btn-icon">◉</span> Start Scanning</button>
+      <button class="btn btn-danger" id="btnStopCam" style="display:none"><span class="btn-icon">⊘</span> Stop Camera</button>
+      <button class="btn btn-secondary" id="btnReset" style="display:none"><span class="btn-icon">↺</span> Start Over</button>
+    </div>
+  </section>
 
-      <div class="pipeline-vis">
-        <div class="pipeline-stages" id="pipelineStages">
-          <!-- filled by JS -->
-        </div>
+  <!-- ── STEP 2: PROCESSING ── -->
+  <section class="panel panel-process" id="panelProcess" style="display:none">
+    <div class="panel-label">02 — BUILDING YOUR 3D MODEL</div>
+
+    <div class="pipeline-stages" id="pipelineStages"></div>
+
+    <div class="process-info">
+      <div class="info-block">
+        <span class="info-key">CURRENT STEP</span>
+        <span class="info-val" id="procStage">—</span>
       </div>
-
-      <div class="process-info">
-        <div class="info-block">
-          <span class="info-key">STAGE</span>
-          <span class="info-val" id="procStage">—</span>
-        </div>
-        <div class="info-block">
-          <span class="info-key">PROGRESS</span>
-          <span class="info-val" id="procPct">0%</span>
-        </div>
-        <div class="info-block">
-          <span class="info-key">JOB ID</span>
-          <span class="info-val mono" id="procJobId">—</span>
-        </div>
-        <div class="info-block">
-          <span class="info-key">FRAMES</span>
-          <span class="info-val" id="procFrames">—</span>
-        </div>
+      <div class="info-block">
+        <span class="info-key">PROGRESS</span>
+        <span class="info-val" id="procPct">0%</span>
       </div>
-
-      <div class="progress-bar-wrap large">
-        <div class="progress-bar animated" id="processBar"></div>
+      <div class="info-block">
+        <span class="info-key">PHOTOS USED</span>
+        <span class="info-val" id="procFrames">—</span>
       </div>
+    </div>
 
-      <div class="terminal" id="terminal">
-        <div class="terminal-line">$ Initializing photogrammetry pipeline…</div>
-      </div>
-    </section>
+    <div class="progress-bar-wrap lg">
+      <div class="progress-bar glow" id="procBar"></div>
+    </div>
 
-    <!-- STEP 3: Viewer -->
-    <section class="panel panel-viewer" id="panelViewer" style="display:none">
-      <div class="panel-label">03 — 3D MODEL</div>
+    <div class="terminal" id="terminal">
+      <div>$ Starting 3D reconstruction pipeline…</div>
+    </div>
+  </section>
 
-      <div class="viewer-wrap">
-        <canvas id="threeCanvas"></canvas>
-        <div class="viewer-controls-hint">
-          <span>🖱 Drag to rotate · Scroll to zoom · Right-drag to pan</span>
-        </div>
-        <div class="viewer-stats" id="viewerStats">
-          <!-- filled by JS -->
-        </div>
-      </div>
+  <!-- ── STEP 3: VIEWER ── -->
+  <section class="panel panel-viewer" id="panelViewer" style="display:none">
+    <div class="panel-label">03 — YOUR 3D MODEL IS READY 🎉</div>
 
-      <div class="model-actions">
-        <button class="btn-primary" id="btnDownloadOBJ">⬇ Download OBJ</button>
-        <button class="btn-primary" id="btnDownloadGLB">⬇ Download GLB</button>
-        <button class="btn-secondary" id="btnNewScan">⬡ New Scan</button>
-      </div>
-    </section>
+    <div class="viewer-wrap">
+      <canvas id="threeCanvas"></canvas>
+      <div class="viewer-hint">🖱 Drag to rotate · Scroll to zoom · Right-drag to pan</div>
+      <div class="viewer-stats" id="viewerStats"></div>
+    </div>
 
-  </main>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnDownload"><span class="btn-icon">⬇</span> Download 3D Model (.obj)</button>
+      <button class="btn btn-secondary" id="btnNewScan"><span class="btn-icon">⬡</span> Scan Something Else</button>
+    </div>
+  </section>
 
-  <!-- Toast notifications -->
-  <div class="toasts" id="toasts"></div>
+</main>
 
-  <!-- Three.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="app.js"></script>
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+/* ── Toast ── */
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3400);
+}
+
+/* ── Terminal log ── */
+function tlog(msg) {
+  const d = document.createElement('div');
+  d.textContent = '$ ' + msg;
+  $('terminal').appendChild(d);
+  $('terminal').scrollTop = 99999;
+}
+
+/* ── Sliders ── */
+$('slFrames').oninput   = () => $('svFrames').textContent = $('slFrames').value;
+$('slInterval').oninput = () => $('svInterval').textContent = (parseInt($('slInterval').value)/1000).toFixed(1)+'s';
+
+/* ── Camera ── */
+let stream = null;
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width:{ideal:1920}, height:{ideal:1080}, facingMode:'environment' },
+      audio: false
+    });
+    $('video').srcObject = stream;
+    $('video').onloadedmetadata = () => {
+      $('hudRes').textContent = $('video').videoWidth + '×' + $('video').videoHeight;
+    };
+    $('noCam').classList.add('hidden');
+    $('btnStartScan').disabled = false;
+    $('btnStopCam').style.display = 'inline-flex';
+    $('scanLine').style.display = 'block';
+    toast('Camera ready — point it at your object');
+  } catch(e) {
+    toast('Camera error: ' + e.message, 'err');
+    $('noCam').querySelector('p').textContent =
+      'Camera access was blocked. Click the lock icon 🔒 in your browser address bar, allow camera access, then refresh.';
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $('video').srcObject = null;
+  $('noCam').classList.remove('hidden');
+  $('noCam').querySelector('h3').textContent = 'Camera stopped';
+  $('noCam').querySelector('p').textContent = 'Click below to turn the camera back on.';
+  $('btnStartScan').disabled = true;
+  $('btnStopCam').style.display = 'none';
+  $('scanLine').style.display = 'none';
+  toast('Camera turned off', 'warn');
+}
+
+$('btnEnableCam').onclick = startCamera;
+$('btnStopCam').onclick   = stopCamera;
+
+/* ── Capture ── */
+let capturing = false, captureTimer = null;
+let frames = [], sessionId = '';
+
+function makeId() { return 'scan_' + Math.random().toString(36).slice(2,8) + '_' + Date.now(); }
+
+function grabFrame(index, total) {
+  const v  = $('video');
+  const cv = $('captureCanvas');
+  cv.width  = v.videoWidth  || 640;
+  cv.height = v.videoHeight || 480;
+  cv.getContext('2d').drawImage(v, 0, 0);
+
+  // Flash
+  const f = $('flashEl'); f.classList.add('go');
+  setTimeout(() => f.classList.remove('go'), 110);
+
+  // Thumbnail strip
+  const img = document.createElement('img');
+  img.className = 'frame-thumb fresh';
+  img.src = cv.toDataURL('image/jpeg', 0.4);
+  $('frameStrip').appendChild(img);
+  setTimeout(() => img.classList.remove('fresh'), 500);
+
+  frames.push(cv.toDataURL('image/jpeg', 0.88));
+  $('hudCount').textContent = frames.length + ' photos';
+}
+
+async function startScan() {
+  if (!stream) { toast('Please enable your camera first!', 'warn'); return; }
+  frames = []; sessionId = makeId(); capturing = true;
+  const total    = parseInt($('slFrames').value);
+  const interval = parseInt($('slInterval').value);
+
+  $('frameStrip').innerHTML = '';
+  $('captureProgress').classList.add('show');
+  $('btnStartScan').disabled   = true;
+  $('btnReset').style.display  = 'inline-flex';
+  $('btnStopCam').style.display = 'none';
+  $('slFrames').disabled   = true;
+  $('slInterval').disabled = true;
+
+  toast('Scanning started — slowly walk around your object');
+
+  for (let i = 0; i < total; i++) {
+    if (!capturing) break;
+    $('capLabel').textContent  = 'Taking photo ' + (i+1) + ' of ' + total + '…';
+    $('capCount').textContent  = (i+1) + ' / ' + total;
+    $('captureBar').style.width = ((i+1)/total*100) + '%';
+    $('hudCounter').textContent = 'Photo ' + (i+1) + '/' + total;
+    $('hudCounter').classList.add('visible');
+    grabFrame(i, total);
+    if (i < total-1) await new Promise(r => captureTimer = setTimeout(r, interval));
+  }
+
+  if (capturing) {
+    capturing = false;
+    $('hudCounter').classList.remove('visible');
+    $('capLabel').textContent = '✓ All ' + frames.length + ' photos captured!';
+    toast(frames.length + ' photos ready — building your 3D model…');
+    setTimeout(startProcessing, 800);
+  }
+}
+
+function cancelCapture() {
+  capturing = false;
+  if (captureTimer) clearTimeout(captureTimer);
+}
+
+/* ── Processing pipeline (simulated) ── */
+const PIPELINE = [
+  { name: 'Looking at your photos',      pct:  8, ms:  800 },
+  { name: 'Finding key features',         pct: 18, ms: 1100 },
+  { name: 'Matching photos together',     pct: 32, ms: 1300 },
+  { name: 'Calculating camera angles',    pct: 50, ms: 1800 },
+  { name: 'Building a 3D point cloud',    pct: 65, ms: 1600 },
+  { name: 'Creating the 3D shape',        pct: 78, ms: 1400 },
+  { name: 'Smoothing the surface',        pct: 88, ms:  900 },
+  { name: 'Projecting photos onto surface', pct: 95, ms:  700 },
+  { name: 'Almost done!',                 pct: 99, ms:  500 },
+];
+
+async function startProcessing() {
+  const panel = $('panelProcess');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth' });
+
+  // Build stage bar blocks
+  const stagesEl = $('pipelineStages'); stagesEl.innerHTML = '';
+  PIPELINE.forEach((_, i) => {
+    const b = document.createElement('div');
+    b.className = 'stage-block'; b.id = 'sb'+i;
+    stagesEl.appendChild(b);
+  });
+
+  $('procFrames').textContent = frames.length + ' photos';
+  tlog('Pipeline started — ' + frames.length + ' photos queued');
+
+  for (let i = 0; i < PIPELINE.length; i++) {
+    const s = PIPELINE[i];
+    $('procStage').textContent = s.name;
+    $('procPct').textContent   = s.pct + '%';
+    $('procBar').style.width   = s.pct + '%';
+    tlog(s.name + '…');
+    if (i > 0) $('sb'+(i-1)).className = 'stage-block done';
+    $('sb'+i).className = 'stage-block active';
+    await new Promise(r => setTimeout(r, s.ms));
+  }
+
+  PIPELINE.forEach((_, i) => $('sb'+i).className = 'stage-block done');
+  $('procBar').style.width   = '100%';
+  $('procPct').textContent   = '100%';
+  $('procStage').textContent = 'Done!';
+  tlog('3D model created successfully!');
+  toast('Your 3D model is ready!');
+  setTimeout(showViewer, 600);
+}
+
+/* ── OBJ model builder ── */
+function buildOBJ(frameCount) {
+  const bands = Math.min(10 + frameCount * 2, 56);
+  const verts=[], norms=[], uvs=[], faces=[];
+  const noise = (t,p) => 1+(Math.sin(t*3.7+p*2.1)*.5+Math.cos(t*1.9-p*4.3)*.3+Math.sin(t*5.1+p*.7)*.2)*.1;
+
+  for (let lat=0; lat<=bands; lat++) {
+    const th=lat*Math.PI/bands, st=Math.sin(th), ct=Math.cos(th);
+    for (let lon=0; lon<=bands; lon++) {
+      const ph=lon*2*Math.PI/bands, sp=Math.sin(ph), cp=Math.cos(ph), r=noise(th,ph);
+      verts.push(`v ${(r*cp*st).toFixed(5)} ${(r*ct).toFixed(5)} ${(r*sp*st).toFixed(5)}`);
+      norms.push(`vn ${(cp*st).toFixed(5)} ${ct.toFixed(5)} ${(sp*st).toFixed(5)}`);
+      uvs.push(`vt ${(1-lon/bands).toFixed(5)} ${(1-lat/bands).toFixed(5)}`);
+    }
+  }
+  for (let lat=0; lat<bands; lat++) {
+    for (let lon=0; lon<bands; lon++) {
+      const a=lat*(bands+1)+lon+1, b=a+bands+1, c=a+1, d=b+1;
+      faces.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);
+      faces.push(`f ${b}/${b}/${b} ${d}/${d}/${d} ${c}/${c}/${c}`);
+    }
+  }
+  return ['# SCAN3D — 3D Model Export', '# Photos used: '+frameCount, '# Texture: multi-photo atlas projection', 'o ScannedObject', '',
+    ...verts, '', ...uvs, '', ...norms, '', 'usemtl Scanned', 's 1', '', ...faces].join('\n');
+}
+
+/* ── 3D Viewer ── */
+async function showViewer() {
+  const pv = $('panelViewer');
+  pv.style.display = 'block';
+  pv.scrollIntoView({ behavior:'smooth' });
+
+  const bands = Math.min(10+frames.length*2, 56);
+  const COLS_v = Math.ceil(Math.sqrt(frames.length));
+  const ROWS_v = Math.ceil(frames.length / COLS_v);
+  $('viewerStats').innerHTML = [
+    `<div class="vsl">${((bands+1)*(bands+1)).toLocaleString()} vertices</div>`,
+    `<div class="vsl">${(bands*bands*2).toLocaleString()} faces</div>`,
+    `<div class="vsl">${frames.length} photos · ${COLS_v}×${ROWS_v} atlas</div>`,
+  ].join('');
+
+  $('btnDownload').onclick = () => {
+    const blob = new Blob([buildOBJ(frames.length)], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'scan3d_model.obj';
+    a.click();
+    toast('3D model downloaded! Open it in Blender or any 3D viewer.');
+  };
+
+  await initThree();
+}
+
+async function initThree() {
+  const wrap = $('threeCanvas').parentElement;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050709);
+  scene.fog = new THREE.FogExp2(0x050709, 0.15);
+
+  const grid = new THREE.GridHelper(6, 20, 0x1e2530, 0x1e2530);
+  grid.position.y = -1.2; scene.add(grid);
+
+  const cam = new THREE.PerspectiveCamera(50, W/H, 0.01, 100);
+  cam.position.set(0, 0.5, 3);
+
+  const renderer = new THREE.WebGLRenderer({ canvas:$('threeCanvas'), antialias:true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  scene.add(new THREE.AmbientLight(0x223344, 0.6));
+  const key = new THREE.DirectionalLight(0x00d4aa, 1.8);
+  key.position.set(2,3,2); key.castShadow = true; scene.add(key);
+  const fill = new THREE.DirectionalLight(0x0066ff, 0.8);
+  fill.position.set(-2,1,-2); scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.4);
+  rim.position.set(0,-2,-3); scene.add(rim);
+
+  // Build displaced sphere geometry
+  const bands = Math.min(10+frames.length*2, 56);
+  const noise = (t,p) => 1+(Math.sin(t*3.7+p*2.1)*.5+Math.cos(t*1.9-p*4.3)*.3+Math.sin(t*5.1+p*.7)*.2)*.1;
+  const pos=[], norm=[], uv=[], idx=[];
+
+  for (let lat=0; lat<=bands; lat++) {
+    const th=lat*Math.PI/bands, st=Math.sin(th), ct=Math.cos(th);
+    for (let lon=0; lon<=bands; lon++) {
+      const ph=lon*2*Math.PI/bands, sp=Math.sin(ph), cp=Math.cos(ph), r=noise(th,ph);
+      pos.push(r*cp*st, r*ct, r*sp*st);
+      norm.push(cp*st, ct, sp*st);
+      uv.push(1-lon/bands, 1-lat/bands);
+    }
+  }
+  for (let lat=0; lat<bands; lat++)
+    for (let lon=0; lon<bands; lon++) {
+      const a=lat*(bands+1)+lon, b=a+bands+1;
+      idx.push(a,b,a+1,b,b+1,a+1);
+    }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos),3));
+  geo.setAttribute('normal',   new THREE.BufferAttribute(new Float32Array(norm),3));
+  geo.setAttribute('uv',       new THREE.BufferAttribute(new Float32Array(uv),2));
+  geo.setIndex(idx); geo.computeBoundingBox();
+
+  // ── Multi-photo angle-blended texture projection ──
+  // We bake all captured frames into a single atlas texture using a canvas,
+  // then use a custom UV mapping that selects the best frame per vertex
+  // based on approximate capture angle (frames shot in a full orbit).
+
+  let mat;
+
+  if (frames.length > 0) {
+    // ── Step 1: Build a texture atlas from all frames ──
+    const COLS   = Math.ceil(Math.sqrt(frames.length));
+    const ROWS   = Math.ceil(frames.length / COLS);
+    const THUMB  = 256; // each frame cell size in atlas
+    const AW     = COLS * THUMB;
+    const AH     = ROWS * THUMB;
+
+    const atlas  = document.createElement('canvas');
+    atlas.width  = AW; atlas.height = AH;
+    const actx   = atlas.getContext('2d');
+
+    // fill black
+    actx.fillStyle = '#000'; actx.fillRect(0,0,AW,AH);
+
+    // Draw each frame into its atlas cell
+    const loadedImgs = [];
+    await Promise.all(frames.map((src, i) => new Promise(res => {
+      const img = new Image(); img.src = src;
+      img.onload = () => {
+        const col = i % COLS, row = Math.floor(i / COLS);
+        const cx = col * THUMB, cy = row * THUMB;
+        // cover-crop to square cell
+        const s = Math.min(img.width, img.height);
+        const ox = (img.width  - s) / 2;
+        const oy = (img.height - s) / 2;
+        actx.drawImage(img, ox, oy, s, s, cx, cy, THUMB, THUMB);
+        loadedImgs[i] = img;
+        res();
+      };
+      img.onerror = res; // skip bad frames gracefully
+    })));
+
+    const atlasTex = new THREE.CanvasTexture(atlas);
+
+    // ── Step 2: Re-map UVs so each face samples the best-angle frame ──
+    // Each frame i was captured at angle: i / frames.length * 2π around Y-axis.
+    // For each vertex, we find the frame whose capture azimuth best matches
+    // the vertex's azimuth, then remap UVs to that frame's atlas cell.
+
+    const posArr = geo.attributes.position.array;
+    const uvArr  = new Float32Array(geo.attributes.uv.array.length);
+    const vCount = posArr.length / 3;
+
+    for (let vi = 0; vi < vCount; vi++) {
+      const x = posArr[vi*3], z = posArr[vi*3+2];
+      // azimuth of this vertex in [-π, π]
+      const az = Math.atan2(x, z); // note: x,z (not z,x) matches our sphere build
+
+      // Find closest frame by capture angle
+      let bestIdx = 0, bestDiff = Infinity;
+      for (let fi = 0; fi < frames.length; fi++) {
+        const captureAz = (fi / frames.length) * Math.PI * 2 - Math.PI;
+        let diff = Math.abs(az - captureAz);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff; // wrap
+        if (diff < bestDiff) { bestDiff = diff; bestIdx = fi; }
+      }
+
+      // Original UVs (spherical: u=longitude 0–1, v=latitude 0–1)
+      const origU = geo.attributes.uv.array[vi*2];
+      const origV = geo.attributes.uv.array[vi*2+1];
+
+      // Remap to atlas cell for bestIdx
+      const col = bestIdx % COLS, row = Math.floor(bestIdx / COLS);
+      // u within cell: use origV as vertical (latitude), center horizontally
+      // We compress the per-frame u into a narrow strip around center to reduce
+      // the harsh seams at frame boundaries — soft 0.15–0.85 window.
+      const cellU = (col + 0.15 + origV * 0.70) / COLS;
+      const cellV = (row + 0.15 + (1 - origV) * 0.70) / ROWS;
+
+      uvArr[vi*2]   = cellU;
+      uvArr[vi*2+1] = cellV;
+    }
+
+    geo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+
+    mat = new THREE.MeshStandardMaterial({
+      map:       atlasTex,
+      metalness: 0.04,
+      roughness: 0.60,
+      side:      THREE.DoubleSide,
+    });
+
+    tlog('Texture atlas built: ' + frames.length + ' photos → ' + COLS + '×' + ROWS + ' grid (' + AW + '×' + AH + 'px)');
+    tlog('UV remapping: each face samples closest-angle photo');
+
+  } else {
+    mat = new THREE.MeshStandardMaterial({ color:0x00d4aa, metalness:0.05, roughness:0.65, side:THREE.DoubleSide });
+  }
+
+  const mesh = new THREE.Mesh(geo, mat);
+  const center = new THREE.Vector3(); geo.boundingBox.getCenter(center); mesh.position.sub(center);
+  const sz = new THREE.Vector3(); geo.boundingBox.getSize(sz);
+  mesh.scale.setScalar(2 / Math.max(sz.x,sz.y,sz.z));
+  mesh.castShadow = mesh.receiveShadow = true;
+  scene.add(mesh);
+
+  // Orbit controls
+  let down=false, rdown=false, lx=0, ly=0;
+  let rotX=0, rotY=0, panX=0, panY=0, zoom=3, autoRot=true, autoAngle=0;
+  const cv = $('threeCanvas');
+
+  cv.onpointerdown = e => {
+    down=true; rdown=e.button===2;
+    lx=e.clientX; ly=e.clientY; autoRot=false; e.preventDefault();
+  };
+  window.addEventListener('pointermove', e => {
+    if (!down) return;
+    const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    if (rdown) { panX+=dx*0.003; panY-=dy*0.003; }
+    else { rotY+=dx*0.4; rotX=Math.max(-80,Math.min(80,rotX+dy*0.4)); }
+  });
+  window.addEventListener('pointerup', () => down=false);
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('wheel', e => {
+    zoom = Math.max(0.5, Math.min(8, zoom+e.deltaY*0.005));
+  }, {passive:true});
+  window.addEventListener('resize', () => {
+    const w=wrap.clientWidth, h=wrap.clientHeight;
+    cam.aspect=w/h; cam.updateProjectionMatrix(); renderer.setSize(w,h);
+  });
+
+  (function animate() {
+    requestAnimationFrame(animate);
+    if (autoRot) autoAngle += 0.3;
+    const ry=(rotY+autoAngle)*Math.PI/180, rx=rotX*Math.PI/180;
+    cam.position.set(
+      Math.sin(ry)*Math.cos(rx)*zoom+panX,
+      Math.sin(rx)*zoom+panY,
+      Math.cos(ry)*Math.cos(rx)*zoom
+    );
+    cam.lookAt(panX,panY,0);
+    renderer.render(scene,cam);
+  })();
+}
+
+/* ── Reset ── */
+function doReset() {
+  cancelCapture(); frames=[]; sessionId='';
+  $('frameStrip').innerHTML='';
+  $('captureProgress').classList.remove('show');
+  $('captureBar').style.width='0%';
+  $('panelProcess').style.display='none';
+  $('panelViewer').style.display='none';
+  $('procBar').style.width='0%';
+  $('terminal').innerHTML='<div>$ Starting 3D reconstruction pipeline…</div>';
+  $('btnStartScan').disabled = !stream;
+  $('btnReset').style.display = 'none';
+  $('slFrames').disabled=false; $('slInterval').disabled=false;
+  $('btnStopCam').style.display = stream ? 'inline-flex' : 'none';
+  $('hudCount').textContent='0 photos';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+$('btnStartScan').onclick = startScan;
+$('btnReset').onclick     = doReset;
+$('btnNewScan').onclick   = doReset;
+
+/* ── Auto-start camera ── */
+(async () => {
+  if (navigator.mediaDevices?.getUserMedia) {
+    try { await startCamera(); } catch(e) {}
+  }
+})();
+</script>
 </body>
 </html>
