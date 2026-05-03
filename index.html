@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-/* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -37,7 +36,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Grid background */
 body::before {
   content: '';
   position: fixed; inset: 0;
@@ -49,7 +47,6 @@ body::before {
   z-index: 0;
 }
 
-/* ── Header ── */
 .header {
   position: sticky; top: 0; z-index: 100;
   display: flex; justify-content: space-between; align-items: center;
@@ -58,17 +55,15 @@ body::before {
   border-bottom: 1px solid var(--bdr);
   backdrop-filter: blur(12px);
 }
-
 .logo {
   display: flex; align-items: center; gap: 0.5rem;
   font-family: var(--cond);
   font-size: 1.5rem; font-weight: 900; letter-spacing: 0.1em;
   color: var(--tx);
 }
-.logo-icon { color: var(--acc); animation: spin 8s linear infinite; }
+.logo-icon { color: var(--acc); animation: spin 8s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .acc { color: var(--acc); }
-
 .header-meta { display: flex; align-items: center; gap: 0.6rem; }
 .status-dot {
   width: 8px; height: 8px; border-radius: 50%;
@@ -84,7 +79,6 @@ body::before {
   letter-spacing: 0.1em;
 }
 
-/* ── Main ── */
 main {
   position: relative; z-index: 1;
   max-width: 900px; margin: 0 auto;
@@ -92,7 +86,6 @@ main {
   display: flex; flex-direction: column; gap: 2rem;
 }
 
-/* ── Panels ── */
 .panel {
   background: var(--bg2);
   border: 1px solid var(--bdr);
@@ -105,14 +98,12 @@ main {
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, var(--acc), var(--acc2), transparent);
 }
-
 .panel-label {
   font-family: var(--mono); font-size: 0.65rem;
   letter-spacing: 0.2em; color: var(--acc);
   margin-bottom: 1.25rem;
 }
 
-/* ── Tip box ── */
 .tip-box {
   background: var(--bg3);
   border: 1px solid var(--bdr2);
@@ -126,7 +117,6 @@ main {
 .tip-box p { font-size: 0.8rem; color: var(--tx2); line-height: 1.6; }
 .tip-box p strong { color: var(--acc); }
 
-/* ── Camera ── */
 .camera-wrap {
   position: relative;
   width: 100%; aspect-ratio: 16/9;
@@ -139,7 +129,6 @@ main {
 #video { width: 100%; height: 100%; object-fit: cover; display: block; }
 #captureCanvas { display: none; }
 
-/* HUD overlay */
 .camera-hud { position: absolute; inset: 0; pointer-events: none; }
 .hud-corner {
   position: absolute; width: 20px; height: 20px;
@@ -150,16 +139,27 @@ main {
 .hud-corner.bl { bottom:12px; left:12px; border-width:0 0 2px 2px; }
 .hud-corner.br { bottom:12px; right:12px; border-width:0 2px 2px 0; }
 
+/* Circular guide ring */
+.hud-ring {
+  position: absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%);
+  width: min(40%,180px); aspect-ratio:1;
+  border: 1.5px dashed rgba(0,212,170,0.4);
+  border-radius: 50%;
+  transition: border-color 0.3s, border-style 0.3s;
+}
+.hud-ring.active { border-color: rgba(0,212,170,0.85); border-style: solid; }
+
 .hud-scanline {
   position: absolute; left:0; right:0; height:1px;
   background: linear-gradient(90deg, transparent, var(--acc), transparent);
-  opacity: 0.4; animation: scanline 3s ease-in-out infinite;
+  opacity: 0.35; animation: scanline 3s ease-in-out infinite;
 }
 @keyframes scanline { 0%{top:10%} 50%{top:90%} 100%{top:10%} }
 
 .hud-counter {
   position: absolute; top:12px; left:50%; transform:translateX(-50%);
-  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
   color: var(--acc); font-family: var(--mono); font-size: 0.68rem;
   padding: 0.28rem 0.75rem; border-radius: 2px;
   border: 1px solid var(--bdr2);
@@ -167,22 +167,29 @@ main {
 }
 .hud-counter.visible { display: block; }
 
+.hud-instruction {
+  position: absolute; bottom: 12px; left:50%; transform:translateX(-50%);
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  color: rgba(0,212,170,0.9); font-family: var(--mono); font-size: 0.63rem;
+  padding: 0.28rem 0.9rem; border-radius: 2px;
+  border: 1px solid var(--bdr2);
+  white-space: nowrap; max-width: 90%;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
 .hud-info {
-  position: absolute; bottom:12px; left:50%; transform:translateX(-50%);
-  display: flex; gap: 1.5rem;
-  font-family: var(--mono); font-size: 0.63rem;
-  color: var(--acc); opacity: 0.8;
-  text-shadow: 0 0 8px var(--acc);
+  position: absolute; top:12px; right:12px;
+  font-family: var(--mono); font-size: 0.6rem;
+  color: rgba(0,212,170,0.6);
 }
 
 .flash-el {
   position: absolute; inset: 0;
-  background: rgba(0,212,170,0.18); opacity: 0;
-  pointer-events: none; transition: opacity 0.08s;
+  background: rgba(0,212,170,0.15); opacity: 0;
+  pointer-events: none; transition: opacity 0.06s;
 }
 .flash-el.go { opacity: 1; }
 
-/* No camera state */
 .no-cam {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
@@ -195,24 +202,18 @@ main {
 .no-cam h3 { font-size: 1.1rem; font-weight: 700; color: var(--tx); }
 .no-cam p { font-size: 0.78rem; color: var(--tx2); max-width: 260px; line-height: 1.5; }
 
-/* ── Controls ── */
 .controls-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 1rem; margin-bottom: 1.25rem;
 }
 @media(max-width:500px) { .controls-grid { grid-template-columns: 1fr; } }
-
-.control-group { }
 .ctrl-label {
   display: block;
   font-family: var(--mono); font-size: 0.6rem;
   letter-spacing: 0.15em; color: var(--tx2);
   margin-bottom: 0.5rem;
 }
-.ctrl-hint {
-  font-size: 0.68rem; color: var(--tx3);
-  margin-top: 0.35rem;
-}
+.ctrl-hint { font-size: 0.68rem; color: var(--tx3); margin-top: 0.35rem; }
 .slider-row { display: flex; align-items: center; gap: 0.75rem; }
 input[type=range] {
   flex: 1; -webkit-appearance: none;
@@ -224,12 +225,8 @@ input[type=range]::-webkit-slider-thumb {
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--acc); box-shadow: 0 0 8px var(--acc); cursor: pointer;
 }
-.slider-val {
-  font-family: var(--mono); font-size: 0.8rem; color: var(--acc);
-  min-width: 2.5rem; text-align: right;
-}
+.slider-val { font-family: var(--mono); font-size: 0.8rem; color: var(--acc); min-width: 2.5rem; text-align: right; }
 
-/* ── Capture Progress ── */
 .capture-progress { margin-bottom: 1.25rem; display: none; }
 .capture-progress.show { display: block; }
 .progress-bar-wrap { height: 4px; background: var(--bdr2); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem; }
@@ -254,7 +251,6 @@ input[type=range]::-webkit-slider-thumb {
 .frame-thumb.fresh { border-color: var(--acc); box-shadow: 0 0 6px var(--acc); }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-/* ── Buttons ── */
 .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 .btn {
   display: inline-flex; align-items: center; gap: 0.4rem;
@@ -264,9 +260,7 @@ input[type=range]::-webkit-slider-thumb {
   cursor: pointer; transition: all 0.2s; text-transform: uppercase;
 }
 .btn-primary { background: var(--acc); color: #000; }
-.btn-primary:hover:not(:disabled) {
-  background: #00ffcc; box-shadow: 0 0 20px var(--acc); transform: translateY(-1px);
-}
+.btn-primary:hover:not(:disabled) { background: #00ffcc; box-shadow: 0 0 20px var(--acc); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-danger { background: transparent; color: var(--err); border: 1px solid var(--err); opacity: 0.85; }
 .btn-danger:hover { opacity: 1; box-shadow: 0 0 12px var(--err); }
@@ -274,20 +268,13 @@ input[type=range]::-webkit-slider-thumb {
 .btn-secondary:hover { border-color: var(--acc); color: var(--acc); }
 .btn-icon { font-size: 1em; }
 
-/* ── Processing Panel ── */
 .panel-process { animation: panelIn 0.4s ease; }
 @keyframes panelIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
 
 .pipeline-stages { display: flex; gap: 3px; margin-bottom: 1.5rem; }
-.stage-block {
-  flex: 1; height: 8px; background: var(--bdr2);
-  border-radius: 1px; transition: all 0.4s;
-}
-.stage-block.active {
-  background: var(--acc2); box-shadow: 0 0 8px var(--acc2);
-  animation: stageFlash 0.5s ease-in-out infinite alternate;
-}
-.stage-block.done { background: var(--acc); }
+.stage-block { flex: 1; height: 8px; background: var(--bdr2); border-radius: 1px; transition: all 0.4s; }
+.stage-block.active { background: var(--acc2); box-shadow: 0 0 8px var(--acc2); animation: stageFlash 0.5s ease-in-out infinite alternate; }
+.stage-block.done { background: var(--acc); box-shadow: none; }
 @keyframes stageFlash { to{opacity:0.5} }
 
 .process-info {
@@ -299,17 +286,37 @@ input[type=range]::-webkit-slider-thumb {
 .info-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; color: var(--tx3); }
 .info-val { font-family: var(--cond); font-size: 1rem; font-weight: 600; color: var(--tx); }
 
+/* Depth preview strip */
+.depth-section { margin-top: 1.25rem; display: none; }
+.depth-section.show { display: block; }
+.depth-label-row { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--tx3); margin-bottom: 0.5rem; }
+.depth-strip { display: flex; gap: 4px; flex-wrap: wrap; }
+.depth-cell {
+  position: relative; width: 60px; height: 45px;
+  border: 1px solid var(--bdr2); border-radius: 1px; overflow: hidden;
+  flex-shrink: 0;
+}
+.depth-cell img, .depth-cell canvas {
+  position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;
+}
+.depth-cell img { opacity: 0.25; }
+.depth-cell .depth-tag {
+  position: absolute; bottom:0; left:0; right:0;
+  font-family: var(--mono); font-size: 0.45rem;
+  background: rgba(0,0,0,0.7); color: var(--acc);
+  padding: 1px 3px; text-align:center;
+}
+
 .terminal {
   background: #000;
   border: 1px solid var(--bdr); border-radius: 2px;
   padding: 0.75rem 1rem; margin-top: 1.25rem;
-  max-height: 150px; overflow-y: auto;
+  max-height: 160px; overflow-y: auto;
   font-family: var(--mono); font-size: 0.68rem;
   color: var(--acc); line-height: 1.8;
   scrollbar-width: thin; scrollbar-color: var(--bdr2) transparent;
 }
 
-/* ── 3D Viewer ── */
 .panel-viewer { animation: panelIn 0.4s ease; }
 .viewer-wrap {
   position: relative; width: 100%; aspect-ratio: 16/9;
@@ -320,7 +327,7 @@ input[type=range]::-webkit-slider-thumb {
 .viewer-hint {
   position: absolute; bottom:12px; left:50%; transform:translateX(-50%);
   font-family: var(--mono); font-size: 0.6rem;
-  color: rgba(200,212,224,0.4); white-space: nowrap; pointer-events: none;
+  color: rgba(200,212,224,0.35); white-space: nowrap; pointer-events: none;
 }
 .viewer-stats {
   position: absolute; top:12px; right:12px;
@@ -331,7 +338,23 @@ input[type=range]::-webkit-slider-thumb {
 }
 .vsl::before { content: '› '; opacity: 0.5; }
 
-/* ── Toast ── */
+/* Viewer toolbar */
+.viewer-toolbar {
+  position: absolute; top:12px; left:12px;
+  display: flex; gap: 4px;
+}
+.vtb {
+  width: 28px; height: 28px;
+  background: rgba(10,12,15,0.8); backdrop-filter: blur(6px);
+  border: 1px solid var(--bdr2); border-radius: 2px;
+  font-family: var(--mono); font-size: 0.55rem;
+  color: var(--tx2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.vtb:hover { border-color: var(--acc); color: var(--acc); }
+.vtb.on { background: rgba(0,212,170,0.15); border-color: var(--acc); color: var(--acc); }
+
 .toasts {
   position: fixed; bottom:1.5rem; right:1.5rem;
   display: flex; flex-direction: column; gap: 0.5rem; z-index: 999;
@@ -341,12 +364,11 @@ input[type=range]::-webkit-slider-thumb {
   font-family: var(--mono); font-size: 0.72rem; color: #000;
   animation: toastIn 0.3s ease; max-width: 300px;
 }
-.toast.ok  { background: var(--acc); }
-.toast.err { background: var(--err); color: #fff; }
+.toast.ok   { background: var(--acc); }
+.toast.err  { background: var(--err); color: #fff; }
 .toast.warn { background: var(--warn); }
 @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
@@ -354,7 +376,6 @@ input[type=range]::-webkit-slider-thumb {
 </head>
 <body>
 
-<!-- ── Header ── -->
 <header class="header">
   <div class="logo">
     <span class="logo-icon">⬡</span>
@@ -362,20 +383,20 @@ input[type=range]::-webkit-slider-thumb {
   </div>
   <div class="header-meta">
     <span class="status-dot"></span>
-    <span class="status-label">Ready</span>
-    <span class="free-badge">FREE · NO DOWNLOAD</span>
+    <span class="status-label">AI Depth Engine</span>
+    <span class="free-badge">FREE · NO UPLOAD</span>
   </div>
 </header>
 
 <main>
 
-  <!-- ── STEP 1: CAMERA ── -->
+  <!-- STEP 1 -->
   <section class="panel" id="panelCamera">
     <div class="panel-label">01 — CAPTURE YOUR OBJECT</div>
 
     <div class="tip-box">
       <span class="tip-icon">💡</span>
-      <p><strong>How to get a good scan:</strong> Walk slowly in a full circle around your object while it takes photos. Use good even lighting — avoid harsh shadows. Works best on objects that aren't shiny or see-through.</p>
+      <p><strong>Best results:</strong> Walk slowly in a full 360° circle around the object. Use even lighting with no harsh shadows. Matte, textured objects work best. Keep the object centred in the ring throughout. <strong>20–30 photos</strong> gives the best 3D detail.</p>
     </div>
 
     <div class="camera-wrap">
@@ -386,38 +407,37 @@ input[type=range]::-webkit-slider-thumb {
         <div class="hud-corner tr"></div>
         <div class="hud-corner bl"></div>
         <div class="hud-corner br"></div>
+        <div class="hud-ring" id="hudRing"></div>
         <div class="hud-scanline" id="scanLine" style="display:none"></div>
         <div class="hud-counter" id="hudCounter"></div>
-        <div class="hud-info">
-          <span id="hudRes">—</span>
-          <span id="hudCount">0 photos</span>
-        </div>
+        <div class="hud-info" id="hudRes">—</div>
+        <div class="hud-instruction" id="hudInstruction">Enable camera to begin</div>
       </div>
       <div class="flash-el" id="flashEl"></div>
       <div class="no-cam" id="noCam">
         <span class="no-cam-icon">⬡</span>
         <h3>Camera not enabled</h3>
-        <p>Your photos stay on your device and are never sent anywhere. Click below to enable your camera.</p>
+        <p>Your photos stay on your device and are never uploaded anywhere. Everything runs locally.</p>
         <button class="btn btn-primary" id="btnEnableCam"><span class="btn-icon">◉</span> Enable Camera</button>
       </div>
     </div>
 
     <div class="controls-grid">
-      <div class="control-group">
+      <div>
         <label class="ctrl-label">NUMBER OF PHOTOS</label>
         <div class="slider-row">
-          <input type="range" id="slFrames" min="5" max="24" value="12" step="1">
-          <span class="slider-val" id="svFrames">12</span>
+          <input type="range" id="slFrames" min="8" max="36" value="24" step="1">
+          <span class="slider-val" id="svFrames">24</span>
         </div>
-        <div class="ctrl-hint">More photos = better quality (takes longer)</div>
+        <div class="ctrl-hint">More photos = better 3D accuracy · 20–30 recommended</div>
       </div>
-      <div class="control-group">
+      <div>
         <label class="ctrl-label">TIME BETWEEN PHOTOS</label>
         <div class="slider-row">
-          <input type="range" id="slInterval" min="500" max="3000" value="1200" step="100">
-          <span class="slider-val" id="svInterval">1.2s</span>
+          <input type="range" id="slInterval" min="500" max="3000" value="1400" step="100">
+          <span class="slider-val" id="svInterval">1.4s</span>
         </div>
-        <div class="ctrl-hint">Longer = more time to move around</div>
+        <div class="ctrl-hint">More time = easier to move around the object</div>
       </div>
     </div>
 
@@ -434,14 +454,14 @@ input[type=range]::-webkit-slider-thumb {
 
     <div class="btn-row">
       <button class="btn btn-primary" id="btnStartScan" disabled><span class="btn-icon">◉</span> Start Scanning</button>
-      <button class="btn btn-danger" id="btnStopCam" style="display:none"><span class="btn-icon">⊘</span> Stop Camera</button>
-      <button class="btn btn-secondary" id="btnReset" style="display:none"><span class="btn-icon">↺</span> Start Over</button>
+      <button class="btn btn-danger"  id="btnStopCam"   style="display:none"><span class="btn-icon">⊘</span> Stop Camera</button>
+      <button class="btn btn-secondary" id="btnReset"   style="display:none"><span class="btn-icon">↺</span> Start Over</button>
     </div>
   </section>
 
-  <!-- ── STEP 2: PROCESSING ── -->
+  <!-- STEP 2 -->
   <section class="panel panel-process" id="panelProcess" style="display:none">
-    <div class="panel-label">02 — BUILDING YOUR 3D MODEL</div>
+    <div class="panel-label">02 — AI RECONSTRUCTION PIPELINE</div>
 
     <div class="pipeline-stages" id="pipelineStages"></div>
 
@@ -455,7 +475,7 @@ input[type=range]::-webkit-slider-thumb {
         <span class="info-val" id="procPct">0%</span>
       </div>
       <div class="info-block">
-        <span class="info-key">PHOTOS USED</span>
+        <span class="info-key">PHOTOS</span>
         <span class="info-val" id="procFrames">—</span>
       </div>
     </div>
@@ -464,24 +484,35 @@ input[type=range]::-webkit-slider-thumb {
       <div class="progress-bar glow" id="procBar"></div>
     </div>
 
+    <div class="depth-section" id="depthSection">
+      <div class="depth-label-row">AI DEPTH MAPS (sample)</div>
+      <div class="depth-strip" id="depthStrip"></div>
+    </div>
+
     <div class="terminal" id="terminal">
-      <div>$ Starting 3D reconstruction pipeline…</div>
+      <div>$ Initialising AI reconstruction pipeline…</div>
     </div>
   </section>
 
-  <!-- ── STEP 3: VIEWER ── -->
+  <!-- STEP 3 -->
   <section class="panel panel-viewer" id="panelViewer" style="display:none">
     <div class="panel-label">03 — YOUR 3D MODEL IS READY 🎉</div>
 
     <div class="viewer-wrap">
       <canvas id="threeCanvas"></canvas>
-      <div class="viewer-hint">🖱 Drag to rotate · Scroll to zoom · Right-drag to pan</div>
+      <div class="viewer-toolbar">
+        <button class="vtb" id="vtbWire"  title="Wireframe">WF</button>
+        <button class="vtb" id="vtbTex"   title="Texture"   >TX</button>
+        <button class="vtb on" id="vtbRot" title="Auto-rotate">⟳</button>
+      </div>
+      <div class="viewer-hint">🖱 Drag · Scroll to zoom · Right-drag to pan</div>
       <div class="viewer-stats" id="viewerStats"></div>
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" id="btnDownload"><span class="btn-icon">⬇</span> Download 3D Model (.obj)</button>
-      <button class="btn btn-secondary" id="btnNewScan"><span class="btn-icon">⬡</span> Scan Something Else</button>
+      <button class="btn btn-primary"   id="btnDownload"><span class="btn-icon">⬇</span> Download .obj</button>
+      <button class="btn btn-secondary" id="btnDownloadTex"><span class="btn-icon">⬇</span> Download Texture</button>
+      <button class="btn btn-secondary" id="btnNewScan"><span class="btn-icon">⬡</span> New Scan</button>
     </div>
   </section>
 
@@ -490,19 +521,32 @@ input[type=range]::-webkit-slider-thumb {
 <div class="toasts" id="toasts"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
 <script>
+'use strict';
 const $ = id => document.getElementById(id);
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const lerp   = (a,b,t)  => a+(b-a)*t;
+const wait   = ms => new Promise(r => setTimeout(r, ms));
 
-/* ── Toast ── */
+/* ─── State ─────────────────────────────────── */
+let stream = null, capturing = false, captureTimer = null;
+let frames = [];        // {dataURL, imageData, w, h}
+let depthMaps = [];     // Float32Array[]
+let meshData  = null;   // {verts,normals,uvs,indices,stats}
+let atlasCanvas = null;
+let midasModel  = null;
+
+/* ─── Toast ───────────────────────────────────── */
 function toast(msg, type='ok') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.textContent = msg;
   $('toasts').appendChild(el);
-  setTimeout(() => el.remove(), 3400);
+  setTimeout(() => el.remove(), 3600);
 }
 
-/* ── Terminal log ── */
+/* ─── Terminal ─────────────────────────────────── */
 function tlog(msg) {
   const d = document.createElement('div');
   d.textContent = '$ ' + msg;
@@ -510,13 +554,11 @@ function tlog(msg) {
   $('terminal').scrollTop = 99999;
 }
 
-/* ── Sliders ── */
+/* ─── Sliders ──────────────────────────────────── */
 $('slFrames').oninput   = () => $('svFrames').textContent = $('slFrames').value;
 $('slInterval').oninput = () => $('svInterval').textContent = (parseInt($('slInterval').value)/1000).toFixed(1)+'s';
 
-/* ── Camera ── */
-let stream = null;
-
+/* ─── Camera ───────────────────────────────────── */
 async function startCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -524,18 +566,18 @@ async function startCamera() {
       audio: false
     });
     $('video').srcObject = stream;
-    $('video').onloadedmetadata = () => {
-      $('hudRes').textContent = $('video').videoWidth + '×' + $('video').videoHeight;
-    };
+    await new Promise(r => $('video').onloadedmetadata = r);
+    $('hudRes').textContent = $('video').videoWidth + '×' + $('video').videoHeight;
     $('noCam').classList.add('hidden');
     $('btnStartScan').disabled = false;
     $('btnStopCam').style.display = 'inline-flex';
     $('scanLine').style.display = 'block';
+    $('hudInstruction').textContent = 'Centre object in ring · press Start Scanning';
     toast('Camera ready — point it at your object');
   } catch(e) {
     toast('Camera error: ' + e.message, 'err');
     $('noCam').querySelector('p').textContent =
-      'Camera access was blocked. Click the lock icon 🔒 in your browser address bar, allow camera access, then refresh.';
+      'Camera access blocked. Click 🔒 in the address bar, allow camera, then refresh.';
   }
 }
 
@@ -544,77 +586,87 @@ function stopCamera() {
   $('video').srcObject = null;
   $('noCam').classList.remove('hidden');
   $('noCam').querySelector('h3').textContent = 'Camera stopped';
-  $('noCam').querySelector('p').textContent = 'Click below to turn the camera back on.';
+  $('noCam').querySelector('p').textContent = 'Click below to re-enable.';
   $('btnStartScan').disabled = true;
   $('btnStopCam').style.display = 'none';
   $('scanLine').style.display = 'none';
-  toast('Camera turned off', 'warn');
+  toast('Camera off', 'warn');
 }
 
 $('btnEnableCam').onclick = startCamera;
 $('btnStopCam').onclick   = stopCamera;
 
-/* ── Capture ── */
-let capturing = false, captureTimer = null;
-let frames = [], sessionId = '';
+/* ─── Capture ──────────────────────────────────── */
+const CAM_INSTRUCTIONS = [
+  'Keep object centred · move slowly',
+  'Step a little to the right →',
+  'Keep circling around the object',
+  'Halfway — keep going!',
+  'Capture the back of the object',
+  'Almost full circle — nearly done!',
+  'Last few shots — complete the loop',
+];
 
-function makeId() { return 'scan_' + Math.random().toString(36).slice(2,8) + '_' + Date.now(); }
-
-function grabFrame(index, total) {
-  const v  = $('video');
-  const cv = $('captureCanvas');
+function grabFrame() {
+  const v = $('video'), cv = $('captureCanvas');
   cv.width  = v.videoWidth  || 640;
   cv.height = v.videoHeight || 480;
-  cv.getContext('2d').drawImage(v, 0, 0);
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(v, 0, 0);
 
-  // Flash
   const f = $('flashEl'); f.classList.add('go');
-  setTimeout(() => f.classList.remove('go'), 110);
+  setTimeout(() => f.classList.remove('go'), 100);
 
-  // Thumbnail strip
+  const dataURL   = cv.toDataURL('image/jpeg', 0.9);
+  const imageData = ctx.getImageData(0, 0, cv.width, cv.height);
+  frames.push({ dataURL, imageData, w: cv.width, h: cv.height });
+
   const img = document.createElement('img');
   img.className = 'frame-thumb fresh';
   img.src = cv.toDataURL('image/jpeg', 0.4);
   $('frameStrip').appendChild(img);
   setTimeout(() => img.classList.remove('fresh'), 500);
-
-  frames.push(cv.toDataURL('image/jpeg', 0.88));
-  $('hudCount').textContent = frames.length + ' photos';
+  $('frameStrip').scrollLeft = 99999;
 }
 
 async function startScan() {
-  if (!stream) { toast('Please enable your camera first!', 'warn'); return; }
-  frames = []; sessionId = makeId(); capturing = true;
+  if (!stream) { toast('Enable camera first', 'warn'); return; }
+  frames = []; capturing = true;
   const total    = parseInt($('slFrames').value);
   const interval = parseInt($('slInterval').value);
 
   $('frameStrip').innerHTML = '';
   $('captureProgress').classList.add('show');
-  $('btnStartScan').disabled   = true;
-  $('btnReset').style.display  = 'inline-flex';
+  $('btnStartScan').disabled = true;
+  $('btnReset').style.display = 'inline-flex';
   $('btnStopCam').style.display = 'none';
-  $('slFrames').disabled   = true;
-  $('slInterval').disabled = true;
-
-  toast('Scanning started — slowly walk around your object');
+  $('slFrames').disabled = $('slInterval').disabled = true;
+  $('hudRing').classList.add('active');
+  toast('Scanning — walk slowly in a full circle around your object');
 
   for (let i = 0; i < total; i++) {
     if (!capturing) break;
-    $('capLabel').textContent  = 'Taking photo ' + (i+1) + ' of ' + total + '…';
-    $('capCount').textContent  = (i+1) + ' / ' + total;
-    $('captureBar').style.width = ((i+1)/total*100) + '%';
-    $('hudCounter').textContent = 'Photo ' + (i+1) + '/' + total;
+    const pct = Math.round((i / total) * 100);
+    $('captureBar').style.width = pct + '%';
+    $('capLabel').textContent   = `Taking photo ${i+1} of ${total}…`;
+    $('capCount').textContent   = `${i+1} / ${total}`;
+    $('hudCounter').textContent = `Photo ${i+1}/${total}`;
     $('hudCounter').classList.add('visible');
-    grabFrame(i, total);
+    const step = Math.floor((i/total) * CAM_INSTRUCTIONS.length);
+    $('hudInstruction').textContent = CAM_INSTRUCTIONS[clamp(step, 0, CAM_INSTRUCTIONS.length-1)];
+    grabFrame();
     if (i < total-1) await new Promise(r => captureTimer = setTimeout(r, interval));
   }
 
   if (capturing) {
     capturing = false;
     $('hudCounter').classList.remove('visible');
-    $('capLabel').textContent = '✓ All ' + frames.length + ' photos captured!';
-    toast(frames.length + ' photos ready — building your 3D model…');
-    setTimeout(startProcessing, 800);
+    $('hudRing').classList.remove('active');
+    $('captureBar').style.width = '100%';
+    $('capLabel').textContent = `✓ ${frames.length} photos captured — starting AI pipeline…`;
+    toast(`${frames.length} photos ready · AI reconstruction starting`);
+    await wait(700);
+    startProcessing();
   }
 }
 
@@ -623,295 +675,528 @@ function cancelCapture() {
   if (captureTimer) clearTimeout(captureTimer);
 }
 
-/* ── Processing pipeline (simulated) ── */
-const PIPELINE = [
-  { name: 'Looking at your photos',      pct:  8, ms:  800 },
-  { name: 'Finding key features',         pct: 18, ms: 1100 },
-  { name: 'Matching photos together',     pct: 32, ms: 1300 },
-  { name: 'Calculating camera angles',    pct: 50, ms: 1800 },
-  { name: 'Building a 3D point cloud',    pct: 65, ms: 1600 },
-  { name: 'Creating the 3D shape',        pct: 78, ms: 1400 },
-  { name: 'Smoothing the surface',        pct: 88, ms:  900 },
-  { name: 'Projecting photos onto surface', pct: 95, ms:  700 },
-  { name: 'Almost done!',                 pct: 99, ms:  500 },
+/* ─── Processing pipeline ──────────────────────── */
+const STAGES = [
+  { name: 'Loading AI depth model',      key: 's0' },
+  { name: 'Estimating depth per photo',  key: 's1' },
+  { name: 'Building point cloud',        key: 's2' },
+  { name: 'Reconstructing surface',      key: 's3' },
+  { name: 'Projecting photo textures',   key: 's4' },
+  { name: 'Finalising',                  key: 's5' },
 ];
+
+function setPipeline(activeIdx, pct, label) {
+  STAGES.forEach((s, i) => {
+    const b = $(s.key);
+    if (!b) return;
+    b.className = i < activeIdx ? 'stage-block done'
+                : i === activeIdx ? 'stage-block active'
+                : 'stage-block';
+  });
+  $('procBar').style.width = pct + '%';
+  $('procPct').textContent = pct + '%';
+  if (label) $('procStage').textContent = label;
+}
 
 async function startProcessing() {
   const panel = $('panelProcess');
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior:'smooth' });
 
-  // Build stage bar blocks
   const stagesEl = $('pipelineStages'); stagesEl.innerHTML = '';
-  PIPELINE.forEach((_, i) => {
+  STAGES.forEach(s => {
     const b = document.createElement('div');
-    b.className = 'stage-block'; b.id = 'sb'+i;
+    b.className = 'stage-block'; b.id = s.key;
     stagesEl.appendChild(b);
   });
 
   $('procFrames').textContent = frames.length + ' photos';
-  tlog('Pipeline started — ' + frames.length + ' photos queued');
+  depthMaps = [];
 
-  for (let i = 0; i < PIPELINE.length; i++) {
-    const s = PIPELINE[i];
-    $('procStage').textContent = s.name;
-    $('procPct').textContent   = s.pct + '%';
-    $('procBar').style.width   = s.pct + '%';
-    tlog(s.name + '…');
-    if (i > 0) $('sb'+(i-1)).className = 'stage-block done';
-    $('sb'+i).className = 'stage-block active';
-    await new Promise(r => setTimeout(r, s.ms));
+  /* Stage 0: Load MiDaS */
+  setPipeline(0, 4, 'Loading AI model…');
+  tlog('Loading MiDaS depth estimation model (TensorFlow.js)…');
+  const t0 = Date.now();
+  try {
+    midasModel = await loadMiDaS();
+    tlog(`MiDaS loaded in ${((Date.now()-t0)/1000).toFixed(1)}s`);
+  } catch(e) {
+    tlog('AI model unavailable — using edge-based fallback');
+    console.warn('MiDaS load failed:', e);
+    midasModel = null;
   }
 
-  PIPELINE.forEach((_, i) => $('sb'+i).className = 'stage-block done');
-  $('procBar').style.width   = '100%';
-  $('procPct').textContent   = '100%';
+  /* Stage 1: Depth per frame */
+  setPipeline(1, 8, 'Depth estimation…');
+  tlog(`Running depth estimation on ${frames.length} photos…`);
+  for (let i = 0; i < frames.length; i++) {
+    const pct = 8 + Math.round((i / frames.length) * 24);
+    $('procBar').style.width = pct + '%';
+    $('procPct').textContent = pct + '%';
+    $('procStage').textContent = `Depth map ${i+1}/${frames.length}`;
+    await wait(0); // yield to UI thread
+    depthMaps.push(midasModel ? await runMiDaS(frames[i]) : fallbackDepth(frames[i]));
+  }
+  tlog(`${frames.length} depth maps complete`);
+  renderDepthPreviews();
+
+  /* Stage 2: Point cloud */
+  setPipeline(2, 34, 'Building point cloud…');
+  tlog('Fusing all depth maps into unified point cloud…');
+  await wait(40);
+  const cloud = buildPointCloud();
+  tlog(`Point cloud: ${cloud.length.toLocaleString()} points`);
+
+  /* Stage 3: Mesh */
+  setPipeline(3, 54, 'Reconstructing surface mesh…');
+  tlog('Voxel grid + surface extraction…');
+  await wait(40);
+  meshData = buildMesh(cloud);
+  tlog(`Mesh: ${meshData.stats.vCount.toLocaleString()} verts, ${meshData.stats.fCount.toLocaleString()} faces`);
+
+  /* Stage 4: Texture */
+  setPipeline(4, 76, 'Building texture atlas…');
+  tlog('Packing photos into multi-angle texture atlas…');
+  await wait(40);
+  atlasCanvas = buildTextureAtlas();
+  const AC = Math.ceil(Math.sqrt(frames.length));
+  tlog(`Atlas: ${frames.length} photos → ${AC}×${Math.ceil(frames.length/AC)} grid`);
+
+  /* Stage 5: Finalise */
+  setPipeline(5, 93, 'Finalising…');
+  await wait(50);
+
+  STAGES.forEach(s => { const b=$(s.key); if(b) b.className='stage-block done'; });
+  $('procBar').style.width = '100%';
+  $('procPct').textContent = '100%';
   $('procStage').textContent = 'Done!';
-  tlog('3D model created successfully!');
-  toast('Your 3D model is ready!');
-  setTimeout(showViewer, 600);
+  tlog('✓ 3D model reconstruction complete!');
+  toast('Your 3D model is ready! 🎉');
+  await wait(500);
+  showViewer();
 }
 
-/* ── OBJ model builder ── */
-function buildOBJ(frameCount) {
-  const bands = Math.min(10 + frameCount * 2, 56);
-  const verts=[], norms=[], uvs=[], faces=[];
-  const noise = (t,p) => 1+(Math.sin(t*3.7+p*2.1)*.5+Math.cos(t*1.9-p*4.3)*.3+Math.sin(t*5.1+p*.7)*.2)*.1;
-
-  for (let lat=0; lat<=bands; lat++) {
-    const th=lat*Math.PI/bands, st=Math.sin(th), ct=Math.cos(th);
-    for (let lon=0; lon<=bands; lon++) {
-      const ph=lon*2*Math.PI/bands, sp=Math.sin(ph), cp=Math.cos(ph), r=noise(th,ph);
-      verts.push(`v ${(r*cp*st).toFixed(5)} ${(r*ct).toFixed(5)} ${(r*sp*st).toFixed(5)}`);
-      norms.push(`vn ${(cp*st).toFixed(5)} ${ct.toFixed(5)} ${(sp*st).toFixed(5)}`);
-      uvs.push(`vt ${(1-lon/bands).toFixed(5)} ${(1-lat/bands).toFixed(5)}`);
-    }
-  }
-  for (let lat=0; lat<bands; lat++) {
-    for (let lon=0; lon<bands; lon++) {
-      const a=lat*(bands+1)+lon+1, b=a+bands+1, c=a+1, d=b+1;
-      faces.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);
-      faces.push(`f ${b}/${b}/${b} ${d}/${d}/${d} ${c}/${c}/${c}`);
-    }
-  }
-  return ['# SCAN3D — 3D Model Export', '# Photos used: '+frameCount, '# Texture: multi-photo atlas projection', 'o ScannedObject', '',
-    ...verts, '', ...uvs, '', ...norms, '', 'usemtl Scanned', 's 1', '', ...faces].join('\n');
+/* ─── MiDaS depth ──────────────────────────────── */
+async function loadMiDaS() {
+  if (typeof tf === 'undefined') throw new Error('TF.js not loaded');
+  return await tf.loadGraphModel(
+    'https://tfhub.dev/intel/midas/v2_1_small/1/model.json',
+    { fromTFHub: true }
+  );
 }
 
-/* ── 3D Viewer ── */
-async function showViewer() {
+async function runMiDaS(frame) {
+  const { imageData, w, h } = frame;
+  return tf.tidy(() => {
+    const img     = tf.browser.fromPixels(imageData);
+    const resized = tf.image.resizeBilinear(img, [256, 256]);
+    const normed  = resized.toFloat().div(255)
+                    .sub(tf.tensor([0.485,0.456,0.406]))
+                    .div(tf.tensor([0.229,0.224,0.225]));
+    const result  = midasModel.predict(normed.expandDims(0));
+    const depth   = (Array.isArray(result) ? result[0] : result).squeeze();
+    const fullRes = tf.image.resizeBilinear(depth.expandDims(-1), [h, w]).squeeze();
+    const arr     = fullRes.arraySync();
+
+    const flat = new Float32Array(w * h);
+    let mn = Infinity, mx = -Infinity;
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+      const v = arr[y][x]; flat[y*w+x] = v;
+      if (v<mn) mn=v; if (v>mx) mx=v;
+    }
+    const rng = mx-mn || 1;
+    for (let i=0;i<flat.length;i++) flat[i] = (flat[i]-mn)/rng;
+    return flat;
+  });
+}
+
+/* Fallback: Laplacian edge + centre-bias depth */
+function fallbackDepth(frame) {
+  const { imageData: id, w, h } = frame;
+  const data = id.data;
+  const depth = new Float32Array(w * h);
+  const g = (y,x) => {
+    const i=(y*w+x)*4;
+    return 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+  };
+  for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++) {
+    const lap = Math.abs(4*g(y,x) - g(y-1,x) - g(y+1,x) - g(y,x-1) - g(y,x+1)) / 255;
+    const nx=(x/w-.5)*2, ny=(y/h-.5)*2;
+    const cb = Math.max(0, 1-Math.sqrt(nx*nx+ny*ny));
+    depth[y*w+x] = clamp(lap*0.55 + cb*0.45, 0, 1);
+  }
+  // 3x3 box blur
+  const out = new Float32Array(w*h);
+  for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++) {
+    let s=0;
+    for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) s+=depth[(y+dy)*w+(x+dx)];
+    out[y*w+x]=s/9;
+  }
+  return out;
+}
+
+/* Depth preview tiles */
+function renderDepthPreviews() {
+  $('depthSection').classList.add('show');
+  const strip = $('depthStrip'); strip.innerHTML = '';
+  const show = Math.min(frames.length, 10);
+  for (let i=0;i<show;i++) {
+    const wrap = document.createElement('div'); wrap.className='depth-cell';
+    const photo = document.createElement('img'); photo.src = frames[i].dataURL;
+    const cv2 = document.createElement('canvas'); cv2.width=60; cv2.height=45;
+    const ctx2 = cv2.getContext('2d');
+    const { w, h } = frames[i]; const d = depthMaps[i];
+    const id2 = ctx2.createImageData(60,45);
+    for (let py=0;py<45;py++) for (let px=0;px<60;px++) {
+      const sx=Math.floor(px/60*w), sy=Math.floor(py/45*h);
+      const v = d[sy*w+sx];
+      const ii=(py*60+px)*4;
+      // Viridis-ish: dark-navy → teal → yellow
+      id2.data[ii]   = Math.round(lerp(lerp(10,0,v),  lerp(0,255,v), v));
+      id2.data[ii+1] = Math.round(lerp(lerp(20,180,v),lerp(180,230,v),v));
+      id2.data[ii+2] = Math.round(lerp(lerp(80,140,v),lerp(140,0,v),  v));
+      id2.data[ii+3] = 210;
+    }
+    ctx2.putImageData(id2,0,0);
+    const tag = document.createElement('div'); tag.className='depth-tag';
+    tag.textContent = `F${i+1}`;
+    wrap.appendChild(photo); wrap.appendChild(cv2); wrap.appendChild(tag);
+    strip.appendChild(wrap);
+  }
+}
+
+/* ─── Point cloud fusion ──────────────────────── */
+function buildPointCloud() {
+  const N = frames.length, pts = [];
+  // Sub-sample density: more frames → sparser per-frame grid (keep total pts manageable)
+  const GRID = Math.max(16, Math.ceil(48 / Math.sqrt(N)));
+
+  for (let fi=0; fi<N; fi++) {
+    const { imageData, w, h } = frames[fi];
+    const d = depthMaps[fi], data = imageData.data;
+    // Capture azimuth
+    const az = (fi/N) * Math.PI*2;
+    const cosA = Math.cos(az), sinA = Math.sin(az);
+    // Approximate camera intrinsics (60° FOV)
+    const fx = (w/2) / Math.tan(30*Math.PI/180);
+    const cx = w/2, cy = h/2;
+
+    for (let y=GRID;y<h-GRID;y+=GRID) {
+      for (let x=GRID;x<w-GRID;x+=GRID) {
+        const dv = d[y*w+x];
+        if (dv < 0.07 || dv > 0.97) continue; // skip background / noise
+
+        const Z  = 0.25 + dv * 1.8;
+        const Xc = (x-cx)/fx * Z;
+        const Yc = -(y-cy)/fx * Z;
+
+        // Rotate by capture azimuth around Y axis
+        const Xw =  Xc*cosA + Z*sinA;
+        const Yw =  Yc;
+        const Zw = -Xc*sinA + Z*cosA;
+
+        const pi = (y*w+x)*4;
+        pts.push({ x:Xw, y:Yw, z:Zw, r:data[pi], g:data[pi+1], b:data[pi+2] });
+      }
+    }
+  }
+  return pts;
+}
+
+/* ─── Voxel mesh reconstruction ───────────────── */
+function buildMesh(points) {
+  if (points.length === 0) return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
+
+  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,mnZ=Infinity,mxZ=-Infinity;
+  for (const p of points) {
+    if(p.x<mnX)mnX=p.x; if(p.x>mxX)mxX=p.x;
+    if(p.y<mnY)mnY=p.y; if(p.y>mxY)mxY=p.y;
+    if(p.z<mnZ)mnZ=p.z; if(p.z>mxZ)mxZ=p.z;
+  }
+  const pad = 0.1;
+  mnX-=pad;mnY-=pad;mnZ-=pad;mxX+=pad;mxY+=pad;mxZ+=pad;
+
+  // Resolution scales with frame count — more frames → finer voxel grid
+  const RES = clamp(36 + Math.floor(frames.length / 4) * 2, 36, 54);
+  const dx=(mxX-mnX)/RES, dy=(mxY-mnY)/RES, dz=(mxZ-mnZ)/RES;
+  const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
+
+  const occ  = new Float32Array(RES*RES*RES);
+  const colR = new Float32Array(RES*RES*RES);
+  const colG = new Float32Array(RES*RES*RES);
+  const colB = new Float32Array(RES*RES*RES);
+  const cnt  = new Uint16Array(RES*RES*RES);
+
+  for (const p of points) {
+    const ix=clamp(Math.floor((p.x-mnX)/dx),0,RES-1);
+    const iy=clamp(Math.floor((p.y-mnY)/dy),0,RES-1);
+    const iz=clamp(Math.floor((p.z-mnZ)/dz),0,RES-1);
+    const vv=VI(ix,iy,iz);
+    occ[vv]=Math.min(occ[vv]+0.25,1);
+    colR[vv]+=p.r; colG[vv]+=p.g; colB[vv]+=p.b; cnt[vv]++;
+  }
+
+  // Two-pass smoothing for denser frame counts
+  const smooth = (src) => {
+    const out = new Float32Array(RES*RES*RES);
+    for(let ix=1;ix<RES-1;ix++) for(let iy=1;iy<RES-1;iy++) for(let iz=1;iz<RES-1;iz++){
+      let s=0,n=0;
+      for(let a=-1;a<=1;a++) for(let b=-1;b<=1;b++) for(let c=-1;c<=1;c++){s+=src[VI(ix+a,iy+b,iz+c)];n++;}
+      out[VI(ix,iy,iz)]=s/n;
+    }
+    return out;
+  };
+  let occ2 = smooth(occ);
+  if (frames.length >= 20) occ2 = smooth(occ2); // second smoothing pass for more frames
+
+  const verts=[], normals=[], uvs=[], indices=[];
+  const vmap=new Map(); let vIdx=0;
+  const THRESH = 0.14;
+
+  function addV(wx,wy,wz, nx,ny,nz, u,v) {
+    const key=`${wx.toFixed(3)},${wy.toFixed(3)},${wz.toFixed(3)}`;
+    if(vmap.has(key)) return vmap.get(key);
+    vmap.set(key,vIdx);
+    verts.push(wx,wy,wz); normals.push(nx,ny,nz); uvs.push(u,v);
+    return vIdx++;
+  }
+
+  // 6 face pairs for surface extraction
+  const FACE6=[
+    [[0,3,7,4],[-1,0,0]],[[1,2,6,5],[1,0,0]],
+    [[0,1,5,4],[0,0,-1]],[[3,2,6,7],[0,0,1]],
+    [[0,1,2,3],[0,-1,0]],[[4,5,6,7],[0,1,0]],
+  ];
+
+  for(let ix=0;ix<RES-1;ix++) for(let iy=0;iy<RES-1;iy++) for(let iz=0;iz<RES-1;iz++){
+    const wx0=mnX+ix*dx, wy0=mnY+iy*dy, wz0=mnZ+iz*dz;
+    const corners=[
+      occ2[VI(ix,  iy,  iz  )], occ2[VI(ix+1,iy,  iz  )],
+      occ2[VI(ix+1,iy+1,iz  )], occ2[VI(ix,  iy+1,iz  )],
+      occ2[VI(ix,  iy,  iz+1)], occ2[VI(ix+1,iy,  iz+1)],
+      occ2[VI(ix+1,iy+1,iz+1)], occ2[VI(ix,  iy+1,iz+1)],
+    ];
+    const cpos=[
+      [wx0,    wy0,    wz0   ],[wx0+dx, wy0,    wz0   ],
+      [wx0+dx, wy0+dy, wz0   ],[wx0,    wy0+dy, wz0   ],
+      [wx0,    wy0,    wz0+dz],[wx0+dx, wy0,    wz0+dz],
+      [wx0+dx, wy0+dy, wz0+dz],[wx0,    wy0+dy, wz0+dz],
+    ];
+    const above = corners.map(c=>c>THRESH);
+
+    for(const [fc, nm] of FACE6){
+      const ac = fc.filter(ci=>above[ci]).length;
+      if(ac===0||ac===4||ac<2) continue;
+      const pts = fc.map(ci=>{
+        const p=cpos[ci];
+        const u2=0.5+Math.atan2(p[2]-((mnZ+mxZ)/2), p[0]-((mnX+mxX)/2))/(2*Math.PI);
+        const v2=clamp(1-(p[1]-mnY)/(mxY-mnY), 0, 1);
+        return addV(p[0],p[1],p[2], nm[0],nm[1],nm[2], u2,v2);
+      });
+      indices.push(pts[0],pts[1],pts[2], pts[0],pts[2],pts[3]);
+    }
+  }
+
+  return { verts, normals, uvs, indices, stats:{vCount:vIdx, fCount:Math.floor(indices.length/3)} };
+}
+
+/* ─── Texture atlas ───────────────────────────── */
+function buildTextureAtlas() {
+  const N=frames.length;
+  // Higher resolution cells for more frames
+  const CELL = N >= 24 ? 384 : N >= 16 ? 320 : 256;
+  const COLS=Math.ceil(Math.sqrt(N)), ROWS=Math.ceil(N/COLS);
+  const cv=document.createElement('canvas');
+  cv.width=COLS*CELL; cv.height=ROWS*CELL;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
+  frames.forEach((f,i)=>{
+    const img=new Image(); img.src=f.dataURL;
+    const col=i%COLS, row=Math.floor(i/COLS);
+    const s=Math.min(f.w,f.h), ox=(f.w-s)/2, oy=(f.h-s)/2;
+    ctx.drawImage(img, ox,oy,s,s, col*CELL,row*CELL, CELL,CELL);
+  });
+  return cv;
+}
+
+/* ─── OBJ export ──────────────────────────────── */
+function buildOBJ() {
+  if (!meshData) return '';
+  const { verts, normals, uvs, indices, stats } = meshData;
+  const lines=[
+    '# SCAN3D — AI Depth-Fusion Export',
+    `# Photos: ${frames.length} | Verts: ${stats.vCount} | Faces: ${stats.fCount}`,
+    'mtllib scan3d.mtl', 'o ScannedObject', '',
+  ];
+  for(let i=0;i<verts.length;i+=3)
+    lines.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
+  lines.push('');
+  for(let i=0;i<uvs.length;i+=2)
+    lines.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
+  lines.push('');
+  for(let i=0;i<normals.length;i+=3)
+    lines.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
+  lines.push('','usemtl Scanned','s 1','');
+  for(let i=0;i<indices.length;i+=3){
+    const a=indices[i]+1, b=indices[i+1]+1, c=indices[i+2]+1;
+    lines.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);
+  }
+  return lines.join('\n');
+}
+
+/* ─── Viewer ──────────────────────────────────── */
+function showViewer() {
   const pv = $('panelViewer');
-  pv.style.display = 'block';
-  pv.scrollIntoView({ behavior:'smooth' });
+  pv.style.display='block';
+  pv.scrollIntoView({behavior:'smooth'});
 
-  const bands = Math.min(10+frames.length*2, 56);
-  const COLS_v = Math.ceil(Math.sqrt(frames.length));
-  const ROWS_v = Math.ceil(frames.length / COLS_v);
-  $('viewerStats').innerHTML = [
-    `<div class="vsl">${((bands+1)*(bands+1)).toLocaleString()} vertices</div>`,
-    `<div class="vsl">${(bands*bands*2).toLocaleString()} faces</div>`,
-    `<div class="vsl">${frames.length} photos · ${COLS_v}×${ROWS_v} atlas</div>`,
+  const COLS_v=Math.ceil(Math.sqrt(frames.length)), ROWS_v=Math.ceil(frames.length/COLS_v);
+  $('viewerStats').innerHTML=[
+    `<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,
+    `<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,
+    `<div class="vsl">${frames.length} photos fused</div>`,
+    `<div class="vsl">${COLS_v}×${ROWS_v} atlas</div>`,
   ].join('');
 
   $('btnDownload').onclick = () => {
-    const blob = new Blob([buildOBJ(frames.length)], {type:'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'scan3d_model.obj';
-    a.click();
-    toast('3D model downloaded! Open it in Blender or any 3D viewer.');
+    const blob=new Blob([buildOBJ()],{type:'text/plain'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='scan3d_model.obj'; a.click();
+    toast('Model downloaded — open in Blender, MeshLab, etc.');
+  };
+  $('btnDownloadTex').onclick = () => {
+    if(!atlasCanvas) return;
+    atlasCanvas.toBlob(blob=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download='scan3d_texture.png'; a.click();
+      toast('Texture atlas downloaded!');
+    });
   };
 
-  await initThree();
+  initThree();
 }
 
-async function initThree() {
-  const wrap = $('threeCanvas').parentElement;
-  const W = wrap.clientWidth, H = wrap.clientHeight;
+function initThree() {
+  const wrap=$('threeCanvas').parentElement;
+  const W=wrap.clientWidth, H=wrap.clientHeight;
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050709);
-  scene.fog = new THREE.FogExp2(0x050709, 0.15);
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x050709);
+  scene.fog=new THREE.FogExp2(0x050709,0.12);
 
-  const grid = new THREE.GridHelper(6, 20, 0x1e2530, 0x1e2530);
-  grid.position.y = -1.2; scene.add(grid);
+  const grid=new THREE.GridHelper(8,24,0x1e2530,0x1e2530);
+  grid.position.y=-1.3; scene.add(grid);
 
-  const cam = new THREE.PerspectiveCamera(50, W/H, 0.01, 100);
-  cam.position.set(0, 0.5, 3);
+  const cam=new THREE.PerspectiveCamera(50,W/H,0.01,200);
+  cam.position.set(0,0.5,3.5);
 
-  const renderer = new THREE.WebGLRenderer({ canvas:$('threeCanvas'), antialias:true });
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
+  const renderer=new THREE.WebGLRenderer({canvas:$('threeCanvas'),antialias:true});
+  renderer.setSize(W,H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.25;
 
-  scene.add(new THREE.AmbientLight(0x223344, 0.6));
-  const key = new THREE.DirectionalLight(0x00d4aa, 1.8);
-  key.position.set(2,3,2); key.castShadow = true; scene.add(key);
-  const fill = new THREE.DirectionalLight(0x0066ff, 0.8);
+  scene.add(new THREE.AmbientLight(0x223344, 0.7));
+  const key=new THREE.DirectionalLight(0x00d4aa,2.0);
+  key.position.set(2,3,2); key.castShadow=true; scene.add(key);
+  const fill=new THREE.DirectionalLight(0x0066ff,0.9);
   fill.position.set(-2,1,-2); scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffffff, 0.4);
+  const rim=new THREE.DirectionalLight(0xffffff,0.5);
   rim.position.set(0,-2,-3); scene.add(rim);
 
-  // Build displaced sphere geometry
-  const bands = Math.min(10+frames.length*2, 56);
-  const noise = (t,p) => 1+(Math.sin(t*3.7+p*2.1)*.5+Math.cos(t*1.9-p*4.3)*.3+Math.sin(t*5.1+p*.7)*.2)*.1;
-  const pos=[], norm=[], uv=[], idx=[];
+  // Geometry from real mesh data
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(meshData.verts),3));
+  geo.setAttribute('normal',  new THREE.BufferAttribute(new Float32Array(meshData.normals),3));
+  geo.setAttribute('uv',      new THREE.BufferAttribute(new Float32Array(meshData.uvs),2));
+  geo.setIndex(meshData.indices);
+  geo.computeVertexNormals(); // recompute smooth normals
+  geo.computeBoundingBox();
 
-  for (let lat=0; lat<=bands; lat++) {
-    const th=lat*Math.PI/bands, st=Math.sin(th), ct=Math.cos(th);
-    for (let lon=0; lon<=bands; lon++) {
-      const ph=lon*2*Math.PI/bands, sp=Math.sin(ph), cp=Math.cos(ph), r=noise(th,ph);
-      pos.push(r*cp*st, r*ct, r*sp*st);
-      norm.push(cp*st, ct, sp*st);
-      uv.push(1-lon/bands, 1-lat/bands);
+  // Centre + fit
+  const centre=new THREE.Vector3(); geo.boundingBox.getCenter(centre);
+  const size=new THREE.Vector3();   geo.boundingBox.getSize(size);
+  const scale=2.2/Math.max(size.x,size.y,size.z);
+
+  // Remap UVs using angle-blended atlas
+  const N=frames.length;
+  const COLS=Math.ceil(Math.sqrt(N)), ROWS=Math.ceil(N/COLS);
+  const posArr=geo.attributes.position.array;
+  const uvArr=new Float32Array(geo.attributes.uv.array.length);
+  const vCount=posArr.length/3;
+
+  for(let vi=0;vi<vCount;vi++){
+    const x=posArr[vi*3], z=posArr[vi*3+2];
+    const az=Math.atan2(x,z); // azimuth of this vertex
+    // find best-matching frame angle
+    let best=0, bestD=Infinity;
+    for(let fi=0;fi<N;fi++){
+      const capAz=(fi/N)*Math.PI*2-Math.PI;
+      let diff=Math.abs(az-capAz);
+      if(diff>Math.PI) diff=2*Math.PI-diff;
+      if(diff<bestD){bestD=diff;best=fi;}
     }
+    const origV=geo.attributes.uv.array[vi*2+1];
+    const col=best%COLS, row=Math.floor(best/COLS);
+    uvArr[vi*2]  =(col+0.1+origV*0.8)/COLS;
+    uvArr[vi*2+1]=(row+0.1+(1-origV)*0.8)/ROWS;
   }
-  for (let lat=0; lat<bands; lat++)
-    for (let lon=0; lon<bands; lon++) {
-      const a=lat*(bands+1)+lon, b=a+bands+1;
-      idx.push(a,b,a+1,b,b+1,a+1);
-    }
+  geo.setAttribute('uv',new THREE.BufferAttribute(uvArr,2));
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos),3));
-  geo.setAttribute('normal',   new THREE.BufferAttribute(new Float32Array(norm),3));
-  geo.setAttribute('uv',       new THREE.BufferAttribute(new Float32Array(uv),2));
-  geo.setIndex(idx); geo.computeBoundingBox();
+  const atlasTex=new THREE.CanvasTexture(atlasCanvas);
 
-  // ── Multi-photo angle-blended texture projection ──
-  // We bake all captured frames into a single atlas texture using a canvas,
-  // then use a custom UV mapping that selects the best frame per vertex
-  // based on approximate capture angle (frames shot in a full orbit).
+  const mat=new THREE.MeshStandardMaterial({map:atlasTex,metalness:0.04,roughness:0.65,side:THREE.DoubleSide});
+  const wireMat=new THREE.MeshBasicMaterial({color:0x00d4aa,wireframe:true,transparent:true,opacity:0.55});
 
-  let mat;
-
-  if (frames.length > 0) {
-    // ── Step 1: Build a texture atlas from all frames ──
-    const COLS   = Math.ceil(Math.sqrt(frames.length));
-    const ROWS   = Math.ceil(frames.length / COLS);
-    const THUMB  = 256; // each frame cell size in atlas
-    const AW     = COLS * THUMB;
-    const AH     = ROWS * THUMB;
-
-    const atlas  = document.createElement('canvas');
-    atlas.width  = AW; atlas.height = AH;
-    const actx   = atlas.getContext('2d');
-
-    // fill black
-    actx.fillStyle = '#000'; actx.fillRect(0,0,AW,AH);
-
-    // Draw each frame into its atlas cell
-    const loadedImgs = [];
-    await Promise.all(frames.map((src, i) => new Promise(res => {
-      const img = new Image(); img.src = src;
-      img.onload = () => {
-        const col = i % COLS, row = Math.floor(i / COLS);
-        const cx = col * THUMB, cy = row * THUMB;
-        // cover-crop to square cell
-        const s = Math.min(img.width, img.height);
-        const ox = (img.width  - s) / 2;
-        const oy = (img.height - s) / 2;
-        actx.drawImage(img, ox, oy, s, s, cx, cy, THUMB, THUMB);
-        loadedImgs[i] = img;
-        res();
-      };
-      img.onerror = res; // skip bad frames gracefully
-    })));
-
-    const atlasTex = new THREE.CanvasTexture(atlas);
-
-    // ── Step 2: Re-map UVs so each face samples the best-angle frame ──
-    // Each frame i was captured at angle: i / frames.length * 2π around Y-axis.
-    // For each vertex, we find the frame whose capture azimuth best matches
-    // the vertex's azimuth, then remap UVs to that frame's atlas cell.
-
-    const posArr = geo.attributes.position.array;
-    const uvArr  = new Float32Array(geo.attributes.uv.array.length);
-    const vCount = posArr.length / 3;
-
-    for (let vi = 0; vi < vCount; vi++) {
-      const x = posArr[vi*3], z = posArr[vi*3+2];
-      // azimuth of this vertex in [-π, π]
-      const az = Math.atan2(x, z); // note: x,z (not z,x) matches our sphere build
-
-      // Find closest frame by capture angle
-      let bestIdx = 0, bestDiff = Infinity;
-      for (let fi = 0; fi < frames.length; fi++) {
-        const captureAz = (fi / frames.length) * Math.PI * 2 - Math.PI;
-        let diff = Math.abs(az - captureAz);
-        if (diff > Math.PI) diff = Math.PI * 2 - diff; // wrap
-        if (diff < bestDiff) { bestDiff = diff; bestIdx = fi; }
-      }
-
-      // Original UVs (spherical: u=longitude 0–1, v=latitude 0–1)
-      const origU = geo.attributes.uv.array[vi*2];
-      const origV = geo.attributes.uv.array[vi*2+1];
-
-      // Remap to atlas cell for bestIdx
-      const col = bestIdx % COLS, row = Math.floor(bestIdx / COLS);
-      // u within cell: use origV as vertical (latitude), center horizontally
-      // We compress the per-frame u into a narrow strip around center to reduce
-      // the harsh seams at frame boundaries — soft 0.15–0.85 window.
-      const cellU = (col + 0.15 + origV * 0.70) / COLS;
-      const cellV = (row + 0.15 + (1 - origV) * 0.70) / ROWS;
-
-      uvArr[vi*2]   = cellU;
-      uvArr[vi*2+1] = cellV;
-    }
-
-    geo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
-
-    mat = new THREE.MeshStandardMaterial({
-      map:       atlasTex,
-      metalness: 0.04,
-      roughness: 0.60,
-      side:      THREE.DoubleSide,
-    });
-
-    tlog('Texture atlas built: ' + frames.length + ' photos → ' + COLS + '×' + ROWS + ' grid (' + AW + '×' + AH + 'px)');
-    tlog('UV remapping: each face samples closest-angle photo');
-
-  } else {
-    mat = new THREE.MeshStandardMaterial({ color:0x00d4aa, metalness:0.05, roughness:0.65, side:THREE.DoubleSide });
-  }
-
-  const mesh = new THREE.Mesh(geo, mat);
-  const center = new THREE.Vector3(); geo.boundingBox.getCenter(center); mesh.position.sub(center);
-  const sz = new THREE.Vector3(); geo.boundingBox.getSize(sz);
-  mesh.scale.setScalar(2 / Math.max(sz.x,sz.y,sz.z));
-  mesh.castShadow = mesh.receiveShadow = true;
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.sub(centre.multiplyScalar(scale));
+  mesh.scale.setScalar(scale);
+  mesh.castShadow=mesh.receiveShadow=true;
   scene.add(mesh);
 
-  // Orbit controls
-  let down=false, rdown=false, lx=0, ly=0;
-  let rotX=0, rotY=0, panX=0, panY=0, zoom=3, autoRot=true, autoAngle=0;
-  const cv = $('threeCanvas');
+  tlog('Three.js scene initialised — viewer ready');
 
-  cv.onpointerdown = e => {
-    down=true; rdown=e.button===2;
-    lx=e.clientX; ly=e.clientY; autoRot=false; e.preventDefault();
+  // Viewer toolbar
+  let wireframe=false, showTex=true, autoRot=true, autoAngle=0;
+  $('vtbWire').onclick=()=>{
+    wireframe=!wireframe; mesh.material=wireframe?wireMat:mat;
+    $('vtbWire').classList.toggle('on',wireframe);
   };
-  window.addEventListener('pointermove', e => {
-    if (!down) return;
+  $('vtbTex').onclick=()=>{
+    showTex=!showTex; mat.map=showTex?atlasTex:null; mat.needsUpdate=true;
+    $('vtbTex').classList.toggle('on',showTex);
+  };
+  $('vtbRot').onclick=()=>{ autoRot=!autoRot; $('vtbRot').classList.toggle('on',autoRot); };
+  $('vtbTex').classList.add('on');
+
+  // Orbit
+  let down=false,rdown=false,lx=0,ly=0;
+  let rotX=0,rotY=0,panX=0,panY=0,zoom=3.5;
+  const cv=$('threeCanvas');
+
+  cv.onpointerdown=e=>{
+    down=true; rdown=e.button===2;
+    lx=e.clientX; ly=e.clientY; autoRot=false; $('vtbRot').classList.remove('on');
+    e.preventDefault();
+  };
+  window.addEventListener('pointermove',e=>{
+    if(!down) return;
     const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
-    if (rdown) { panX+=dx*0.003; panY-=dy*0.003; }
-    else { rotY+=dx*0.4; rotX=Math.max(-80,Math.min(80,rotX+dy*0.4)); }
+    if(rdown){panX+=dx*0.003;panY-=dy*0.003;}
+    else{rotY+=dx*0.38; rotX=clamp(rotX+dy*0.38,-82,82);}
   });
-  window.addEventListener('pointerup', () => down=false);
-  cv.addEventListener('contextmenu', e => e.preventDefault());
-  cv.addEventListener('wheel', e => {
-    zoom = Math.max(0.5, Math.min(8, zoom+e.deltaY*0.005));
-  }, {passive:true});
-  window.addEventListener('resize', () => {
-    const w=wrap.clientWidth, h=wrap.clientHeight;
+  window.addEventListener('pointerup',()=>down=false);
+  cv.addEventListener('contextmenu',e=>e.preventDefault());
+  cv.addEventListener('wheel',e=>{zoom=clamp(zoom+e.deltaY*0.005,0.4,10);},{passive:true});
+  window.addEventListener('resize',()=>{
+    const w=wrap.clientWidth,h=wrap.clientHeight;
     cam.aspect=w/h; cam.updateProjectionMatrix(); renderer.setSize(w,h);
   });
 
-  (function animate() {
+  (function animate(){
     requestAnimationFrame(animate);
-    if (autoRot) autoAngle += 0.3;
+    if(autoRot) autoAngle+=0.28;
     const ry=(rotY+autoAngle)*Math.PI/180, rx=rotX*Math.PI/180;
     cam.position.set(
       Math.sin(ry)*Math.cos(rx)*zoom+panX,
@@ -923,32 +1208,37 @@ async function initThree() {
   })();
 }
 
-/* ── Reset ── */
+/* ─── Reset ───────────────────────────────────── */
 function doReset() {
-  cancelCapture(); frames=[]; sessionId='';
+  cancelCapture();
+  frames=[]; depthMaps=[]; meshData=null; atlasCanvas=null;
   $('frameStrip').innerHTML='';
   $('captureProgress').classList.remove('show');
   $('captureBar').style.width='0%';
   $('panelProcess').style.display='none';
   $('panelViewer').style.display='none';
+  $('depthSection').classList.remove('show');
+  $('depthStrip').innerHTML='';
   $('procBar').style.width='0%';
-  $('terminal').innerHTML='<div>$ Starting 3D reconstruction pipeline…</div>';
-  $('btnStartScan').disabled = !stream;
-  $('btnReset').style.display = 'none';
-  $('slFrames').disabled=false; $('slInterval').disabled=false;
-  $('btnStopCam').style.display = stream ? 'inline-flex' : 'none';
-  $('hudCount').textContent='0 photos';
+  $('terminal').innerHTML='<div>$ Initialising AI reconstruction pipeline…</div>';
+  $('btnStartScan').disabled=!stream;
+  $('btnReset').style.display='none';
+  $('slFrames').disabled=$('slInterval').disabled=false;
+  $('btnStopCam').style.display=stream?'inline-flex':'none';
+  $('hudCount') && ($('hudCount').textContent='0 photos');
+  $('hudInstruction').textContent=stream?'Centre object in ring · press Start Scanning':'Enable camera to begin';
+  $('hudRing').classList.remove('active');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-$('btnStartScan').onclick = startScan;
-$('btnReset').onclick     = doReset;
-$('btnNewScan').onclick   = doReset;
+$('btnStartScan').onclick=startScan;
+$('btnReset').onclick=doReset;
+$('btnNewScan').onclick=doReset;
 
-/* ── Auto-start camera ── */
-(async () => {
-  if (navigator.mediaDevices?.getUserMedia) {
-    try { await startCamera(); } catch(e) {}
+/* ─── Boot ─────────────────────────────────────── */
+(async()=>{
+  if(navigator.mediaDevices?.getUserMedia){
+    try{ await startCamera(); }catch(e){}
   }
 })();
 </script>
