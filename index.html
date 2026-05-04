@@ -1302,31 +1302,49 @@ function initThree() {
 
   const edgeGeo = buildEdgeLines(geo);
 
-  // Core neon line
+  // Core neon line — always on top (depthTest: false), full brightness
   const neonMat = new THREE.LineBasicMaterial({
     color: 0x00ff41,
     transparent: true,
-    opacity: 0.85,
-    depthTest: true,
+    opacity: 1.0,
+    depthTest: false,   // draws on top of everything
+    depthWrite: false,
   });
   const neonLines = new THREE.LineSegments(edgeGeo, neonMat);
   neonLines.position.copy(mesh.position);
   neonLines.scale.copy(mesh.scale);
+  neonLines.renderOrder = 999;  // render last = always on top
   scene.add(neonLines);
 
-  // Outer glow halo — slightly scaled out, more transparent
+  // Inner glow — slightly larger, also on top
   const haloMat = new THREE.LineBasicMaterial({
     color: 0x00ff88,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.55,
     depthTest: false,
+    depthWrite: false,
   });
   const haloLines = new THREE.LineSegments(edgeGeo, haloMat);
   haloLines.position.copy(mesh.position);
-  haloLines.scale.copy(mesh.scale).multiplyScalar(1.018); // slightly larger
+  haloLines.scale.copy(mesh.scale).multiplyScalar(1.012);
+  haloLines.renderOrder = 998;
   scene.add(haloLines);
 
-  tlog('Neon outline: ' + (edgeGeo.attributes.position.count/2).toLocaleString() + ' edges');
+  // Outer bloom — widest spread, most transparent
+  const bloomMat = new THREE.LineBasicMaterial({
+    color: 0x44ffaa,
+    transparent: true,
+    opacity: 0.18,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const bloomLines = new THREE.LineSegments(edgeGeo, bloomMat);
+  bloomLines.position.copy(mesh.position);
+  bloomLines.scale.copy(mesh.scale).multiplyScalar(1.032);
+  bloomLines.renderOrder = 997;
+  scene.add(bloomLines);
+
+  tlog('Neon outline: ' + (edgeGeo.attributes.position.count/2).toLocaleString() + ' edges · 3-layer glow');
 
   // Viewer toolbar
   let wireframe=false, showTex=true, showNeon=true, autoRot=true, autoAngle=0;
@@ -1340,7 +1358,7 @@ function initThree() {
   };
   $('vtbNeon').onclick=()=>{
     showNeon=!showNeon;
-    neonLines.visible=haloLines.visible=showNeon;
+    neonLines.visible=haloLines.visible=bloomLines.visible=showNeon;
     $('vtbNeon').classList.toggle('on',showNeon);
   };
   $('vtbRot').onclick=()=>{ autoRot=!autoRot; $('vtbRot').classList.toggle('on',autoRot); };
@@ -1382,9 +1400,10 @@ function initThree() {
     cam.lookAt(panX,panY,0);
     // Pulse neon opacity gently
     if(showNeon){
-      const t=Date.now()*0.002;
-      neonMat.opacity  = 0.72 + Math.sin(t)*0.18;
-      haloMat.opacity  = 0.15 + Math.sin(t+1)*0.08;
+      const t=Date.now()*0.0018;
+      neonMat.opacity  = 0.88 + Math.sin(t)*0.12;
+      haloMat.opacity  = 0.42 + Math.sin(t+1)*0.13;
+      bloomMat.opacity = 0.13 + Math.sin(t+2)*0.06;
     }
     renderer.render(scene,cam);
   })();
