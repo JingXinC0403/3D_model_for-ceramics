@@ -551,14 +551,119 @@ let outlineRAF = null;
 const NEON = '#00ff41'; // neon green
 
 function startOutlineLoop() {
-  const video   = $('video');
-  const cvOut   = $('outlineCanvas');
+  const video     = $('video');
+  const cvOut     = $('outlineCanvas');
   const cvScratch = document.createElement('canvas');
-  const ctxOut  = cvOut.getContext('2d');
-  const ctxSrc  = cvScratch.getContext('2d', { willReadFrequently: true });
+  const ctxOut    = cvOut.getContext('2d');
+  const ctxSrc    = cvScratch.getContext('2d', { willReadFrequently: true });
 
-  // Downscale factor for performance — process at 1/3 res, draw back at full size
-  const SCALE = 3;
+  // Process at half resolution for speed
+  const SCALE = 2;
+
+  // Background colour model — updated every 90 frames using border pixels
+  let bgR = 128, bgG = 128, bgB = 128;
+  let bgFrameCount = 0;
+  const BG_UPDATE_INTERVAL = 90;
+
+  // Track the previous foreground mask for temporal smoothing
+  let prevMask = null;
+  const TEMPORAL_BLEND = 0.35; // how much to blend with previous frame mask
+
+  function sampleBackground(d, SW, SH) {
+    // Sample a ring of pixels around the outer 12% border — these are reliably background
+    const BORDER = Math.floor(Math.min(SW, SH) * 0.12);
+    let r=0, g=0, b=0, n=0;
+    const step = 3;
+    // Top & bottom strips
+    for (let x=0; x<SW; x+=step) {
+      for (let row of [BORDER, SH-1-BORDER]) {
+        const i=(row*SW+x)*4;
+        r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++;
+      }
+    }
+    // Left & right strips
+    for (let y=BORDER; y<SH-BORDER; y+=step) {
+      for (let col of [BORDER, SW-1-BORDER]) {
+        const i=(y*SW+col)*4;
+        r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++;
+      }
+    }
+    if (n > 0) { bgR=r/n; bgG=g/n; bgB=b/n; }
+  }
+
+  function buildForegroundMask(d, SW, SH) {
+    // Per-pixel colour distance from background model
+    const mask = new Float32Array(SW * SH);
+
+    for (let i = 0; i < SW * SH; i++) {
+      const pr = d[i*4], pg = d[i*4+1], pb = d[i*4+2];
+      // Euclidean colour distance from background
+      const dist = Math.sqrt(
+        (pr-bgR)*(pr-bgR) +
+        (pg-bgG)*(pg-bgG) +
+        (pb-bgB)*(pb-bgB)
+      );
+      mask[i] = dist; // high = different from background = likely foreground
+    }
+
+    // Normalise to 0-1
+    let maxD = 0;
+    for (let i = 0; i < mask.length; i++) if (mask[i] > maxD) maxD = mask[i];
+    if (maxD > 0) for (let i = 0; i < mask.length; i++) mask[i] /= maxD;
+
+    return mask;
+  }
+
+  function keepLargestBlob(binaryMask, SW, SH) {
+    // Flood-fill connected component analysis — keep only the largest blob
+    // that contains the centre pixel (the object the user is scanning)
+    const visited = new Uint8Array(SW * SH);
+    const output  = new Uint8Array(SW * SH);
+
+    // Find the seed: largest connected region touching the centre
+    const cx = Math.floor(SW / 2), cy = Math.floor(SH / 2);
+
+    // Search outward from centre for a foreground pixel
+    let seedIdx = -1;
+    for (let r = 0; r < Math.min(SW, SH) / 3; r += 2) {
+      for (let angle = 0; angle < 8; angle++) {
+        const sx = cx + Math.round(r * Math.cos(angle * Math.PI / 4));
+        const sy = cy + Math.round(r * Math.sin(angle * Math.PI / 4));
+        if (sx < 0 || sy < 0 || sx >= SW || sy >= SH) continue;
+        if (binaryMask[sy * SW + sx]) { seedIdx = sy * SW + sx; break; }
+      }
+      if (seedIdx >= 0) break;
+    }
+
+    if (seedIdx < 0) return output; // no foreground near centre
+
+    // BFS flood fill from seed
+    const queue = [seedIdx];
+    visited[seedIdx] = 1;
+    let head = 0;
+
+    while (head < queue.length) {
+      const idx = queue[head++];
+      const x = idx % SW, y = Math.floor(idx / SW);
+      output[idx] = 1;
+
+      const neighbours = [
+        idx - 1, idx + 1, idx - SW, idx + SW
+      ];
+      for (const ni of neighbours) {
+        if (ni < 0 || ni >= SW * SH) continue;
+        const nx = ni % SW;
+        // Prevent wrap-around at row boundaries
+        if (Math.abs(nx - (idx % SW)) > 1) continue;
+        if (!visited[ni] && binaryMask[ni]) {
+          visited[ni] = 1;
+          queue.push(ni);
+        }
+      }
+    }
+
+    return output;
+  }
 
   function frame() {
     outlineRAF = requestAnimationFrame(frame);
@@ -570,69 +675,97 @@ function startOutlineLoop() {
     cvScratch.width  = SW; cvScratch.height = SH;
     cvOut.width      = VW; cvOut.height     = VH;
 
-    // Draw scaled-down video frame
     ctxSrc.drawImage(video, 0, 0, SW, SH);
     const src = ctxSrc.getImageData(0, 0, SW, SH);
     const d   = src.data;
 
-    // Convert to greyscale
-    const grey = new Float32Array(SW * SH);
-    for (let i = 0; i < SW * SH; i++) {
-      grey[i] = 0.299*d[i*4] + 0.587*d[i*4+1] + 0.114*d[i*4+2];
+    // Periodically refresh background model from border pixels
+    if (bgFrameCount++ % BG_UPDATE_INTERVAL === 0) {
+      sampleBackground(d, SW, SH);
     }
 
-    // Sobel edge detection
-    const edge = new Float32Array(SW * SH);
-    let maxE = 0;
-    for (let y = 1; y < SH-1; y++) {
-      for (let x = 1; x < SW-1; x++) {
-        const tl=grey[(y-1)*SW+(x-1)], t=grey[(y-1)*SW+x], tr=grey[(y-1)*SW+(x+1)];
-        const ml=grey[ y   *SW+(x-1)],                      mr=grey[ y   *SW+(x+1)];
-        const bl=grey[(y+1)*SW+(x-1)], b=grey[(y+1)*SW+x], br=grey[(y+1)*SW+(x+1)];
-        const gx = -tl - 2*ml - bl + tr + 2*mr + br;
-        const gy = -tl - 2*t  - tr + bl + 2*b  + br;
-        const mag = Math.sqrt(gx*gx + gy*gy);
-        edge[y*SW+x] = mag;
-        if (mag > maxE) maxE = mag;
+    // Step 1: Build foreground probability mask
+    const fgMask = buildForegroundMask(d, SW, SH);
+
+    // Step 2: Apply temporal smoothing with previous frame
+    const smoothed = new Float32Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++) {
+      smoothed[i] = prevMask
+        ? fgMask[i] * (1 - TEMPORAL_BLEND) + prevMask[i] * TEMPORAL_BLEND
+        : fgMask[i];
+    }
+    prevMask = smoothed;
+
+    // Step 3: Threshold to binary mask — adaptive: use median of top quartile
+    const sorted = smoothed.slice().sort();
+    const fgThreshold = sorted[Math.floor(sorted.length * 0.72)];
+    const binary = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++) {
+      binary[i] = smoothed[i] > fgThreshold ? 1 : 0;
+    }
+
+    // Step 4: Keep only the largest foreground blob at the centre
+    const blobMask = keepLargestBlob(binary, SW, SH);
+
+    // Step 5: Dilate the blob mask slightly (3px) to close small gaps
+    const dilated = new Uint8Array(SW * SH);
+    const DILATE = 2;
+    for (let y = DILATE; y < SH - DILATE; y++) {
+      for (let x = DILATE; x < SW - DILATE; x++) {
+        if (!blobMask[y * SW + x]) continue;
+        for (let dy = -DILATE; dy <= DILATE; dy++) {
+          for (let dx = -DILATE; dx <= DILATE; dx++) {
+            dilated[(y + dy) * SW + (x + dx)] = 1;
+          }
+        }
       }
     }
 
-    // Render neon green edges onto output canvas
+    // Step 6: Extract the outline = pixels at the edge of the dilated blob
+    // An edge pixel is one where not all 4 neighbours are also in the blob
+    const edgeMask = new Uint8Array(SW * SH);
+    for (let y = 1; y < SH - 1; y++) {
+      for (let x = 1; x < SW - 1; x++) {
+        if (!dilated[y * SW + x]) continue;
+        if (
+          !dilated[(y-1)*SW+x] || !dilated[(y+1)*SW+x] ||
+          !dilated[y*SW+(x-1)] || !dilated[y*SW+(x+1)]
+        ) {
+          edgeMask[y * SW + x] = 1;
+        }
+      }
+    }
+
+    // Step 7: Render neon green outline onto output canvas
     ctxOut.clearRect(0, 0, VW, VH);
     const outImg = ctxOut.createImageData(VW, VH);
     const od = outImg.data;
-    const threshold = maxE * 0.22; // adaptive threshold
 
     for (let sy = 0; sy < SH; sy++) {
       for (let sx = 0; sx < SW; sx++) {
-        const mag = edge[sy*SW+sx];
-        if (mag < threshold) continue;
+        if (!edgeMask[sy * SW + sx]) continue;
 
-        // Map strength 0-1
-        const strength = Math.min((mag - threshold) / (maxE * 0.5), 1);
-        const alpha    = Math.round(strength * 230);
-
-        // Scale up — fill a SCALE×SCALE block
+        // Fill SCALE×SCALE block at full resolution
         for (let dy = 0; dy < SCALE; dy++) {
           for (let dx = 0; dx < SCALE; dx++) {
-            const px = sx*SCALE + dx;
-            const py = sy*SCALE + dy;
+            const px = sx * SCALE + dx;
+            const py = sy * SCALE + dy;
             if (px >= VW || py >= VH) continue;
-            const ii = (py*VW + px) * 4;
-            od[ii]   = 0;           // R
-            od[ii+1] = Math.round(255 * strength); // G — neon green
-            od[ii+2] = Math.round(60  * strength); // B — slight cyan tinge
-            od[ii+3] = alpha;
+            const ii = (py * VW + px) * 4;
+            od[ii]   = 0;    // R
+            od[ii+1] = 255;  // G — pure neon green
+            od[ii+2] = 50;   // B — slight teal
+            od[ii+3] = 230;  // A
           }
         }
       }
     }
     ctxOut.putImageData(outImg, 0, 0);
 
-    // Glow pass: draw the canvas on itself with blur
+    // Glow pass — bloom the outline
     ctxOut.save();
-    ctxOut.filter = 'blur(2px)';
-    ctxOut.globalAlpha = 0.45;
+    ctxOut.filter = 'blur(3px)';
+    ctxOut.globalAlpha = 0.5;
     ctxOut.globalCompositeOperation = 'screen';
     ctxOut.drawImage(cvOut, 0, 0);
     ctxOut.restore();
