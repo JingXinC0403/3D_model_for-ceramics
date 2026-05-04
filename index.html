@@ -128,6 +128,13 @@ main {
 }
 #video { width: 100%; height: 100%; object-fit: cover; display: block; }
 #captureCanvas { display: none; }
+#outlineCanvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.92;
+}
 
 .camera-hud { position: absolute; inset: 0; pointer-events: none; }
 .hud-corner {
@@ -402,6 +409,7 @@ input[type=range]::-webkit-slider-thumb {
     <div class="camera-wrap">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="captureCanvas"></canvas>
+      <canvas id="outlineCanvas"></canvas>
       <div class="camera-hud">
         <div class="hud-corner tl"></div>
         <div class="hud-corner tr"></div>
@@ -503,6 +511,7 @@ input[type=range]::-webkit-slider-thumb {
       <div class="viewer-toolbar">
         <button class="vtb" id="vtbWire"  title="Wireframe">WF</button>
         <button class="vtb" id="vtbTex"   title="Texture"   >TX</button>
+        <button class="vtb on" id="vtbNeon" title="Neon outline">NE</button>
         <button class="vtb on" id="vtbRot" title="Auto-rotate">⟳</button>
       </div>
       <div class="viewer-hint">🖱 Drag · Scroll to zoom · Right-drag to pan</div>
@@ -536,6 +545,107 @@ let depthMaps = [];     // Float32Array[]
 let meshData  = null;   // {verts,normals,uvs,indices,stats}
 let atlasCanvas = null;
 let midasModel  = null;
+
+/* ─── Live neon outline engine ─────────────────── */
+let outlineRAF = null;
+const NEON = '#00ff41'; // neon green
+
+function startOutlineLoop() {
+  const video   = $('video');
+  const cvOut   = $('outlineCanvas');
+  const cvScratch = document.createElement('canvas');
+  const ctxOut  = cvOut.getContext('2d');
+  const ctxSrc  = cvScratch.getContext('2d', { willReadFrequently: true });
+
+  // Downscale factor for performance — process at 1/3 res, draw back at full size
+  const SCALE = 3;
+
+  function frame() {
+    outlineRAF = requestAnimationFrame(frame);
+    if (!video.videoWidth) return;
+
+    const VW = video.videoWidth, VH = video.videoHeight;
+    const SW = Math.floor(VW / SCALE), SH = Math.floor(VH / SCALE);
+
+    cvScratch.width  = SW; cvScratch.height = SH;
+    cvOut.width      = VW; cvOut.height     = VH;
+
+    // Draw scaled-down video frame
+    ctxSrc.drawImage(video, 0, 0, SW, SH);
+    const src = ctxSrc.getImageData(0, 0, SW, SH);
+    const d   = src.data;
+
+    // Convert to greyscale
+    const grey = new Float32Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++) {
+      grey[i] = 0.299*d[i*4] + 0.587*d[i*4+1] + 0.114*d[i*4+2];
+    }
+
+    // Sobel edge detection
+    const edge = new Float32Array(SW * SH);
+    let maxE = 0;
+    for (let y = 1; y < SH-1; y++) {
+      for (let x = 1; x < SW-1; x++) {
+        const tl=grey[(y-1)*SW+(x-1)], t=grey[(y-1)*SW+x], tr=grey[(y-1)*SW+(x+1)];
+        const ml=grey[ y   *SW+(x-1)],                      mr=grey[ y   *SW+(x+1)];
+        const bl=grey[(y+1)*SW+(x-1)], b=grey[(y+1)*SW+x], br=grey[(y+1)*SW+(x+1)];
+        const gx = -tl - 2*ml - bl + tr + 2*mr + br;
+        const gy = -tl - 2*t  - tr + bl + 2*b  + br;
+        const mag = Math.sqrt(gx*gx + gy*gy);
+        edge[y*SW+x] = mag;
+        if (mag > maxE) maxE = mag;
+      }
+    }
+
+    // Render neon green edges onto output canvas
+    ctxOut.clearRect(0, 0, VW, VH);
+    const outImg = ctxOut.createImageData(VW, VH);
+    const od = outImg.data;
+    const threshold = maxE * 0.22; // adaptive threshold
+
+    for (let sy = 0; sy < SH; sy++) {
+      for (let sx = 0; sx < SW; sx++) {
+        const mag = edge[sy*SW+sx];
+        if (mag < threshold) continue;
+
+        // Map strength 0-1
+        const strength = Math.min((mag - threshold) / (maxE * 0.5), 1);
+        const alpha    = Math.round(strength * 230);
+
+        // Scale up — fill a SCALE×SCALE block
+        for (let dy = 0; dy < SCALE; dy++) {
+          for (let dx = 0; dx < SCALE; dx++) {
+            const px = sx*SCALE + dx;
+            const py = sy*SCALE + dy;
+            if (px >= VW || py >= VH) continue;
+            const ii = (py*VW + px) * 4;
+            od[ii]   = 0;           // R
+            od[ii+1] = Math.round(255 * strength); // G — neon green
+            od[ii+2] = Math.round(60  * strength); // B — slight cyan tinge
+            od[ii+3] = alpha;
+          }
+        }
+      }
+    }
+    ctxOut.putImageData(outImg, 0, 0);
+
+    // Glow pass: draw the canvas on itself with blur
+    ctxOut.save();
+    ctxOut.filter = 'blur(2px)';
+    ctxOut.globalAlpha = 0.45;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(cvOut, 0, 0);
+    ctxOut.restore();
+  }
+
+  frame();
+}
+
+function stopOutlineLoop() {
+  if (outlineRAF) { cancelAnimationFrame(outlineRAF); outlineRAF = null; }
+  const cv = $('outlineCanvas');
+  if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+}
 
 /* ─── Toast ───────────────────────────────────── */
 function toast(msg, type='ok') {
@@ -574,6 +684,7 @@ async function startCamera() {
     $('scanLine').style.display = 'block';
     $('hudInstruction').textContent = 'Centre object in ring · press Start Scanning';
     toast('Camera ready — point it at your object');
+    startOutlineLoop();
   } catch(e) {
     toast('Camera error: ' + e.message, 'err');
     $('noCam').querySelector('p').textContent =
@@ -590,6 +701,7 @@ function stopCamera() {
   $('btnStartScan').disabled = true;
   $('btnStopCam').style.display = 'none';
   $('scanLine').style.display = 'none';
+  stopOutlineLoop();
   toast('Camera off', 'warn');
 }
 
@@ -1155,10 +1267,69 @@ function initThree() {
   mesh.castShadow=mesh.receiveShadow=true;
   scene.add(mesh);
 
-  tlog('Three.js scene initialised — viewer ready');
+  // ── Neon green outline shell ──────────────────────────────
+  // Build edge list: for every triangle, emit each edge only once.
+  // Then render as LineSegments with a glowing green material + a slightly
+  // scaled-out copy for the "halo" glow effect.
+  function buildEdgeLines(geometry) {
+    const pos = geometry.attributes.position.array;
+    const idx = geometry.index ? geometry.index.array : null;
+    const edgeSet = new Set();
+    const lineVerts = [];
+
+    const addEdge = (a, b) => {
+      const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+      if (edgeSet.has(key)) return;
+      edgeSet.add(key);
+      lineVerts.push(
+        pos[a*3], pos[a*3+1], pos[a*3+2],
+        pos[b*3], pos[b*3+1], pos[b*3+2]
+      );
+    };
+
+    const faceCount = idx ? idx.length / 3 : pos.length / 9;
+    for (let f = 0; f < faceCount; f++) {
+      const a = idx ? idx[f*3]   : f*3;
+      const b = idx ? idx[f*3+1] : f*3+1;
+      const c = idx ? idx[f*3+2] : f*3+2;
+      addEdge(a, b); addEdge(b, c); addEdge(c, a);
+    }
+
+    const geo2 = new THREE.BufferGeometry();
+    geo2.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVerts), 3));
+    return geo2;
+  }
+
+  const edgeGeo = buildEdgeLines(geo);
+
+  // Core neon line
+  const neonMat = new THREE.LineBasicMaterial({
+    color: 0x00ff41,
+    transparent: true,
+    opacity: 0.85,
+    depthTest: true,
+  });
+  const neonLines = new THREE.LineSegments(edgeGeo, neonMat);
+  neonLines.position.copy(mesh.position);
+  neonLines.scale.copy(mesh.scale);
+  scene.add(neonLines);
+
+  // Outer glow halo — slightly scaled out, more transparent
+  const haloMat = new THREE.LineBasicMaterial({
+    color: 0x00ff88,
+    transparent: true,
+    opacity: 0.22,
+    depthTest: false,
+  });
+  const haloLines = new THREE.LineSegments(edgeGeo, haloMat);
+  haloLines.position.copy(mesh.position);
+  haloLines.scale.copy(mesh.scale).multiplyScalar(1.018); // slightly larger
+  scene.add(haloLines);
+
+  tlog('Neon outline: ' + (edgeGeo.attributes.position.count/2).toLocaleString() + ' edges');
 
   // Viewer toolbar
-  let wireframe=false, showTex=true, autoRot=true, autoAngle=0;
+  let wireframe=false, showTex=true, showNeon=true, autoRot=true, autoAngle=0;
   $('vtbWire').onclick=()=>{
     wireframe=!wireframe; mesh.material=wireframe?wireMat:mat;
     $('vtbWire').classList.toggle('on',wireframe);
@@ -1166,6 +1337,11 @@ function initThree() {
   $('vtbTex').onclick=()=>{
     showTex=!showTex; mat.map=showTex?atlasTex:null; mat.needsUpdate=true;
     $('vtbTex').classList.toggle('on',showTex);
+  };
+  $('vtbNeon').onclick=()=>{
+    showNeon=!showNeon;
+    neonLines.visible=haloLines.visible=showNeon;
+    $('vtbNeon').classList.toggle('on',showNeon);
   };
   $('vtbRot').onclick=()=>{ autoRot=!autoRot; $('vtbRot').classList.toggle('on',autoRot); };
   $('vtbTex').classList.add('on');
@@ -1204,6 +1380,12 @@ function initThree() {
       Math.cos(ry)*Math.cos(rx)*zoom
     );
     cam.lookAt(panX,panY,0);
+    // Pulse neon opacity gently
+    if(showNeon){
+      const t=Date.now()*0.002;
+      neonMat.opacity  = 0.72 + Math.sin(t)*0.18;
+      haloMat.opacity  = 0.15 + Math.sin(t+1)*0.08;
+    }
     renderer.render(scene,cam);
   })();
 }
@@ -1211,6 +1393,7 @@ function initThree() {
 /* ─── Reset ───────────────────────────────────── */
 function doReset() {
   cancelCapture();
+  stopOutlineLoop();
   frames=[]; depthMaps=[]; meshData=null; atlasCanvas=null;
   $('frameStrip').innerHTML='';
   $('captureProgress').classList.remove('show');
@@ -1228,6 +1411,7 @@ function doReset() {
   $('hudCount') && ($('hudCount').textContent='0 photos');
   $('hudInstruction').textContent=stream?'Centre object in ring · press Start Scanning':'Enable camera to begin';
   $('hudRing').classList.remove('active');
+  if (stream) startOutlineLoop();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
