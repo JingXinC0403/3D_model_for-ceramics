@@ -548,6 +548,10 @@ let midasModel  = null;
 
 /* ─── Live neon outline engine ─────────────────── */
 let outlineRAF = null;
+// Shared foreground mask — written by outline loop, read by grabFrame()
+// Stored at process resolution (1/SCALE of video)
+let sharedFgMask = null;
+let sharedFgW = 0, sharedFgH = 0;
 
 function startOutlineLoop() {
   const video     = $('video');
@@ -755,6 +759,11 @@ function startOutlineLoop() {
     // Keep ONLY the central connected blob — all other blobs discarded
     const blob = centralBlobOnly(closed, SW, SH);
 
+    // Share the blob mask with grabFrame() so point cloud uses real object shape
+    sharedFgMask = blob;
+    sharedFgW    = SW;
+    sharedFgH    = SH;
+
     // Extract 2px-thick silhouette edge
     const edge = silhouette(blob, SW, SH, 2);
 
@@ -881,7 +890,25 @@ function grabFrame() {
 
   const dataURL   = cv.toDataURL('image/jpeg', 0.9);
   const imageData = ctx.getImageData(0, 0, cv.width, cv.height);
-  frames.push({ dataURL, imageData, w: cv.width, h: cv.height });
+
+  // Snapshot the current foreground mask from the outline engine.
+  // Scale it up to match the full frame resolution so buildPointCloud
+  // can look up per-pixel object membership at full resolution.
+  let fgMaskFull = null;
+  if (sharedFgMask && sharedFgW > 0 && sharedFgH > 0) {
+    fgMaskFull = new Uint8Array(cv.width * cv.height);
+    const scaleX = sharedFgW / cv.width;
+    const scaleY = sharedFgH / cv.height;
+    for (let y = 0; y < cv.height; y++) {
+      for (let x = 0; x < cv.width; x++) {
+        const sx = clamp(Math.floor(x * scaleX), 0, sharedFgW - 1);
+        const sy = clamp(Math.floor(y * scaleY), 0, sharedFgH - 1);
+        fgMaskFull[y * cv.width + x] = sharedFgMask[sy * sharedFgW + sx];
+      }
+    }
+  }
+
+  frames.push({ dataURL, imageData, w: cv.width, h: cv.height, fgMask: fgMaskFull });
 
   const img = document.createElement('img');
   img.className = 'frame-thumb fresh';
@@ -1004,7 +1031,8 @@ async function startProcessing() {
 
   /* Stage 2: Point cloud */
   setPipeline(2, 34, 'Building point cloud…');
-  tlog('Fusing all depth maps into unified point cloud…');
+  const maskedFrames = frames.filter(f => f.fgMask).length;
+  tlog(`Fusing ${frames.length} frames (${maskedFrames} with object masks)…`);
   await wait(40);
   const cloud = buildPointCloud();
   tlog(`Point cloud: ${cloud.length.toLocaleString()} points`);
@@ -1130,69 +1158,69 @@ function renderDepthPreviews() {
 /* ─── Point cloud fusion ──────────────────────── */
 function buildPointCloud() {
   const N = frames.length, pts = [];
-
-  // Dense sampling — every 6px at process resolution gives ~10k pts/frame
-  // This is the single biggest fix: more points = more shape fidelity
-  const GRID = 6;
+  const GRID = 5; // sample every 5px — dense enough for real shape
 
   for (let fi = 0; fi < N; fi++) {
-    const { imageData, w, h } = frames[fi];
-    const d = depthMaps[fi], data = imageData.data;
+    const { imageData, w, h, fgMask } = frames[fi];
+    const d    = depthMaps[fi];
+    const data = imageData.data;
 
-    // Capture azimuth for this frame
     const az   = (fi / N) * Math.PI * 2;
     const cosA = Math.cos(az), sinA = Math.sin(az);
+    const fx   = (w / 2) / Math.tan(30 * Math.PI / 180);
+    const cx   = w / 2, cy = h / 2;
 
-    // Camera intrinsics — 60° horizontal FOV
-    const fx = (w / 2) / Math.tan(30 * Math.PI / 180);
-    const cx = w / 2, cy = h / 2;
-
-    // Pre-compute a foreground confidence map from the depth map itself:
-    // Pixels near the median depth value are likely the object surface.
-    // This avoids adding sky/table/background points to the cloud.
+    // Count foreground pixels to compute median depth of the object only
     let depthSum = 0, depthCount = 0;
-    for (let y = GRID; y < h - GRID; y += GRID)
+    for (let y = GRID; y < h - GRID; y += GRID) {
       for (let x = GRID; x < w - GRID; x += GRID) {
+        // Only consider pixels inside the foreground mask
+        const inFg = !fgMask || fgMask[y * w + x];
+        if (!inFg) continue;
         const dv = d[y * w + x];
-        if (dv > 0.10 && dv < 0.92) { depthSum += dv; depthCount++; }
+        if (dv > 0.08 && dv < 0.94) { depthSum += dv; depthCount++; }
       }
+    }
     const depthMed = depthCount > 0 ? depthSum / depthCount : 0.5;
 
     for (let y = GRID; y < h - GRID; y += GRID) {
       for (let x = GRID; x < w - GRID; x += GRID) {
+        // ── KEY FIX: skip any pixel not identified as the object ──
+        // If no mask exists (outline not running), fall back to centre crop
+        const inFg = fgMask
+          ? fgMask[y * w + x]
+          : (x > w*0.15 && x < w*0.85 && y > h*0.15 && y < h*0.85);
+        if (!inFg) continue;
+
         const dv = d[y * w + x];
+        if (dv < 0.08 || dv > 0.94) continue;
 
-        // Skip pixels that are clearly background (very far) or sensor noise (very close)
-        if (dv < 0.10 || dv > 0.92) continue;
+        // Confidence: how close to object median depth
+        const depthWeight = 1 - Math.min(Math.abs(dv - depthMed) / 0.30, 1);
+        if (depthWeight < 0.12) continue;
 
-        // Weight by proximity to median depth — object surface clusters around median
-        // Points far from median are likely background or foreground noise
-        const depthWeight = 1 - Math.min(Math.abs(dv - depthMed) / 0.35, 1);
-        if (depthWeight < 0.15) continue;
+        // Skip frame edges (distortion)
+        if (x < w * 0.04 || x > w * 0.96 || y < h * 0.04 || y > h * 0.96) continue;
 
-        // Skip pixels at edge of frame (lens distortion artefacts)
-        if (x < w * 0.05 || x > w * 0.95 || y < h * 0.05 || y > h * 0.95) continue;
-
-        // Unproject: image coords → camera-space 3D
-        // MiDaS outputs inverse-depth (closer = higher value), so map to Z
-        const Z  = 0.4 + (1.0 - dv) * 1.6;   // inverse-depth → metric depth
+        // Inverse-depth → metric Z (MiDaS: high value = close)
+        const Z  = 0.4 + (1.0 - dv) * 1.6;
         const Xc = (x - cx) / fx * Z;
-        const Yc = -(y - cy) / fx * Z;          // flip Y (image Y is down)
+        const Yc = -(y - cy) / fx * Z;
 
-        // Rotate point from camera space to world space by capture azimuth
+        // Rotate to world space by capture azimuth
         const Xw =  Xc * cosA + Z  * sinA;
         const Yw =  Yc;
         const Zw = -Xc * sinA + Z  * cosA;
 
         const pi = (y * w + x) * 4;
-        pts.push({
-          x: Xw, y: Yw, z: Zw,
-          r: data[pi], g: data[pi+1], b: data[pi+2],
-          w: depthWeight   // confidence weight
-        });
+        pts.push({ x:Xw, y:Yw, z:Zw,
+                   r:data[pi], g:data[pi+1], b:data[pi+2],
+                   w:depthWeight });
       }
     }
   }
+
+  tlog(`Point cloud: ${pts.length.toLocaleString()} object-only points`);
   return pts;
 }
 
