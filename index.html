@@ -548,7 +548,10 @@ let midasModel  = null;
 
 /* ─── Live neon outline engine ─────────────────── */
 let outlineRAF = null;
-const NEON = '#00ff41'; // neon green
+// Shared foreground mask — written by outline loop, read by grabFrame()
+// Stored at process resolution (1/SCALE of video)
+let sharedFgMask = null;
+let sharedFgW = 0, sharedFgH = 0;
 
 function startOutlineLoop() {
   const video     = $('video');
@@ -557,218 +560,241 @@ function startOutlineLoop() {
   const ctxOut    = cvOut.getContext('2d');
   const ctxSrc    = cvScratch.getContext('2d', { willReadFrequently: true });
 
-  // Process at half resolution for speed
-  const SCALE = 2;
+  const SCALE = 3; // process at 1/3 res for speed
 
-  // Background colour model — updated every 90 frames using border pixels
-  let bgR = 128, bgG = 128, bgB = 128;
-  let bgFrameCount = 0;
-  const BG_UPDATE_INTERVAL = 90;
+  // ── Per-pixel Gaussian background model (MOG2-lite) ──
+  // Each pixel has its own learned mean+variance. Pixels that deviate
+  // strongly from their own background = foreground. This handles
+  // complex / textured / multi-colour backgrounds correctly.
+  let bgMeanR = null, bgMeanG = null, bgMeanB = null;
+  let bgVarR  = null, bgVarG  = null, bgVarB  = null;
+  let bgReady = false, frameCount = 0;
 
-  // Track the previous foreground mask for temporal smoothing
-  let prevMask = null;
-  const TEMPORAL_BLEND = 0.35; // how much to blend with previous frame mask
+  // Previous greyscale frame for motion detection
+  let prevGrey = null;
+  // Temporal IIR accumulator
+  let fgAccum  = null;
 
-  function sampleBackground(d, SW, SH) {
-    // Sample a ring of pixels around the outer 12% border — these are reliably background
-    const BORDER = Math.floor(Math.min(SW, SH) * 0.12);
-    let r=0, g=0, b=0, n=0;
-    const step = 3;
-    // Top & bottom strips
-    for (let x=0; x<SW; x+=step) {
-      for (let row of [BORDER, SH-1-BORDER]) {
-        const i=(row*SW+x)*4;
-        r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++;
-      }
+  function initModel(d, N) {
+    bgMeanR = new Float32Array(N); bgMeanG = new Float32Array(N); bgMeanB = new Float32Array(N);
+    bgVarR  = new Float32Array(N).fill(900);  // high initial variance = uncertain
+    bgVarG  = new Float32Array(N).fill(900);
+    bgVarB  = new Float32Array(N).fill(900);
+    for (let i = 0; i < N; i++) {
+      bgMeanR[i] = d[i*4]; bgMeanG[i] = d[i*4+1]; bgMeanB[i] = d[i*4+2];
     }
-    // Left & right strips
-    for (let y=BORDER; y<SH-BORDER; y+=step) {
-      for (let col of [BORDER, SW-1-BORDER]) {
-        const i=(y*SW+col)*4;
-        r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++;
-      }
-    }
-    if (n > 0) { bgR=r/n; bgG=g/n; bgB=b/n; }
+    bgReady = true;
   }
 
-  function buildForegroundMask(d, SW, SH) {
-    // Per-pixel colour distance from background model
-    const mask = new Float32Array(SW * SH);
-
-    for (let i = 0; i < SW * SH; i++) {
-      const pr = d[i*4], pg = d[i*4+1], pb = d[i*4+2];
-      // Euclidean colour distance from background
-      const dist = Math.sqrt(
-        (pr-bgR)*(pr-bgR) +
-        (pg-bgG)*(pg-bgG) +
-        (pb-bgB)*(pb-bgB)
-      );
-      mask[i] = dist; // high = different from background = likely foreground
-    }
-
-    // Normalise to 0-1
-    let maxD = 0;
-    for (let i = 0; i < mask.length; i++) if (mask[i] > maxD) maxD = mask[i];
-    if (maxD > 0) for (let i = 0; i < mask.length; i++) mask[i] /= maxD;
-
-    return mask;
+  // How many std-devs is pixel i from its background model?
+  function bgDistance(d, i) {
+    const dR = d[i*4]   - bgMeanR[i];
+    const dG = d[i*4+1] - bgMeanG[i];
+    const dB = d[i*4+2] - bgMeanB[i];
+    // Clamp variance floor to avoid div-by-zero on uniform backgrounds
+    return (dR*dR / Math.max(bgVarR[i],25)) +
+           (dG*dG / Math.max(bgVarG[i],25)) +
+           (dB*dB / Math.max(bgVarB[i],25));
   }
 
-  function keepLargestBlob(binaryMask, SW, SH) {
-    // Flood-fill connected component analysis — keep only the largest blob
-    // that contains the centre pixel (the object the user is scanning)
+  // Update background model — only for pixels classified as background
+  function updateModel(d, N) {
+    // Fast learning at start, slow once settled
+    const lr = frameCount < 45 ? 0.20 : 0.012;
+    for (let i = 0; i < N; i++) {
+      if (bgDistance(d, i) > 3.0) continue; // skip foreground pixels
+      const dR = d[i*4]   - bgMeanR[i];
+      const dG = d[i*4+1] - bgMeanG[i];
+      const dB = d[i*4+2] - bgMeanB[i];
+      bgMeanR[i] += lr*dR; bgMeanG[i] += lr*dG; bgMeanB[i] += lr*dB;
+      bgVarR[i]   = (1-lr)*bgVarR[i] + lr*dR*dR;
+      bgVarG[i]   = (1-lr)*bgVarG[i] + lr*dG*dG;
+      bgVarB[i]   = (1-lr)*bgVarB[i] + lr*dB*dB;
+    }
+  }
+
+  // ── Ring gate: weight by distance from frame centre ──
+  // Pixels well inside the guide ring get full weight.
+  // Pixels near/outside the edges are suppressed to zero.
+  // This is the key prior: "the object is in the centre."
+  function ringGate(x, y, SW, SH) {
+    const nx = (x / SW - 0.5) * 2;  // -1 to 1
+    const ny = (y / SH - 0.5) * 2;
+    const d  = Math.sqrt(nx*nx + ny*ny);
+    // Full weight inside r=0.60, smooth falloff, zero outside r=0.95
+    return Math.max(0, Math.min(1, (0.95 - d) / 0.35));
+  }
+
+  // ── BFS from centre: keep only the connected blob touching centre ──
+  // Everything not connected to the central object is discarded.
+  function centralBlobOnly(binary, SW, SH) {
+    const out     = new Uint8Array(SW * SH);
     const visited = new Uint8Array(SW * SH);
-    const output  = new Uint8Array(SW * SH);
-
-    // Find the seed: largest connected region touching the centre
     const cx = Math.floor(SW / 2), cy = Math.floor(SH / 2);
 
-    // Search outward from centre for a foreground pixel
-    let seedIdx = -1;
-    for (let r = 0; r < Math.min(SW, SH) / 3; r += 2) {
-      for (let angle = 0; angle < 8; angle++) {
-        const sx = cx + Math.round(r * Math.cos(angle * Math.PI / 4));
-        const sy = cy + Math.round(r * Math.sin(angle * Math.PI / 4));
-        if (sx < 0 || sy < 0 || sx >= SW || sy >= SH) continue;
-        if (binaryMask[sy * SW + sx]) { seedIdx = sy * SW + sx; break; }
-      }
-      if (seedIdx >= 0) break;
-    }
-
-    if (seedIdx < 0) return output; // no foreground near centre
-
-    // BFS flood fill from seed
-    const queue = [seedIdx];
-    visited[seedIdx] = 1;
-    let head = 0;
-
-    while (head < queue.length) {
-      const idx = queue[head++];
-      const x = idx % SW, y = Math.floor(idx / SW);
-      output[idx] = 1;
-
-      const neighbours = [
-        idx - 1, idx + 1, idx - SW, idx + SW
-      ];
-      for (const ni of neighbours) {
-        if (ni < 0 || ni >= SW * SH) continue;
-        const nx = ni % SW;
-        // Prevent wrap-around at row boundaries
-        if (Math.abs(nx - (idx % SW)) > 1) continue;
-        if (!visited[ni] && binaryMask[ni]) {
-          visited[ni] = 1;
-          queue.push(ni);
-        }
+    // Spiral outward from centre to find the first foreground seed
+    let seed = -1;
+    outer:
+    for (let r = 0; r <= Math.floor(Math.min(SW,SH) * 0.42); r++) {
+      for (let a = 0; a < 16; a++) {
+        const ang = a * Math.PI / 8;
+        const sx  = cx + Math.round(r * Math.cos(ang));
+        const sy  = cy + Math.round(r * Math.sin(ang));
+        if (sx < 1 || sy < 1 || sx >= SW-1 || sy >= SH-1) continue;
+        if (binary[sy*SW+sx]) { seed = sy*SW+sx; break outer; }
       }
     }
+    if (seed < 0) return out; // nothing at centre = no object detected
 
-    return output;
+    // BFS with pre-allocated queue for speed
+    const q = new Int32Array(SW * SH);
+    let head = 0, tail = 0;
+    q[tail++] = seed; visited[seed] = 1;
+
+    while (head < tail) {
+      const idx = q[head++];
+      out[idx] = 1;
+      const x = idx % SW;
+      for (const ni of [idx-1, idx+1, idx-SW, idx+SW]) {
+        if (ni < 0 || ni >= SW*SH) continue;
+        if (Math.abs((ni % SW) - x) > 1) continue; // no row-wrap
+        if (!visited[ni] && binary[ni]) { visited[ni] = 1; q[tail++] = ni; }
+      }
+    }
+    return out;
   }
 
+  // ── Morphological close: dilate then erode to fill holes ──
+  function morphClose(mask, SW, SH, r) {
+    const tmp = new Uint8Array(SW * SH);
+    // Dilate
+    for (let y=r; y<SH-r; y++) for (let x=r; x<SW-r; x++) {
+      if (!mask[y*SW+x]) continue;
+      for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++) tmp[(y+dy)*SW+(x+dx)]=1;
+    }
+    // Erode
+    const out = new Uint8Array(SW * SH);
+    for (let y=r; y<SH-r; y++) for (let x=r; x<SW-r; x++) {
+      if (!tmp[y*SW+x]) continue;
+      let ok=true;
+      for (let dy=-r; dy<=r&&ok; dy++) for (let dx=-r; dx<=r&&ok; dx++) if (!tmp[(y+dy)*SW+(x+dx)]) ok=false;
+      if (ok) out[y*SW+x]=1;
+    }
+    return out;
+  }
+
+  // ── Silhouette edge: foreground pixels adjacent to background ──
+  function silhouette(mask, SW, SH, thickness) {
+    const edge = new Uint8Array(SW * SH);
+    for (let y=thickness; y<SH-thickness; y++) {
+      for (let x=thickness; x<SW-thickness; x++) {
+        if (!mask[y*SW+x]) continue;
+        let isEdge = false;
+        outer2:
+        for (let dy=-thickness; dy<=thickness; dy++)
+          for (let dx=-thickness; dx<=thickness; dx++)
+            if (!mask[(y+dy)*SW+(x+dx)]) { isEdge=true; break outer2; }
+        if (isEdge) edge[y*SW+x]=1;
+      }
+    }
+    return edge;
+  }
+
+  // ── Main render loop ──────────────────────────────────────────
   function frame() {
     outlineRAF = requestAnimationFrame(frame);
     if (!video.videoWidth) return;
 
-    const VW = video.videoWidth, VH = video.videoHeight;
-    const SW = Math.floor(VW / SCALE), SH = Math.floor(VH / SCALE);
+    const VW = video.videoWidth,  VH = video.videoHeight;
+    const SW = Math.floor(VW/SCALE), SH = Math.floor(VH/SCALE);
+    const N  = SW * SH;
 
-    cvScratch.width  = SW; cvScratch.height = SH;
-    cvOut.width      = VW; cvOut.height     = VH;
+    cvScratch.width = SW; cvScratch.height = SH;
+    cvOut.width     = VW; cvOut.height     = VH;
 
     ctxSrc.drawImage(video, 0, 0, SW, SH);
     const src = ctxSrc.getImageData(0, 0, SW, SH);
     const d   = src.data;
 
-    // Periodically refresh background model from border pixels
-    if (bgFrameCount++ % BG_UPDATE_INTERVAL === 0) {
-      sampleBackground(d, SW, SH);
+    // Init or reinit model if resolution changed
+    if (!bgReady || bgMeanR.length !== N) {
+      initModel(d, N);
+      frameCount = 0; fgAccum = null; prevGrey = null;
     }
 
-    // Step 1: Build foreground probability mask
-    const fgMask = buildForegroundMask(d, SW, SH);
+    // Motion mask via frame differencing
+    const grey = new Float32Array(N);
+    for (let i=0; i<N; i++) grey[i] = 0.299*d[i*4] + 0.587*d[i*4+1] + 0.114*d[i*4+2];
+    const motion = new Float32Array(N);
+    if (prevGrey && prevGrey.length === N)
+      for (let i=0; i<N; i++) motion[i] = Math.min(Math.abs(grey[i]-prevGrey[i])/60, 1);
+    prevGrey = grey.slice();
 
-    // Step 2: Apply temporal smoothing with previous frame
-    const smoothed = new Float32Array(SW * SH);
-    for (let i = 0; i < SW * SH; i++) {
-      smoothed[i] = prevMask
-        ? fgMask[i] * (1 - TEMPORAL_BLEND) + prevMask[i] * TEMPORAL_BLEND
-        : fgMask[i];
-    }
-    prevMask = smoothed;
-
-    // Step 3: Threshold to binary mask — adaptive: use median of top quartile
-    const sorted = smoothed.slice().sort();
-    const fgThreshold = sorted[Math.floor(sorted.length * 0.72)];
-    const binary = new Uint8Array(SW * SH);
-    for (let i = 0; i < SW * SH; i++) {
-      binary[i] = smoothed[i] > fgThreshold ? 1 : 0;
-    }
-
-    // Step 4: Keep only the largest foreground blob at the centre
-    const blobMask = keepLargestBlob(binary, SW, SH);
-
-    // Step 5: Dilate the blob mask slightly (3px) to close small gaps
-    const dilated = new Uint8Array(SW * SH);
-    const DILATE = 2;
-    for (let y = DILATE; y < SH - DILATE; y++) {
-      for (let x = DILATE; x < SW - DILATE; x++) {
-        if (!blobMask[y * SW + x]) continue;
-        for (let dy = -DILATE; dy <= DILATE; dy++) {
-          for (let dx = -DILATE; dx <= DILATE; dx++) {
-            dilated[(y + dy) * SW + (x + dx)] = 1;
-          }
-        }
+    // Per-pixel foreground score = bg distance + motion, gated by ring
+    const fgRaw = new Float32Array(N);
+    for (let y=0; y<SH; y++) {
+      for (let x=0; x<SW; x++) {
+        const i   = y*SW+x;
+        const bgD = Math.min(bgDistance(d, i) / 8, 1); // normalise
+        const mot = motion[i];
+        const rg  = ringGate(x, y, SW, SH);
+        fgRaw[i]  = (bgD*0.70 + mot*0.30) * rg;
       }
     }
 
-    // Step 6: Extract the outline = pixels at the edge of the dilated blob
-    // An edge pixel is one where not all 4 neighbours are also in the blob
-    const edgeMask = new Uint8Array(SW * SH);
-    for (let y = 1; y < SH - 1; y++) {
-      for (let x = 1; x < SW - 1; x++) {
-        if (!dilated[y * SW + x]) continue;
-        if (
-          !dilated[(y-1)*SW+x] || !dilated[(y+1)*SW+x] ||
-          !dilated[y*SW+(x-1)] || !dilated[y*SW+(x+1)]
-        ) {
-          edgeMask[y * SW + x] = 1;
-        }
-      }
-    }
+    // Update background model (skips foreground pixels automatically)
+    updateModel(d, N);
 
-    // Step 7: Render neon green outline onto output canvas
+    // Temporal IIR smoothing: damps flicker without ghosting
+    if (!fgAccum || fgAccum.length !== N) fgAccum = fgRaw.slice();
+    for (let i=0; i<N; i++) fgAccum[i] = fgAccum[i]*0.60 + fgRaw[i]*0.40;
+
+    // Hard threshold → binary mask
+    const binary = new Uint8Array(N);
+    for (let i=0; i<N; i++) binary[i] = fgAccum[i] > 0.25 ? 1 : 0;
+
+    // Morphological close (radius 3) — fills small holes in the mask
+    const closed = morphClose(binary, SW, SH, 3);
+
+    // Keep ONLY the central connected blob — all other blobs discarded
+    const blob = centralBlobOnly(closed, SW, SH);
+
+    // Share the blob mask with grabFrame() so point cloud uses real object shape
+    sharedFgMask = blob;
+    sharedFgW    = SW;
+    sharedFgH    = SH;
+
+    // Extract 2px-thick silhouette edge
+    const edge = silhouette(blob, SW, SH, 2);
+
+    // Render neon green edge at full resolution
     ctxOut.clearRect(0, 0, VW, VH);
     const outImg = ctxOut.createImageData(VW, VH);
     const od = outImg.data;
-
-    for (let sy = 0; sy < SH; sy++) {
-      for (let sx = 0; sx < SW; sx++) {
-        if (!edgeMask[sy * SW + sx]) continue;
-
-        // Fill SCALE×SCALE block at full resolution
-        for (let dy = 0; dy < SCALE; dy++) {
-          for (let dx = 0; dx < SCALE; dx++) {
-            const px = sx * SCALE + dx;
-            const py = sy * SCALE + dy;
-            if (px >= VW || py >= VH) continue;
-            const ii = (py * VW + px) * 4;
-            od[ii]   = 0;    // R
-            od[ii+1] = 255;  // G — pure neon green
-            od[ii+2] = 50;   // B — slight teal
-            od[ii+3] = 230;  // A
+    for (let sy=0; sy<SH; sy++) {
+      for (let sx=0; sx<SW; sx++) {
+        if (!edge[sy*SW+sx]) continue;
+        for (let dy=0; dy<SCALE; dy++) {
+          for (let dx=0; dx<SCALE; dx++) {
+            const px=sx*SCALE+dx, py=sy*SCALE+dy;
+            if (px>=VW||py>=VH) continue;
+            const ii=(py*VW+px)*4;
+            od[ii]=0; od[ii+1]=255; od[ii+2]=55; od[ii+3]=235;
           }
         }
       }
     }
     ctxOut.putImageData(outImg, 0, 0);
 
-    // Glow pass — bloom the outline
+    // Glow bloom pass
     ctxOut.save();
-    ctxOut.filter = 'blur(3px)';
-    ctxOut.globalAlpha = 0.5;
-    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.filter='blur(3px)';
+    ctxOut.globalAlpha=0.55;
+    ctxOut.globalCompositeOperation='screen';
     ctxOut.drawImage(cvOut, 0, 0);
     ctxOut.restore();
+
+    frameCount++;
   }
 
   frame();
@@ -864,7 +890,25 @@ function grabFrame() {
 
   const dataURL   = cv.toDataURL('image/jpeg', 0.9);
   const imageData = ctx.getImageData(0, 0, cv.width, cv.height);
-  frames.push({ dataURL, imageData, w: cv.width, h: cv.height });
+
+  // Snapshot the current foreground mask from the outline engine.
+  // Scale it up to match the full frame resolution so buildPointCloud
+  // can look up per-pixel object membership at full resolution.
+  let fgMaskFull = null;
+  if (sharedFgMask && sharedFgW > 0 && sharedFgH > 0) {
+    fgMaskFull = new Uint8Array(cv.width * cv.height);
+    const scaleX = sharedFgW / cv.width;
+    const scaleY = sharedFgH / cv.height;
+    for (let y = 0; y < cv.height; y++) {
+      for (let x = 0; x < cv.width; x++) {
+        const sx = clamp(Math.floor(x * scaleX), 0, sharedFgW - 1);
+        const sy = clamp(Math.floor(y * scaleY), 0, sharedFgH - 1);
+        fgMaskFull[y * cv.width + x] = sharedFgMask[sy * sharedFgW + sx];
+      }
+    }
+  }
+
+  frames.push({ dataURL, imageData, w: cv.width, h: cv.height, fgMask: fgMaskFull });
 
   const img = document.createElement('img');
   img.className = 'frame-thumb fresh';
@@ -987,7 +1031,8 @@ async function startProcessing() {
 
   /* Stage 2: Point cloud */
   setPipeline(2, 34, 'Building point cloud…');
-  tlog('Fusing all depth maps into unified point cloud…');
+  const maskedFrames = frames.filter(f => f.fgMask).length;
+  tlog(`Fusing ${frames.length} frames (${maskedFrames} with object masks)…`);
   await wait(40);
   const cloud = buildPointCloud();
   tlog(`Point cloud: ${cloud.length.toLocaleString()} points`);
@@ -1113,44 +1158,47 @@ function renderDepthPreviews() {
 /* ─── Point cloud fusion ──────────────────────── */
 function buildPointCloud() {
   const N = frames.length, pts = [];
-  // Sub-sample density: more frames → sparser per-frame grid (keep total pts manageable)
-  const GRID = Math.max(16, Math.ceil(48 / Math.sqrt(N)));
+  const STEP = 8; // sample every 8px
 
-  for (let fi=0; fi<N; fi++) {
-    const { imageData, w, h } = frames[fi];
-    const d = depthMaps[fi], data = imageData.data;
-    // Capture azimuth
-    const az = (fi/N) * Math.PI*2;
+  for (let fi = 0; fi < N; fi++) {
+    const { imageData, w, h, fgMask } = frames[fi];
+    const d    = depthMaps[fi];
+    const data = imageData.data;
+    const az   = (fi / N) * Math.PI * 2;
     const cosA = Math.cos(az), sinA = Math.sin(az);
-    // Approximate camera intrinsics (60° FOV)
-    const fx = (w/2) / Math.tan(30*Math.PI/180);
-    const cx = w/2, cy = h/2;
+    const fx   = (w / 2) / Math.tan(30 * Math.PI / 180);
+    const cx = w / 2, cy = h / 2;
 
-    for (let y=GRID;y<h-GRID;y+=GRID) {
-      for (let x=GRID;x<w-GRID;x+=GRID) {
-        const dv = d[y*w+x];
-        if (dv < 0.07 || dv > 0.97) continue; // skip background / noise
-
-        const Z  = 0.25 + dv * 1.8;
-        const Xc = (x-cx)/fx * Z;
-        const Yc = -(y-cy)/fx * Z;
-
-        // Rotate by capture azimuth around Y axis
-        const Xw =  Xc*cosA + Z*sinA;
+    for (let y = STEP; y < h - STEP; y += STEP) {
+      for (let x = STEP; x < w - STEP; x += STEP) {
+        const inFg = fgMask ? fgMask[y * w + x]
+          : (x > w*0.1 && x < w*0.9 && y > h*0.1 && y < h*0.9);
+        if (!inFg) continue;
+        const dv = d[y * w + x];
+        if (dv < 0.05 || dv > 0.95) continue;
+        const Z  = 0.5 + (1 - dv) * 1.5;
+        const Xc = (x - cx) / fx * Z;
+        const Yc = -(y - cy) / fx * Z;
+        const Xw =  Xc * cosA + Z * sinA;
         const Yw =  Yc;
-        const Zw = -Xc*sinA + Z*cosA;
-
-        const pi = (y*w+x)*4;
+        const Zw = -Xc * sinA + Z * cosA;
+        const pi = (y * w + x) * 4;
         pts.push({ x:Xw, y:Yw, z:Zw, r:data[pi], g:data[pi+1], b:data[pi+2] });
       }
     }
   }
+  tlog(`Point cloud: ${pts.length.toLocaleString()} points`);
   return pts;
 }
 
-/* ─── Voxel mesh reconstruction ───────────────── */
+/* ─── Mesh from point cloud — fast grid approach ─── */
 function buildMesh(points) {
-  if (points.length === 0) return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
+  if (points.length === 0) {
+    return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
+  }
+
+  // Use a moderate resolution voxel grid — 48³ is fast, produces real shape
+  const RES = 48;
 
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,mnZ=Infinity,mxZ=-Infinity;
   for (const p of points) {
@@ -1158,87 +1206,234 @@ function buildMesh(points) {
     if(p.y<mnY)mnY=p.y; if(p.y>mxY)mxY=p.y;
     if(p.z<mnZ)mnZ=p.z; if(p.z>mxZ)mxZ=p.z;
   }
-  const pad = 0.1;
-  mnX-=pad;mnY-=pad;mnZ-=pad;mxX+=pad;mxY+=pad;mxZ+=pad;
+  // Pad so the surface doesn't clip the grid boundary
+  const pad = (mxX - mnX + mxY - mnY + mxZ - mnZ) * 0.05 + 0.1;
+  mnX-=pad; mnY-=pad; mnZ-=pad;
+  mxX+=pad; mxY+=pad; mxZ+=pad;
 
-  // Resolution scales with frame count — more frames → finer voxel grid
-  const RES = clamp(36 + Math.floor(frames.length / 4) * 2, 36, 54);
   const dx=(mxX-mnX)/RES, dy=(mxY-mnY)/RES, dz=(mxZ-mnZ)/RES;
   const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
+  const N3 = RES*RES*RES;
 
-  const occ  = new Float32Array(RES*RES*RES);
-  const colR = new Float32Array(RES*RES*RES);
-  const colG = new Float32Array(RES*RES*RES);
-  const colB = new Float32Array(RES*RES*RES);
-  const cnt  = new Uint16Array(RES*RES*RES);
-
+  // Accumulate point hits per voxel
+  const cnt = new Float32Array(N3);
   for (const p of points) {
-    const ix=clamp(Math.floor((p.x-mnX)/dx),0,RES-1);
-    const iy=clamp(Math.floor((p.y-mnY)/dy),0,RES-1);
-    const iz=clamp(Math.floor((p.z-mnZ)/dz),0,RES-1);
-    const vv=VI(ix,iy,iz);
-    occ[vv]=Math.min(occ[vv]+0.25,1);
-    colR[vv]+=p.r; colG[vv]+=p.g; colB[vv]+=p.b; cnt[vv]++;
+    const ix = clamp(Math.floor((p.x-mnX)/dx), 0, RES-1);
+    const iy = clamp(Math.floor((p.y-mnY)/dy), 0, RES-1);
+    const iz = clamp(Math.floor((p.z-mnZ)/dz), 0, RES-1);
+    cnt[VI(ix,iy,iz)]++;
   }
 
-  // Two-pass smoothing for denser frame counts
-  const smooth = (src) => {
-    const out = new Float32Array(RES*RES*RES);
-    for(let ix=1;ix<RES-1;ix++) for(let iy=1;iy<RES-1;iy++) for(let iz=1;iz<RES-1;iz++){
-      let s=0,n=0;
-      for(let a=-1;a<=1;a++) for(let b=-1;b<=1;b++) for(let c=-1;c<=1;c++){s+=src[VI(ix+a,iy+b,iz+c)];n++;}
-      out[VI(ix,iy,iz)]=s/n;
-    }
-    return out;
-  };
-  let occ2 = smooth(occ);
-  if (frames.length >= 20) occ2 = smooth(occ2); // second smoothing pass for more frames
+  // Normalise to 0-1
+  let cntMax = 0;
+  for (let i=0;i<N3;i++) if(cnt[i]>cntMax) cntMax=cnt[i];
+  if (cntMax === 0) return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
+  const occ = new Float32Array(N3);
+  for (let i=0;i<N3;i++) occ[i] = cnt[i] / cntMax;
 
+  // Single smooth pass to fill gaps between nearby points
+  const occ2 = new Float32Array(N3);
+  for (let ix=1;ix<RES-1;ix++)
+  for (let iy=1;iy<RES-1;iy++)
+  for (let iz=1;iz<RES-1;iz++) {
+    const c = occ[VI(ix,iy,iz)];
+    const nb = occ[VI(ix-1,iy,iz)] + occ[VI(ix+1,iy,iz)]
+             + occ[VI(ix,iy-1,iz)] + occ[VI(ix,iy+1,iz)]
+             + occ[VI(ix,iy,iz-1)] + occ[VI(ix,iy,iz+1)];
+    occ2[VI(ix,iy,iz)] = c * 0.5 + nb * (0.5/6);
+  }
+
+  // Simple marching cubes — clean 256-entry tables
+  // edgeTable[i] = bitmask of which of 12 edges are crossed
+  const ET = [
+    0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,
+    400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,
+    560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,
+    928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,
+    1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,
+    1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,
+    1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,
+    1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,
+    2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,
+    2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,
+    2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,
+    2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,
+    3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,
+    3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,
+    3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,
+    3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0
+  ];
+
+  // Compact triangle table — each entry is flat array of edge triples, -1 terminated
+  const TT = [
+    [],
+    [0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],
+    [9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],
+    [1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],
+    [0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],
+    [4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],
+    [1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],
+    [2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],
+    [9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],
+    [3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],
+    [4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],
+    [9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],
+    [1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],
+    [2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],
+    [0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],
+    [10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],
+    [5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],
+    [9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],
+    [1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],
+    [8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],
+    [7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],
+    [2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],
+    [9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],
+    [11,10,0,11,0,3,10,5,0,8,0,7,5,7,0],[11,10,5,7,11,5],
+    [10,6,5],[0,8,3,5,10,6],[9,0,1,5,10,6],[1,8,3,1,9,8,5,10,6],
+    [1,6,5,2,6,1],[1,6,5,1,2,6,3,0,8],[9,6,5,9,0,6,0,2,6],
+    [5,9,8,5,8,2,5,2,6,3,2,8],[2,3,11,10,6,5],[11,0,8,11,2,0,10,6,5],
+    [0,1,9,2,3,11,5,10,6],[5,10,6,1,9,2,9,11,2,9,8,11],
+    [6,3,11,6,5,3,5,1,3],[0,8,11,0,11,5,0,5,1,5,11,6],
+    [3,11,6,0,3,6,0,6,5,0,5,9],[6,5,9,6,9,11,11,9,8],
+    [5,10,6,4,7,8],[4,3,0,4,7,3,6,5,10],[1,9,0,5,10,6,8,4,7],
+    [10,6,5,1,9,7,1,7,3,7,9,4],[6,1,2,6,5,1,4,7,8],
+    [1,2,5,5,2,6,3,0,4,3,4,7],[8,4,7,9,0,5,0,6,5,0,2,6],
+    [7,3,9,7,9,4,3,2,9,5,9,6,2,6,9],[3,11,2,7,8,4,10,6,5],
+    [5,10,6,4,7,2,4,2,0,2,7,11],[0,1,9,4,7,8,2,3,11,5,10,6],
+    [9,2,1,9,11,2,9,4,11,7,11,4,5,10,6],[8,4,7,3,11,5,3,5,1,5,11,6],
+    [5,1,11,5,11,6,1,0,11,7,11,4,0,4,11],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7],
+    [6,5,9,6,9,11,4,7,9,7,11,9],[10,4,9,6,4,10],
+    [4,10,6,4,9,10,0,8,3],[10,0,1,10,6,0,6,4,0],
+    [8,3,1,8,1,6,8,6,4,6,1,10],[1,4,9,1,2,4,2,6,4],
+    [3,0,8,1,2,9,2,4,9,2,6,4],[0,2,4,4,2,6],[8,3,2,8,2,4,4,2,6],
+    [10,4,9,10,6,4,11,2,3],[0,8,2,2,8,11,4,9,10,4,10,6],
+    [3,11,2,0,1,6,0,6,4,6,1,10],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1],
+    [9,6,4,9,3,6,9,1,3,11,6,3],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1],
+    [3,11,6,3,6,0,0,6,4],[6,4,8,11,6,8],[7,10,6,7,8,10,8,9,10],
+    [0,7,3,0,10,7,0,9,10,6,7,10],[10,6,7,1,10,7,1,7,8,1,8,0],
+    [10,6,7,10,7,1,1,7,3],[1,2,6,1,6,8,1,8,9,8,6,7],
+    [2,6,9,2,9,1,6,7,9,0,9,3,7,3,9],[7,8,0,7,0,6,6,0,2],
+    [7,3,2,6,7,2],[2,3,11,10,6,8,10,8,9,8,6,7],
+    [2,0,7,2,7,11,0,9,7,6,7,10,9,10,7],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11],
+    [11,2,1,11,1,7,10,6,1,6,7,1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6],
+    [0,9,1,11,6,7],[7,8,0,7,0,6,3,11,0,11,6,0],[7,11,6],
+    [7,6,11],[3,0,8,11,7,6],[0,1,9,11,7,6],[8,1,9,8,3,1,11,7,6],
+    [10,1,2,6,11,7],[1,2,10,3,0,8,6,11,7],[2,9,0,2,10,9,6,11,7],
+    [6,11,7,2,10,3,10,8,3,10,9,8],[7,2,3,6,2,7],[7,0,8,7,6,0,6,2,0],
+    [2,7,3,2,6,7,0,1,9],[1,6,2,1,8,6,1,9,8,8,7,6],
+    [10,7,6,10,1,7,1,3,7],[10,7,6,1,7,10,1,8,7,1,0,8],
+    [0,3,7,0,7,10,0,10,9,6,10,7],[7,6,10,7,10,8,8,10,9],
+    [6,8,4,11,8,6],[3,6,11,3,0,6,0,4,6],[8,6,11,8,4,6,9,0,1],
+    [9,4,6,9,6,3,9,3,1,11,3,6],[6,8,4,6,11,8,2,10,1],
+    [1,2,10,3,0,11,0,6,11,0,4,6],[4,11,8,4,6,11,0,2,9,2,10,9],
+    [10,9,3,10,3,2,9,4,3,11,3,6,4,6,3],[8,2,3,8,4,2,4,6,2],
+    [0,4,2,4,6,2],[1,9,0,2,3,4,2,4,6,4,3,8],[1,9,4,1,4,2,2,4,6],
+    [8,1,3,8,6,1,8,4,6,6,10,1],[10,1,0,10,0,6,6,0,4],
+    [4,6,3,4,3,8,6,10,3,0,3,9,10,9,3],[10,9,4,6,10,4],
+    [4,9,5,7,6,11],[0,8,3,4,9,5,11,7,6],[5,0,1,5,4,0,7,6,11],
+    [11,7,6,8,3,4,3,5,4,3,1,5],[9,5,4,10,1,2,7,6,11],
+    [6,11,7,1,2,10,0,8,3,4,9,5],[7,6,11,5,4,10,4,2,10,4,0,2],
+    [3,4,8,3,5,4,3,2,5,10,5,2,11,7,6],[7,2,3,7,6,2,5,4,9],
+    [9,5,4,0,8,6,0,6,2,6,8,7],[3,6,2,3,7,6,1,5,0,5,4,0],
+    [6,2,8,6,8,7,2,1,8,4,8,5,1,5,8],[9,5,4,10,1,6,1,7,6,1,3,7],
+    [1,6,10,1,7,6,1,0,7,8,7,0,9,5,4],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10],
+    [7,6,10,7,10,8,5,4,10,4,8,10],[6,9,5,6,11,9,11,8,9],
+    [3,6,11,0,6,3,0,5,6,0,9,5],[0,11,8,0,5,11,0,1,5,5,6,11],
+    [6,11,3,6,3,5,5,3,1],[1,2,10,9,5,11,9,11,8,11,5,6],
+    [0,11,3,0,6,11,0,9,6,5,6,9,1,2,10],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],
+    [6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],
+    [9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],
+    [1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],
+    [10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],
+    [11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],
+    [10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],
+    [0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],
+    [7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],
+    [8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],
+    [1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],
+    [0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],
+    [5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],
+    [0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],
+    [2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],
+    [0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],
+    [2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],
+    [3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],
+    [8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],
+    [9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],
+    [1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],
+    [4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],
+    [11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],
+    [2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],
+    [3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],
+    [4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],
+    [4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],
+    [0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],
+    [3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],
+    [2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],
+    [1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]
+  ];
+
+  const EP = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const CV = [[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+
+  const THRESH = 0.15;
   const verts=[], normals=[], uvs=[], indices=[];
-  const vmap=new Map(); let vIdx=0;
-  const THRESH = 0.14;
+  const vmap = new Map(); let vIdx = 0;
+  const ctrX=(mnX+mxX)/2, ctrZ=(mnZ+mxZ)/2;
 
-  function addV(wx,wy,wz, nx,ny,nz, u,v) {
-    const key=`${wx.toFixed(3)},${wy.toFixed(3)},${wz.toFixed(3)}`;
-    if(vmap.has(key)) return vmap.get(key);
-    vmap.set(key,vIdx);
-    verts.push(wx,wy,wz); normals.push(nx,ny,nz); uvs.push(u,v);
+  function interp(p1,p2,v1,v2) {
+    const t = (v1===v2) ? 0.5 : clamp((THRESH-v1)/(v2-v1),0,1);
+    return [p1[0]+(p2[0]-p1[0])*t, p1[1]+(p2[1]-p1[1])*t, p1[2]+(p2[2]-p1[2])*t];
+  }
+
+  function vert(p, nx, ny, nz) {
+    const u = 0.5 + Math.atan2(p[2]-ctrZ, p[0]-ctrX)/(2*Math.PI);
+    const v = clamp(1-(p[1]-mnY)/(mxY-mnY), 0, 1);
+    const key = `${(p[0]/dx)|0},${(p[1]/dy)|0},${(p[2]/dz)|0}`;
+    if (vmap.has(key)) return vmap.get(key);
+    vmap.set(key, vIdx);
+    verts.push(p[0],p[1],p[2]); normals.push(nx,ny,nz); uvs.push(u,v);
     return vIdx++;
   }
 
-  // 6 face pairs for surface extraction
-  const FACE6=[
-    [[0,3,7,4],[-1,0,0]],[[1,2,6,5],[1,0,0]],
-    [[0,1,5,4],[0,0,-1]],[[3,2,6,7],[0,0,1]],
-    [[0,1,2,3],[0,-1,0]],[[4,5,6,7],[0,1,0]],
-  ];
+  function getNormal(ix,iy,iz) {
+    const gx = occ2[VI(Math.min(ix+1,RES-1),iy,iz)] - occ2[VI(Math.max(ix-1,0),iy,iz)];
+    const gy = occ2[VI(ix,Math.min(iy+1,RES-1),iz)] - occ2[VI(ix,Math.max(iy-1,0),iz)];
+    const gz = occ2[VI(ix,iy,Math.min(iz+1,RES-1))] - occ2[VI(ix,iy,Math.max(iz-1,0))];
+    const len = Math.sqrt(gx*gx+gy*gy+gz*gz)||1;
+    return [-gx/len,-gy/len,-gz/len];
+  }
 
-  for(let ix=0;ix<RES-1;ix++) for(let iy=0;iy<RES-1;iy++) for(let iz=0;iz<RES-1;iz++){
-    const wx0=mnX+ix*dx, wy0=mnY+iy*dy, wz0=mnZ+iz*dz;
-    const corners=[
+  for (let ix=0;ix<RES-1;ix++)
+  for (let iy=0;iy<RES-1;iy++)
+  for (let iz=0;iz<RES-1;iz++) {
+    const vals=[
       occ2[VI(ix,  iy,  iz  )], occ2[VI(ix+1,iy,  iz  )],
       occ2[VI(ix+1,iy+1,iz  )], occ2[VI(ix,  iy+1,iz  )],
       occ2[VI(ix,  iy,  iz+1)], occ2[VI(ix+1,iy,  iz+1)],
       occ2[VI(ix+1,iy+1,iz+1)], occ2[VI(ix,  iy+1,iz+1)],
     ];
-    const cpos=[
-      [wx0,    wy0,    wz0   ],[wx0+dx, wy0,    wz0   ],
-      [wx0+dx, wy0+dy, wz0   ],[wx0,    wy0+dy, wz0   ],
-      [wx0,    wy0,    wz0+dz],[wx0+dx, wy0,    wz0+dz],
-      [wx0+dx, wy0+dy, wz0+dz],[wx0,    wy0+dy, wz0+dz],
-    ];
-    const above = corners.map(c=>c>THRESH);
+    let ci=0;
+    for(let c=0;c<8;c++) if(vals[c]>THRESH) ci|=(1<<c);
+    if(ci===0||ci===255) continue;
+    const et=ET[ci]; if(!et) continue;
 
-    for(const [fc, nm] of FACE6){
-      const ac = fc.filter(ci=>above[ci]).length;
-      if(ac===0||ac===4||ac<2) continue;
-      const pts = fc.map(ci=>{
-        const p=cpos[ci];
-        const u2=0.5+Math.atan2(p[2]-((mnZ+mxZ)/2), p[0]-((mnX+mxX)/2))/(2*Math.PI);
-        const v2=clamp(1-(p[1]-mnY)/(mxY-mnY), 0, 1);
-        return addV(p[0],p[1],p[2], nm[0],nm[1],nm[2], u2,v2);
-      });
-      indices.push(pts[0],pts[1],pts[2], pts[0],pts[2],pts[3]);
+    const cp = CV.map(([a,b,c2])=>[mnX+(ix+a)*dx, mnY+(iy+b)*dy, mnZ+(iz+c2)*dz]);
+    const ev = new Array(12);
+    for(let e=0;e<12;e++) {
+      if(!(et&(1<<e))) continue;
+      ev[e]=interp(cp[EP[e][0]], cp[EP[e][1]], vals[EP[e][0]], vals[EP[e][1]]);
+    }
+    const tris=TT[ci]; if(!tris||tris.length===0) continue;
+    const nm=getNormal(ix,iy,iz);
+    for(let t=0;t<tris.length;t+=3) {
+      if(ev[tris[t]]===undefined||ev[tris[t+1]]===undefined||ev[tris[t+2]]===undefined) continue;
+      indices.push(
+        vert(ev[tris[t]],   nm[0],nm[1],nm[2]),
+        vert(ev[tris[t+1]], nm[0],nm[1],nm[2]),
+        vert(ev[tris[t+2]], nm[0],nm[1],nm[2])
+      );
     }
   }
 
