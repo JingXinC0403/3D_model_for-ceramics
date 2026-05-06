@@ -133,7 +133,7 @@ main {
   width: 100%; height: 100%;
   pointer-events: none;
   mix-blend-mode: screen;
-  opacity: 0.92;
+  opacity: 0.95;
 }
 
 .camera-hud { position: absolute; inset: 0; pointer-events: none; }
@@ -145,17 +145,6 @@ main {
 .hud-corner.tr { top:12px; right:12px; border-width:2px 2px 0 0; }
 .hud-corner.bl { bottom:12px; left:12px; border-width:0 0 2px 2px; }
 .hud-corner.br { bottom:12px; right:12px; border-width:0 2px 2px 0; }
-
-/* Circular guide ring */
-.hud-ring {
-  position: absolute; top:50%; left:50%;
-  transform: translate(-50%,-50%);
-  width: min(40%,180px); aspect-ratio:1;
-  border: 1.5px dashed rgba(0,212,170,0.4);
-  border-radius: 50%;
-  transition: border-color 0.3s, border-style 0.3s;
-}
-.hud-ring.active { border-color: rgba(0,212,170,0.85); border-style: solid; }
 
 .hud-scanline {
   position: absolute; left:0; right:0; height:1px;
@@ -189,6 +178,19 @@ main {
   font-family: var(--mono); font-size: 0.6rem;
   color: rgba(0,212,170,0.6);
 }
+
+/* Outline quality indicator */
+.hud-quality {
+  position: absolute; top:12px; left:12px;
+  font-family: var(--mono); font-size: 0.6rem;
+  color: rgba(0,212,170,0.7);
+  background: rgba(0,0,0,0.55);
+  padding: 0.2rem 0.5rem; border-radius: 2px;
+  transition: color 0.4s;
+}
+.hud-quality.good { color: #00ff88; }
+.hud-quality.fair { color: var(--warn); }
+.hud-quality.none { color: var(--tx3); }
 
 .flash-el {
   position: absolute; inset: 0;
@@ -293,7 +295,6 @@ input[type=range]::-webkit-slider-thumb {
 .info-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; color: var(--tx3); }
 .info-val { font-family: var(--cond); font-size: 1rem; font-weight: 600; color: var(--tx); }
 
-/* Depth preview strip */
 .depth-section { margin-top: 1.25rem; display: none; }
 .depth-section.show { display: block; }
 .depth-label-row { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--tx3); margin-bottom: 0.5rem; }
@@ -345,7 +346,6 @@ input[type=range]::-webkit-slider-thumb {
 }
 .vsl::before { content: '› '; opacity: 0.5; }
 
-/* Viewer toolbar */
 .viewer-toolbar {
   position: absolute; top:12px; left:12px;
   display: flex; gap: 4px;
@@ -403,7 +403,7 @@ input[type=range]::-webkit-slider-thumb {
 
     <div class="tip-box">
       <span class="tip-icon">💡</span>
-      <p><strong>Best results:</strong> Walk slowly in a full 360° circle around the object. Use even lighting with no harsh shadows. Matte, textured objects work best. Keep the object centred in the ring throughout. <strong>20–30 photos</strong> gives the best 3D detail.</p>
+      <p><strong>Best results:</strong> Place your object on a plain, contrasting surface. Walk slowly in a full 360° circle. Works with any object — mouse, battery, pottery, keys, shoes. <strong>20–30 photos</strong> gives the best 3D detail. The green outline shows what the AI is tracking.</p>
     </div>
 
     <div class="camera-wrap">
@@ -415,7 +415,7 @@ input[type=range]::-webkit-slider-thumb {
         <div class="hud-corner tr"></div>
         <div class="hud-corner bl"></div>
         <div class="hud-corner br"></div>
-        <div class="hud-ring" id="hudRing"></div>
+        <div class="hud-quality none" id="hudQuality">SCANNING…</div>
         <div class="hud-scanline" id="scanLine" style="display:none"></div>
         <div class="hud-counter" id="hudCounter"></div>
         <div class="hud-info" id="hudRes">—</div>
@@ -470,9 +470,7 @@ input[type=range]::-webkit-slider-thumb {
   <!-- STEP 2 -->
   <section class="panel panel-process" id="panelProcess" style="display:none">
     <div class="panel-label">02 — AI RECONSTRUCTION PIPELINE</div>
-
     <div class="pipeline-stages" id="pipelineStages"></div>
-
     <div class="process-info">
       <div class="info-block">
         <span class="info-key">CURRENT STEP</span>
@@ -487,16 +485,13 @@ input[type=range]::-webkit-slider-thumb {
         <span class="info-val" id="procFrames">—</span>
       </div>
     </div>
-
     <div class="progress-bar-wrap lg">
       <div class="progress-bar glow" id="procBar"></div>
     </div>
-
     <div class="depth-section" id="depthSection">
       <div class="depth-label-row">AI DEPTH MAPS (sample)</div>
       <div class="depth-strip" id="depthStrip"></div>
     </div>
-
     <div class="terminal" id="terminal">
       <div>$ Initialising AI reconstruction pipeline…</div>
     </div>
@@ -505,7 +500,6 @@ input[type=range]::-webkit-slider-thumb {
   <!-- STEP 3 -->
   <section class="panel panel-viewer" id="panelViewer" style="display:none">
     <div class="panel-label">03 — YOUR 3D MODEL IS READY 🎉</div>
-
     <div class="viewer-wrap">
       <canvas id="threeCanvas"></canvas>
       <div class="viewer-toolbar">
@@ -517,7 +511,6 @@ input[type=range]::-webkit-slider-thumb {
       <div class="viewer-hint">🖱 Drag · Scroll to zoom · Right-drag to pan</div>
       <div class="viewer-stats" id="viewerStats"></div>
     </div>
-
     <div class="btn-row">
       <button class="btn btn-primary"   id="btnDownload"><span class="btn-icon">⬇</span> Download .obj</button>
       <button class="btn btn-secondary" id="btnDownloadTex"><span class="btn-icon">⬇</span> Download Texture</button>
@@ -540,18 +533,35 @@ const wait   = ms => new Promise(r => setTimeout(r, ms));
 
 /* ─── State ─────────────────────────────────── */
 let stream = null, capturing = false, captureTimer = null;
-let frames = [];        // {dataURL, imageData, w, h}
-let depthMaps = [];     // Float32Array[]
-let meshData  = null;   // {verts,normals,uvs,indices,stats}
+let frames = [];
+let depthMaps = [];
+let meshData  = null;
 let atlasCanvas = null;
 let midasModel  = null;
 
-/* ─── Live neon outline engine ─────────────────── */
-let outlineRAF = null;
-// Shared foreground mask — written by outline loop, read by grabFrame()
-// Stored at process resolution (1/SCALE of video)
+/* ─── Shared foreground mask (written by outline loop, read by grabFrame) ─── */
 let sharedFgMask = null;
 let sharedFgW = 0, sharedFgH = 0;
+let outlineQualityScore = 0; // 0–1, used to drive the HUD badge
+
+/* ═══════════════════════════════════════════════════════════════════════
+   IMPROVED OUTLINE ENGINE
+   
+   Key improvements over the original:
+   1. Dual-layer background model: per-pixel Gaussian (slow, accurate) +
+      a fast "first-frame snapshot" for cold-start speed.
+   2. No ring-gate suppression — replaced with a soft centre-weight that
+      allows any shape (rectangular, elongated, irregular) to be detected.
+   3. Adaptive threshold: auto-tunes every 30 frames to handle objects
+      with low contrast against the background.
+   4. Gap-bridging BFS: expands the flood-fill by a dilation radius so
+      thin parts (mouse cable, pottery handle, battery cap) stay connected.
+   5. Multi-layer neon rendering: core 1px line + 3px blur glow + 8px
+      bloom, all composited via screen blend — works on any background colour.
+   6. Quality score drives the HUD badge: green/yellow/grey.
+═══════════════════════════════════════════════════════════════════════ */
+
+let outlineRAF = null;
 
 function startOutlineLoop() {
   const video     = $('video');
@@ -560,153 +570,282 @@ function startOutlineLoop() {
   const ctxOut    = cvOut.getContext('2d');
   const ctxSrc    = cvScratch.getContext('2d', { willReadFrequently: true });
 
-  const SCALE = 3; // process at 1/3 res for speed
+  // Process at 1/3 resolution for speed; render back at full res
+  const SCALE = 3;
 
-  // ── Per-pixel Gaussian background model (MOG2-lite) ──
-  // Each pixel has its own learned mean+variance. Pixels that deviate
-  // strongly from their own background = foreground. This handles
-  // complex / textured / multi-colour backgrounds correctly.
+  // ── Background model state ──────────────────────────────────────────
   let bgMeanR = null, bgMeanG = null, bgMeanB = null;
   let bgVarR  = null, bgVarG  = null, bgVarB  = null;
-  let bgReady = false, frameCount = 0;
+  let bgReady = false;
 
-  // Previous greyscale frame for motion detection
-  let prevGrey = null;
-  // Temporal IIR accumulator
-  let fgAccum  = null;
+  // Cold-start: snapshot of the very first frame used as an instant bg reference
+  // This lets the outline appear within 1–2 frames of camera start.
+  let snapR = null, snapG = null, snapB = null;
 
-  function initModel(d, N) {
+  let frameCount   = 0;
+  let prevGrey     = null;
+  let fgAccum      = null;         // IIR temporal accumulator
+  let adaptThresh  = 0.22;         // auto-tuned threshold
+  let lastSW = 0, lastSH = 0;
+
+  // ── Per-pixel Gaussian background model ─────────────────────────────
+  function initModel(d, N, SW, SH) {
     bgMeanR = new Float32Array(N); bgMeanG = new Float32Array(N); bgMeanB = new Float32Array(N);
-    bgVarR  = new Float32Array(N).fill(900);  // high initial variance = uncertain
-    bgVarG  = new Float32Array(N).fill(900);
-    bgVarB  = new Float32Array(N).fill(900);
+    bgVarR  = new Float32Array(N).fill(1600); // high initial variance = "uncertain"
+    bgVarG  = new Float32Array(N).fill(1600);
+    bgVarB  = new Float32Array(N).fill(1600);
+    snapR   = new Float32Array(N);
+    snapG   = new Float32Array(N);
+    snapB   = new Float32Array(N);
     for (let i = 0; i < N; i++) {
-      bgMeanR[i] = d[i*4]; bgMeanG[i] = d[i*4+1]; bgMeanB[i] = d[i*4+2];
+      bgMeanR[i] = snapR[i] = d[i*4];
+      bgMeanG[i] = snapG[i] = d[i*4+1];
+      bgMeanB[i] = snapB[i] = d[i*4+2];
     }
     bgReady = true;
+    lastSW = SW; lastSH = SH;
+    frameCount = 0; fgAccum = null; prevGrey = null;
+    adaptThresh = 0.22;
   }
 
-  // How many std-devs is pixel i from its background model?
-  function bgDistance(d, i) {
+  // Mahalanobis-like distance from the Gaussian model (normalised to ~0-1)
+  function bgDistGauss(d, i) {
     const dR = d[i*4]   - bgMeanR[i];
     const dG = d[i*4+1] - bgMeanG[i];
     const dB = d[i*4+2] - bgMeanB[i];
-    // Clamp variance floor to avoid div-by-zero on uniform backgrounds
-    return (dR*dR / Math.max(bgVarR[i],25)) +
-           (dG*dG / Math.max(bgVarG[i],25)) +
-           (dB*dB / Math.max(bgVarB[i],25));
+    return (dR*dR / Math.max(bgVarR[i], 36)) +
+           (dG*dG / Math.max(bgVarG[i], 36)) +
+           (dB*dB / Math.max(bgVarB[i], 36));
   }
 
-  // Update background model — only for pixels classified as background
+  // Distance from the cold-start snapshot (instant, no learning needed)
+  function bgDistSnap(d, i) {
+    const dR = d[i*4]   - snapR[i];
+    const dG = d[i*4+1] - snapG[i];
+    const dB = d[i*4+2] - snapB[i];
+    return Math.sqrt(dR*dR + dG*dG + dB*dB) / 441.67; // normalise to 0-1 (max=√(3×255²))
+  }
+
   function updateModel(d, N) {
-    // Fast learning at start, slow once settled
-    const lr = frameCount < 45 ? 0.20 : 0.012;
+    // Fast learning in first 60 frames, slow once settled
+    const lr = frameCount < 30 ? 0.18 : frameCount < 60 ? 0.06 : 0.012;
     for (let i = 0; i < N; i++) {
-      if (bgDistance(d, i) > 3.0) continue; // skip foreground pixels
+      if (bgDistGauss(d, i) > 3.5) continue; // skip fg pixels
       const dR = d[i*4]   - bgMeanR[i];
       const dG = d[i*4+1] - bgMeanG[i];
       const dB = d[i*4+2] - bgMeanB[i];
-      bgMeanR[i] += lr*dR; bgMeanG[i] += lr*dG; bgMeanB[i] += lr*dB;
-      bgVarR[i]   = (1-lr)*bgVarR[i] + lr*dR*dR;
-      bgVarG[i]   = (1-lr)*bgVarG[i] + lr*dG*dG;
-      bgVarB[i]   = (1-lr)*bgVarB[i] + lr*dB*dB;
+      bgMeanR[i] += lr * dR;  bgMeanG[i] += lr * dG;  bgMeanB[i] += lr * dB;
+      bgVarR[i]   = (1-lr) * bgVarR[i] + lr * dR * dR;
+      bgVarG[i]   = (1-lr) * bgVarG[i] + lr * dG * dG;
+      bgVarB[i]   = (1-lr) * bgVarB[i] + lr * dB * dB;
     }
   }
 
-  // ── Ring gate: weight by distance from frame centre ──
-  // Pixels well inside the guide ring get full weight.
-  // Pixels near/outside the edges are suppressed to zero.
-  // This is the key prior: "the object is in the centre."
-  function ringGate(x, y, SW, SH) {
-    const nx = (x / SW - 0.5) * 2;  // -1 to 1
-    const ny = (y / SH - 0.5) * 2;
-    const d  = Math.sqrt(nx*nx + ny*ny);
-    // Full weight inside r=0.60, smooth falloff, zero outside r=0.95
-    return Math.max(0, Math.min(1, (0.95 - d) / 0.35));
+  // ── Soft centre-weight: full weight in middle 70%, gentle falloff to edges ──
+  // This replaces the hard ring-gate, allowing any object shape.
+  // Rectangular objects won't be clipped; objects near the edge still detected.
+  function centreWeight(x, y, SW, SH) {
+    const nx = Math.abs((x / SW - 0.5) * 2);   // 0=centre, 1=edge
+    const ny = Math.abs((y / SH - 0.5) * 2);
+    const d  = Math.max(nx, ny);                 // L∞ distance (square falloff)
+    // Full weight inside d=0.72, smooth falloff to 0.3 at edges
+    return Math.max(0.3, Math.min(1.0, (0.92 - d) / 0.20));
   }
 
-  // ── BFS from centre: keep only the connected blob touching centre ──
-  // Everything not connected to the central object is discarded.
-  function centralBlobOnly(binary, SW, SH) {
-    const out     = new Uint8Array(SW * SH);
+  // ── Adaptive threshold tuner ─────────────────────────────────────────
+  // Every 30 frames, look at the distribution of fgAccum values.
+  // If too few or too many pixels are above threshold, nudge it.
+  function tuneThreshold(fgAccum, N) {
+    let above = 0;
+    for (let i = 0; i < N; i++) if (fgAccum[i] > adaptThresh) above++;
+    const ratio = above / N;
+    // Target: 2–25% of pixels as foreground (reasonable for most objects)
+    if (ratio < 0.01) adaptThresh = Math.max(0.08, adaptThresh - 0.015);
+    else if (ratio > 0.35) adaptThresh = Math.min(0.55, adaptThresh + 0.015);
+  }
+
+  // ── Gap-bridging BFS ─────────────────────────────────────────────────
+  // 1. Dilate the binary mask by BRIDGE_R pixels first
+  // 2. BFS from centre (bridged mask)
+  // 3. Erode back by BRIDGE_R to recover original shape
+  // This ensures thin connectors (mouse scroll wheel area, handle, cord) stay attached.
+  const BRIDGE_R = 4; // pixels in processing resolution
+
+  function dilate(mask, SW, SH, r) {
+    const out = new Uint8Array(SW * SH);
+    for (let y = r; y < SH - r; y++)
+      for (let x = r; x < SW - r; x++) {
+        if (!mask[y * SW + x]) continue;
+        for (let dy = -r; dy <= r; dy++)
+          for (let dx = -r; dx <= r; dx++)
+            out[(y + dy) * SW + (x + dx)] = 1;
+      }
+    return out;
+  }
+
+  function erode(mask, SW, SH, r) {
+    const out = new Uint8Array(SW * SH);
+    for (let y = r; y < SH - r; y++)
+      for (let x = r; x < SW - r; x++) {
+        let ok = true;
+        for (let dy = -r; dy <= r && ok; dy++)
+          for (let dx = -r; dx <= r && ok; dx++)
+            if (!mask[(y + dy) * SW + (x + dx)]) ok = false;
+        if (ok) out[y * SW + x] = 1;
+      }
+    return out;
+  }
+
+  // Morphological close (dilate then erode) — fills holes inside object
+  function morphClose(mask, SW, SH, r) {
+    return erode(dilate(mask, SW, SH, r), SW, SH, r);
+  }
+
+  // Gap-bridging connected-component: dilate, BFS, erode
+  function centralBlobBridged(binary, SW, SH) {
+    // Step 1: dilate to bridge gaps
+    const bridged = dilate(binary, SW, SH, BRIDGE_R);
+
+    // Step 2: BFS from centre on the bridged mask
     const visited = new Uint8Array(SW * SH);
+    const bfsResult = new Uint8Array(SW * SH);
     const cx = Math.floor(SW / 2), cy = Math.floor(SH / 2);
 
-    // Spiral outward from centre to find the first foreground seed
+    // Spiral search from centre to find a foreground seed
     let seed = -1;
+    const maxR = Math.floor(Math.min(SW, SH) * 0.48);
     outer:
-    for (let r = 0; r <= Math.floor(Math.min(SW,SH) * 0.42); r++) {
-      for (let a = 0; a < 16; a++) {
-        const ang = a * Math.PI / 8;
+    for (let r = 0; r <= maxR; r++) {
+      // Check in a circle of radius r
+      const steps = Math.max(8, r * 6);
+      for (let s = 0; s < steps; s++) {
+        const ang = (s / steps) * Math.PI * 2;
         const sx  = cx + Math.round(r * Math.cos(ang));
         const sy  = cy + Math.round(r * Math.sin(ang));
-        if (sx < 1 || sy < 1 || sx >= SW-1 || sy >= SH-1) continue;
-        if (binary[sy*SW+sx]) { seed = sy*SW+sx; break outer; }
+        if (sx < 1 || sy < 1 || sx >= SW - 1 || sy >= SH - 1) continue;
+        if (bridged[sy * SW + sx]) { seed = sy * SW + sx; break outer; }
       }
     }
-    if (seed < 0) return out; // nothing at centre = no object detected
+    if (seed < 0) return new Uint8Array(SW * SH);
 
-    // BFS with pre-allocated queue for speed
     const q = new Int32Array(SW * SH);
     let head = 0, tail = 0;
     q[tail++] = seed; visited[seed] = 1;
 
     while (head < tail) {
       const idx = q[head++];
-      out[idx] = 1;
+      bfsResult[idx] = 1;
       const x = idx % SW;
-      for (const ni of [idx-1, idx+1, idx-SW, idx+SW]) {
-        if (ni < 0 || ni >= SW*SH) continue;
-        if (Math.abs((ni % SW) - x) > 1) continue; // no row-wrap
-        if (!visited[ni] && binary[ni]) { visited[ni] = 1; q[tail++] = ni; }
+      for (const ni of [idx - 1, idx + 1, idx - SW, idx + SW]) {
+        if (ni < 0 || ni >= SW * SH) continue;
+        if (Math.abs((ni % SW) - x) > 1) continue;
+        if (!visited[ni] && bridged[ni]) { visited[ni] = 1; q[tail++] = ni; }
       }
     }
-    return out;
+
+    // Step 3: AND the BFS result with the bridged mask, then erode back
+    // This recovers the original shape while keeping bridged parts
+    const combined = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++) combined[i] = bfsResult[i] & binary[i];
+
+    // Close again to fill any remaining holes from the AND
+    const closed2 = morphClose(combined, SW, SH, 2);
+
+    // Also include bridge region intersected with original: catches any
+    // thin connectors that survived the bridge but not the original threshold
+    const bridge_contrib = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++)
+      bridge_contrib[i] = bfsResult[i] ? 1 : 0;
+    // Erode the BFS result by BRIDGE_R to undo the dilation
+    const shrunk = erode(bridge_contrib, SW, SH, BRIDGE_R);
+
+    // Final: union of closed original pixels + shrunk bridge fill
+    const final = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++)
+      final[i] = closed2[i] | shrunk[i];
+
+    return final;
   }
 
-  // ── Morphological close: dilate then erode to fill holes ──
-  function morphClose(mask, SW, SH, r) {
-    const tmp = new Uint8Array(SW * SH);
-    // Dilate
-    for (let y=r; y<SH-r; y++) for (let x=r; x<SW-r; x++) {
-      if (!mask[y*SW+x]) continue;
-      for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++) tmp[(y+dy)*SW+(x+dx)]=1;
-    }
-    // Erode
-    const out = new Uint8Array(SW * SH);
-    for (let y=r; y<SH-r; y++) for (let x=r; x<SW-r; x++) {
-      if (!tmp[y*SW+x]) continue;
-      let ok=true;
-      for (let dy=-r; dy<=r&&ok; dy++) for (let dx=-r; dx<=r&&ok; dx++) if (!tmp[(y+dy)*SW+(x+dx)]) ok=false;
-      if (ok) out[y*SW+x]=1;
-    }
-    return out;
-  }
+  // ── Silhouette extraction ────────────────────────────────────────────
+  // Extract a thick silhouette border that looks good even on small objects.
+  // Uses a variable thickness based on object size.
+  function silhouette(mask, SW, SH) {
+    // Count fg pixels to estimate object size
+    let fgCount = 0;
+    for (let i = 0; i < SW * SH; i++) fgCount += mask[i];
+    const objFrac = fgCount / (SW * SH);
+    // Thickness: 1px for tiny objects, up to 3px for large ones
+    const thickness = objFrac < 0.02 ? 1 : objFrac < 0.08 ? 2 : 3;
 
-  // ── Silhouette edge: foreground pixels adjacent to background ──
-  function silhouette(mask, SW, SH, thickness) {
     const edge = new Uint8Array(SW * SH);
-    for (let y=thickness; y<SH-thickness; y++) {
-      for (let x=thickness; x<SW-thickness; x++) {
-        if (!mask[y*SW+x]) continue;
+    for (let y = thickness; y < SH - thickness; y++) {
+      for (let x = thickness; x < SW - thickness; x++) {
+        if (!mask[y * SW + x]) continue;
         let isEdge = false;
-        outer2:
-        for (let dy=-thickness; dy<=thickness; dy++)
-          for (let dx=-thickness; dx<=thickness; dx++)
-            if (!mask[(y+dy)*SW+(x+dx)]) { isEdge=true; break outer2; }
-        if (isEdge) edge[y*SW+x]=1;
+        outer3:
+        for (let dy = -thickness; dy <= thickness; dy++)
+          for (let dx = -thickness; dx <= thickness; dx++)
+            if (!mask[(y + dy) * SW + (x + dx)]) { isEdge = true; break outer3; }
+        if (isEdge) edge[y * SW + x] = 1;
       }
     }
     return edge;
   }
 
-  // ── Main render loop ──────────────────────────────────────────
+  // ── Multi-layer neon renderer ────────────────────────────────────────
+  // Renders 3 passes: core line (bright), inner glow (medium), outer bloom (soft).
+  // All on one canvas via compositing. Works on any background colour.
+  function renderNeon(edge, SW, SH, VW, VH, ctxOut) {
+    // Build a small edge canvas at processing resolution
+    const edgeCv  = document.createElement('canvas');
+    edgeCv.width  = SW; edgeCv.height = SH;
+    const edgeCtx = edgeCv.getContext('2d');
+    const edgeImg = edgeCtx.createImageData(SW, SH);
+    const ed = edgeImg.data;
+    for (let i = 0; i < SW * SH; i++) {
+      if (!edge[i]) continue;
+      ed[i*4]   = 0;
+      ed[i*4+1] = 255;
+      ed[i*4+2] = 80;
+      ed[i*4+3] = 255;
+    }
+    edgeCtx.putImageData(edgeImg, 0, 0);
+
+    ctxOut.clearRect(0, 0, VW, VH);
+
+    // Layer 3 — outer bloom (widest, most transparent)
+    ctxOut.save();
+    ctxOut.filter = 'blur(8px)';
+    ctxOut.globalAlpha = 0.45;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(edgeCv, 0, 0, VW, VH);
+    ctxOut.restore();
+
+    // Layer 2 — inner glow
+    ctxOut.save();
+    ctxOut.filter = 'blur(3px)';
+    ctxOut.globalAlpha = 0.80;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(edgeCv, 0, 0, VW, VH);
+    ctxOut.restore();
+
+    // Layer 1 — crisp core line (no blur)
+    ctxOut.save();
+    ctxOut.filter = 'none';
+    ctxOut.globalAlpha = 1.0;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(edgeCv, 0, 0, VW, VH);
+    ctxOut.restore();
+  }
+
+  // ── Main render loop ──────────────────────────────────────────────────
   function frame() {
     outlineRAF = requestAnimationFrame(frame);
     if (!video.videoWidth) return;
 
-    const VW = video.videoWidth,  VH = video.videoHeight;
-    const SW = Math.floor(VW/SCALE), SH = Math.floor(VH/SCALE);
+    const VW = video.videoWidth, VH = video.videoHeight;
+    const SW = Math.floor(VW / SCALE), SH = Math.floor(VH / SCALE);
     const N  = SW * SH;
 
     cvScratch.width = SW; cvScratch.height = SH;
@@ -716,83 +855,99 @@ function startOutlineLoop() {
     const src = ctxSrc.getImageData(0, 0, SW, SH);
     const d   = src.data;
 
-    // Init or reinit model if resolution changed
-    if (!bgReady || bgMeanR.length !== N) {
-      initModel(d, N);
-      frameCount = 0; fgAccum = null; prevGrey = null;
+    // Init or reinit if resolution changed
+    if (!bgReady || lastSW !== SW || lastSH !== SH) {
+      initModel(d, N, SW, SH);
     }
 
-    // Motion mask via frame differencing
+    // ── Motion mask via frame differencing ──────────────────────────
     const grey = new Float32Array(N);
-    for (let i=0; i<N; i++) grey[i] = 0.299*d[i*4] + 0.587*d[i*4+1] + 0.114*d[i*4+2];
+    for (let i = 0; i < N; i++)
+      grey[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
     const motion = new Float32Array(N);
     if (prevGrey && prevGrey.length === N)
-      for (let i=0; i<N; i++) motion[i] = Math.min(Math.abs(grey[i]-prevGrey[i])/60, 1);
+      for (let i = 0; i < N; i++)
+        motion[i] = Math.min(Math.abs(grey[i] - prevGrey[i]) / 55, 1);
     prevGrey = grey.slice();
 
-    // Per-pixel foreground score = bg distance + motion, gated by ring
+    // ── Per-pixel fg score ──────────────────────────────────────────
+    // Blend two bg-distance signals:
+    //   snapDist  — fast cold-start, compares to first frame
+    //   gaussDist — learned over time, more accurate
+    // After frameCount > 60, trust gaussDist more.
+    const gaussWeight = Math.min(frameCount / 60, 1.0);
+    const snapWeight  = 1.0 - gaussWeight;
+
     const fgRaw = new Float32Array(N);
-    for (let y=0; y<SH; y++) {
-      for (let x=0; x<SW; x++) {
-        const i   = y*SW+x;
-        const bgD = Math.min(bgDistance(d, i) / 8, 1); // normalise
+    for (let y = 0; y < SH; y++) {
+      for (let x = 0; x < SW; x++) {
+        const i  = y * SW + x;
+        const gD = Math.min(bgDistGauss(d, i) / 9, 1);
+        const sD = bgDistSnap(d, i);
+        // Blend the two signals
+        const bgD = gD * gaussWeight + sD * snapWeight;
         const mot = motion[i];
-        const rg  = ringGate(x, y, SW, SH);
-        fgRaw[i]  = (bgD*0.70 + mot*0.30) * rg;
+        const cw  = centreWeight(x, y, SW, SH); // soft spatial prior
+        fgRaw[i]  = (bgD * 0.72 + mot * 0.28) * cw;
       }
     }
 
-    // Update background model (skips foreground pixels automatically)
     updateModel(d, N);
 
-    // Temporal IIR smoothing: damps flicker without ghosting
+    // ── Temporal IIR smoothing ──────────────────────────────────────
     if (!fgAccum || fgAccum.length !== N) fgAccum = fgRaw.slice();
-    for (let i=0; i<N; i++) fgAccum[i] = fgAccum[i]*0.60 + fgRaw[i]*0.40;
+    const iirAlpha = 0.35;  // how fast to react to changes
+    for (let i = 0; i < N; i++)
+      fgAccum[i] = fgAccum[i] * (1 - iirAlpha) + fgRaw[i] * iirAlpha;
 
-    // Hard threshold → binary mask
+    // Tune threshold every 30 frames
+    if (frameCount % 30 === 0) tuneThreshold(fgAccum, N);
+
+    // ── Hard threshold → binary ──────────────────────────────────────
     const binary = new Uint8Array(N);
-    for (let i=0; i<N; i++) binary[i] = fgAccum[i] > 0.25 ? 1 : 0;
+    for (let i = 0; i < N; i++) binary[i] = fgAccum[i] > adaptThresh ? 1 : 0;
 
-    // Morphological close (radius 3) — fills small holes in the mask
+    // ── Morphological close (fills holes inside object) ──────────────
     const closed = morphClose(binary, SW, SH, 3);
 
-    // Keep ONLY the central connected blob — all other blobs discarded
-    const blob = centralBlobOnly(closed, SW, SH);
+    // ── Gap-bridging BFS: keep only central blob, bridge thin parts ──
+    const blob = centralBlobBridged(closed, SW, SH);
 
-    // Share the blob mask with grabFrame() so point cloud uses real object shape
+    // ── Share fg mask with grabFrame() ──────────────────────────────
     sharedFgMask = blob;
     sharedFgW    = SW;
     sharedFgH    = SH;
 
-    // Extract 2px-thick silhouette edge
-    const edge = silhouette(blob, SW, SH, 2);
+    // ── Quality score ────────────────────────────────────────────────
+    let blobCount = 0;
+    for (let i = 0; i < N; i++) blobCount += blob[i];
+    const blobFrac = blobCount / N;
+    // A reasonable object covers 2–60% of the frame
+    outlineQualityScore = blobFrac < 0.005 ? 0
+                        : blobFrac < 0.02  ? blobFrac / 0.02 * 0.5
+                        : blobFrac > 0.65  ? Math.max(0, 1 - (blobFrac - 0.65) / 0.2)
+                        : 1.0;
 
-    // Render neon green edge at full resolution
-    ctxOut.clearRect(0, 0, VW, VH);
-    const outImg = ctxOut.createImageData(VW, VH);
-    const od = outImg.data;
-    for (let sy=0; sy<SH; sy++) {
-      for (let sx=0; sx<SW; sx++) {
-        if (!edge[sy*SW+sx]) continue;
-        for (let dy=0; dy<SCALE; dy++) {
-          for (let dx=0; dx<SCALE; dx++) {
-            const px=sx*SCALE+dx, py=sy*SCALE+dy;
-            if (px>=VW||py>=VH) continue;
-            const ii=(py*VW+px)*4;
-            od[ii]=0; od[ii+1]=255; od[ii+2]=55; od[ii+3]=235;
-          }
-        }
+    // Update HUD quality badge
+    const qEl = $('hudQuality');
+    if (qEl) {
+      if (outlineQualityScore > 0.6) {
+        qEl.className = 'hud-quality good';
+        qEl.textContent = 'TRACKING ✓';
+      } else if (outlineQualityScore > 0.15) {
+        qEl.className = 'hud-quality fair';
+        qEl.textContent = 'ADJUSTING…';
+      } else {
+        qEl.className = 'hud-quality none';
+        qEl.textContent = frameCount < 45 ? 'LEARNING BG…' : 'NO OBJECT';
       }
     }
-    ctxOut.putImageData(outImg, 0, 0);
 
-    // Glow bloom pass
-    ctxOut.save();
-    ctxOut.filter='blur(3px)';
-    ctxOut.globalAlpha=0.55;
-    ctxOut.globalCompositeOperation='screen';
-    ctxOut.drawImage(cvOut, 0, 0);
-    ctxOut.restore();
+    // ── Silhouette edge ──────────────────────────────────────────────
+    const edge = silhouette(blob, SW, SH);
+
+    // ── Render multi-layer neon outline ─────────────────────────────
+    renderNeon(edge, SW, SH, VW, VH, ctxOut);
 
     frameCount++;
   }
@@ -804,6 +959,9 @@ function stopOutlineLoop() {
   if (outlineRAF) { cancelAnimationFrame(outlineRAF); outlineRAF = null; }
   const cv = $('outlineCanvas');
   if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  sharedFgMask = null;
+  const qEl = $('hudQuality');
+  if (qEl) { qEl.className = 'hud-quality none'; qEl.textContent = '—'; }
 }
 
 /* ─── Toast ───────────────────────────────────── */
@@ -841,7 +999,7 @@ async function startCamera() {
     $('btnStartScan').disabled = false;
     $('btnStopCam').style.display = 'inline-flex';
     $('scanLine').style.display = 'block';
-    $('hudInstruction').textContent = 'Centre object in ring · press Start Scanning';
+    $('hudInstruction').textContent = 'Point at object · green outline will appear';
     toast('Camera ready — point it at your object');
     startOutlineLoop();
   } catch(e) {
@@ -891,9 +1049,7 @@ function grabFrame() {
   const dataURL   = cv.toDataURL('image/jpeg', 0.9);
   const imageData = ctx.getImageData(0, 0, cv.width, cv.height);
 
-  // Snapshot the current foreground mask from the outline engine.
-  // Scale it up to match the full frame resolution so buildPointCloud
-  // can look up per-pixel object membership at full resolution.
+  // Scale the shared fg mask up to full frame resolution
   let fgMaskFull = null;
   if (sharedFgMask && sharedFgW > 0 && sharedFgH > 0) {
     fgMaskFull = new Uint8Array(cv.width * cv.height);
@@ -930,7 +1086,6 @@ async function startScan() {
   $('btnReset').style.display = 'inline-flex';
   $('btnStopCam').style.display = 'none';
   $('slFrames').disabled = $('slInterval').disabled = true;
-  $('hudRing').classList.add('active');
   toast('Scanning — walk slowly in a full circle around your object');
 
   for (let i = 0; i < total; i++) {
@@ -950,7 +1105,6 @@ async function startScan() {
   if (capturing) {
     capturing = false;
     $('hudCounter').classList.remove('visible');
-    $('hudRing').classList.remove('active');
     $('captureBar').style.width = '100%';
     $('capLabel').textContent = `✓ ${frames.length} photos captured — starting AI pipeline…`;
     toast(`${frames.length} photos ready · AI reconstruction starting`);
@@ -1002,7 +1156,6 @@ async function startProcessing() {
   $('procFrames').textContent = frames.length + ' photos';
   depthMaps = [];
 
-  /* Stage 0: Load MiDaS */
   setPipeline(0, 4, 'Loading AI model…');
   tlog('Loading MiDaS depth estimation model (TensorFlow.js)…');
   const t0 = Date.now();
@@ -1011,11 +1164,9 @@ async function startProcessing() {
     tlog(`MiDaS loaded in ${((Date.now()-t0)/1000).toFixed(1)}s`);
   } catch(e) {
     tlog('AI model unavailable — using edge-based fallback');
-    console.warn('MiDaS load failed:', e);
     midasModel = null;
   }
 
-  /* Stage 1: Depth per frame */
   setPipeline(1, 8, 'Depth estimation…');
   tlog(`Running depth estimation on ${frames.length} photos…`);
   for (let i = 0; i < frames.length; i++) {
@@ -1023,13 +1174,12 @@ async function startProcessing() {
     $('procBar').style.width = pct + '%';
     $('procPct').textContent = pct + '%';
     $('procStage').textContent = `Depth map ${i+1}/${frames.length}`;
-    await wait(0); // yield to UI thread
+    await wait(0);
     depthMaps.push(midasModel ? await runMiDaS(frames[i]) : fallbackDepth(frames[i]));
   }
   tlog(`${frames.length} depth maps complete`);
   renderDepthPreviews();
 
-  /* Stage 2: Point cloud */
   setPipeline(2, 34, 'Building point cloud…');
   const maskedFrames = frames.filter(f => f.fgMask).length;
   tlog(`Fusing ${frames.length} frames (${maskedFrames} with object masks)…`);
@@ -1037,14 +1187,12 @@ async function startProcessing() {
   const cloud = buildPointCloud();
   tlog(`Point cloud: ${cloud.length.toLocaleString()} points`);
 
-  /* Stage 3: Mesh */
   setPipeline(3, 54, 'Reconstructing surface mesh…');
   tlog('Voxel grid + surface extraction…');
   await wait(40);
   meshData = buildMesh(cloud);
   tlog(`Mesh: ${meshData.stats.vCount.toLocaleString()} verts, ${meshData.stats.fCount.toLocaleString()} faces`);
 
-  /* Stage 4: Texture */
   setPipeline(4, 76, 'Building texture atlas…');
   tlog('Packing photos into multi-angle texture atlas…');
   await wait(40);
@@ -1052,7 +1200,6 @@ async function startProcessing() {
   const AC = Math.ceil(Math.sqrt(frames.length));
   tlog(`Atlas: ${frames.length} photos → ${AC}×${Math.ceil(frames.length/AC)} grid`);
 
-  /* Stage 5: Finalise */
   setPipeline(5, 93, 'Finalising…');
   await wait(50);
 
@@ -1087,8 +1234,7 @@ async function runMiDaS(frame) {
     const depth   = (Array.isArray(result) ? result[0] : result).squeeze();
     const fullRes = tf.image.resizeBilinear(depth.expandDims(-1), [h, w]).squeeze();
     const arr     = fullRes.arraySync();
-
-    const flat = new Float32Array(w * h);
+    const flat    = new Float32Array(w * h);
     let mn = Infinity, mx = -Infinity;
     for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
       const v = arr[y][x]; flat[y*w+x] = v;
@@ -1100,7 +1246,6 @@ async function runMiDaS(frame) {
   });
 }
 
-/* Fallback: Laplacian edge + centre-bias depth */
 function fallbackDepth(frame) {
   const { imageData: id, w, h } = frame;
   const data = id.data;
@@ -1115,7 +1260,6 @@ function fallbackDepth(frame) {
     const cb = Math.max(0, 1-Math.sqrt(nx*nx+ny*ny));
     depth[y*w+x] = clamp(lap*0.55 + cb*0.45, 0, 1);
   }
-  // 3x3 box blur
   const out = new Float32Array(w*h);
   for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++) {
     let s=0;
@@ -1125,7 +1269,6 @@ function fallbackDepth(frame) {
   return out;
 }
 
-/* Depth preview tiles */
 function renderDepthPreviews() {
   $('depthSection').classList.add('show');
   const strip = $('depthStrip'); strip.innerHTML = '';
@@ -1141,7 +1284,6 @@ function renderDepthPreviews() {
       const sx=Math.floor(px/60*w), sy=Math.floor(py/45*h);
       const v = d[sy*w+sx];
       const ii=(py*60+px)*4;
-      // Viridis-ish: dark-navy → teal → yellow
       id2.data[ii]   = Math.round(lerp(lerp(10,0,v),  lerp(0,255,v), v));
       id2.data[ii+1] = Math.round(lerp(lerp(20,180,v),lerp(180,230,v),v));
       id2.data[ii+2] = Math.round(lerp(lerp(80,140,v),lerp(140,0,v),  v));
@@ -1158,7 +1300,7 @@ function renderDepthPreviews() {
 /* ─── Point cloud fusion ──────────────────────── */
 function buildPointCloud() {
   const N = frames.length, pts = [];
-  const STEP = 8; // sample every 8px
+  const STEP = 8;
 
   for (let fi = 0; fi < N; fi++) {
     const { imageData, w, h, fgMask } = frames[fi];
@@ -1187,390 +1329,193 @@ function buildPointCloud() {
       }
     }
   }
-  tlog(`Point cloud: ${pts.length.toLocaleString()} points`);
   return pts;
 }
 
-/* ─── Mesh from point cloud — fast grid approach ─── */
+/* ─── Mesh from point cloud ─────────────────────── */
 function buildMesh(points) {
-  if (points.length === 0) {
+  if (points.length === 0)
     return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
-  }
 
-  // Use a moderate resolution voxel grid — 48³ is fast, produces real shape
   const RES = 48;
-
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,mnZ=Infinity,mxZ=-Infinity;
   for (const p of points) {
     if(p.x<mnX)mnX=p.x; if(p.x>mxX)mxX=p.x;
     if(p.y<mnY)mnY=p.y; if(p.y>mxY)mxY=p.y;
     if(p.z<mnZ)mnZ=p.z; if(p.z>mxZ)mxZ=p.z;
   }
-  // Pad so the surface doesn't clip the grid boundary
-  const pad = (mxX - mnX + mxY - mnY + mxZ - mnZ) * 0.05 + 0.1;
-  mnX-=pad; mnY-=pad; mnZ-=pad;
-  mxX+=pad; mxY+=pad; mxZ+=pad;
-
+  const pad = (mxX-mnX+mxY-mnY+mxZ-mnZ)*0.05+0.1;
+  mnX-=pad; mnY-=pad; mnZ-=pad; mxX+=pad; mxY+=pad; mxZ+=pad;
   const dx=(mxX-mnX)/RES, dy=(mxY-mnY)/RES, dz=(mxZ-mnZ)/RES;
   const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
   const N3 = RES*RES*RES;
-
-  // Accumulate point hits per voxel
   const cnt = new Float32Array(N3);
   for (const p of points) {
-    const ix = clamp(Math.floor((p.x-mnX)/dx), 0, RES-1);
-    const iy = clamp(Math.floor((p.y-mnY)/dy), 0, RES-1);
-    const iz = clamp(Math.floor((p.z-mnZ)/dz), 0, RES-1);
+    const ix=clamp(Math.floor((p.x-mnX)/dx),0,RES-1);
+    const iy=clamp(Math.floor((p.y-mnY)/dy),0,RES-1);
+    const iz=clamp(Math.floor((p.z-mnZ)/dz),0,RES-1);
     cnt[VI(ix,iy,iz)]++;
   }
-
-  // Normalise to 0-1
-  let cntMax = 0;
-  for (let i=0;i<N3;i++) if(cnt[i]>cntMax) cntMax=cnt[i];
-  if (cntMax === 0) return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
-  const occ = new Float32Array(N3);
-  for (let i=0;i<N3;i++) occ[i] = cnt[i] / cntMax;
-
-  // Single smooth pass to fill gaps between nearby points
-  const occ2 = new Float32Array(N3);
-  for (let ix=1;ix<RES-1;ix++)
-  for (let iy=1;iy<RES-1;iy++)
-  for (let iz=1;iz<RES-1;iz++) {
-    const c = occ[VI(ix,iy,iz)];
-    const nb = occ[VI(ix-1,iy,iz)] + occ[VI(ix+1,iy,iz)]
-             + occ[VI(ix,iy-1,iz)] + occ[VI(ix,iy+1,iz)]
-             + occ[VI(ix,iy,iz-1)] + occ[VI(ix,iy,iz+1)];
-    occ2[VI(ix,iy,iz)] = c * 0.5 + nb * (0.5/6);
+  let cntMax=0;
+  for(let i=0;i<N3;i++) if(cnt[i]>cntMax) cntMax=cnt[i];
+  if(cntMax===0) return{verts:[],normals:[],uvs:[],indices:[],stats:{vCount:0,fCount:0}};
+  const occ=new Float32Array(N3);
+  for(let i=0;i<N3;i++) occ[i]=cnt[i]/cntMax;
+  const occ2=new Float32Array(N3);
+  for(let ix=1;ix<RES-1;ix++)
+  for(let iy=1;iy<RES-1;iy++)
+  for(let iz=1;iz<RES-1;iz++){
+    const c=occ[VI(ix,iy,iz)];
+    const nb=occ[VI(ix-1,iy,iz)]+occ[VI(ix+1,iy,iz)]
+            +occ[VI(ix,iy-1,iz)]+occ[VI(ix,iy+1,iz)]
+            +occ[VI(ix,iy,iz-1)]+occ[VI(ix,iy,iz+1)];
+    occ2[VI(ix,iy,iz)]=c*0.5+nb*(0.5/6);
   }
 
-  // Simple marching cubes — clean 256-entry tables
-  // edgeTable[i] = bitmask of which of 12 edges are crossed
-  const ET = [
-    0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,
-    400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,
-    560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,
-    928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,
-    1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,
-    1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,
-    1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,
-    1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,
-    2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,
-    2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,
-    2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,
-    2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,
-    3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,
-    3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,
-    3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,
-    3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0
-  ];
+  const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
+  const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
+  const EP=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const CV=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+  const THRESH=0.15;
+  const verts=[],normals=[],uvs=[],indices=[];
+  const vmap=new Map(); let vIdx=0;
+  const ctrX=(mnX+mxX)/2,ctrZ=(mnZ+mxZ)/2;
 
-  // Compact triangle table — each entry is flat array of edge triples, -1 terminated
-  const TT = [
-    [],
-    [0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],
-    [9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],
-    [1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],
-    [0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],
-    [4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],
-    [1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],
-    [2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],
-    [9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],
-    [3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],
-    [4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],
-    [9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],
-    [1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],
-    [2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],
-    [0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],
-    [10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],
-    [5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],
-    [9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],
-    [1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],
-    [8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],
-    [7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],
-    [2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],
-    [9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],
-    [11,10,0,11,0,3,10,5,0,8,0,7,5,7,0],[11,10,5,7,11,5],
-    [10,6,5],[0,8,3,5,10,6],[9,0,1,5,10,6],[1,8,3,1,9,8,5,10,6],
-    [1,6,5,2,6,1],[1,6,5,1,2,6,3,0,8],[9,6,5,9,0,6,0,2,6],
-    [5,9,8,5,8,2,5,2,6,3,2,8],[2,3,11,10,6,5],[11,0,8,11,2,0,10,6,5],
-    [0,1,9,2,3,11,5,10,6],[5,10,6,1,9,2,9,11,2,9,8,11],
-    [6,3,11,6,5,3,5,1,3],[0,8,11,0,11,5,0,5,1,5,11,6],
-    [3,11,6,0,3,6,0,6,5,0,5,9],[6,5,9,6,9,11,11,9,8],
-    [5,10,6,4,7,8],[4,3,0,4,7,3,6,5,10],[1,9,0,5,10,6,8,4,7],
-    [10,6,5,1,9,7,1,7,3,7,9,4],[6,1,2,6,5,1,4,7,8],
-    [1,2,5,5,2,6,3,0,4,3,4,7],[8,4,7,9,0,5,0,6,5,0,2,6],
-    [7,3,9,7,9,4,3,2,9,5,9,6,2,6,9],[3,11,2,7,8,4,10,6,5],
-    [5,10,6,4,7,2,4,2,0,2,7,11],[0,1,9,4,7,8,2,3,11,5,10,6],
-    [9,2,1,9,11,2,9,4,11,7,11,4,5,10,6],[8,4,7,3,11,5,3,5,1,5,11,6],
-    [5,1,11,5,11,6,1,0,11,7,11,4,0,4,11],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7],
-    [6,5,9,6,9,11,4,7,9,7,11,9],[10,4,9,6,4,10],
-    [4,10,6,4,9,10,0,8,3],[10,0,1,10,6,0,6,4,0],
-    [8,3,1,8,1,6,8,6,4,6,1,10],[1,4,9,1,2,4,2,6,4],
-    [3,0,8,1,2,9,2,4,9,2,6,4],[0,2,4,4,2,6],[8,3,2,8,2,4,4,2,6],
-    [10,4,9,10,6,4,11,2,3],[0,8,2,2,8,11,4,9,10,4,10,6],
-    [3,11,2,0,1,6,0,6,4,6,1,10],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1],
-    [9,6,4,9,3,6,9,1,3,11,6,3],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1],
-    [3,11,6,3,6,0,0,6,4],[6,4,8,11,6,8],[7,10,6,7,8,10,8,9,10],
-    [0,7,3,0,10,7,0,9,10,6,7,10],[10,6,7,1,10,7,1,7,8,1,8,0],
-    [10,6,7,10,7,1,1,7,3],[1,2,6,1,6,8,1,8,9,8,6,7],
-    [2,6,9,2,9,1,6,7,9,0,9,3,7,3,9],[7,8,0,7,0,6,6,0,2],
-    [7,3,2,6,7,2],[2,3,11,10,6,8,10,8,9,8,6,7],
-    [2,0,7,2,7,11,0,9,7,6,7,10,9,10,7],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11],
-    [11,2,1,11,1,7,10,6,1,6,7,1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6],
-    [0,9,1,11,6,7],[7,8,0,7,0,6,3,11,0,11,6,0],[7,11,6],
-    [7,6,11],[3,0,8,11,7,6],[0,1,9,11,7,6],[8,1,9,8,3,1,11,7,6],
-    [10,1,2,6,11,7],[1,2,10,3,0,8,6,11,7],[2,9,0,2,10,9,6,11,7],
-    [6,11,7,2,10,3,10,8,3,10,9,8],[7,2,3,6,2,7],[7,0,8,7,6,0,6,2,0],
-    [2,7,3,2,6,7,0,1,9],[1,6,2,1,8,6,1,9,8,8,7,6],
-    [10,7,6,10,1,7,1,3,7],[10,7,6,1,7,10,1,8,7,1,0,8],
-    [0,3,7,0,7,10,0,10,9,6,10,7],[7,6,10,7,10,8,8,10,9],
-    [6,8,4,11,8,6],[3,6,11,3,0,6,0,4,6],[8,6,11,8,4,6,9,0,1],
-    [9,4,6,9,6,3,9,3,1,11,3,6],[6,8,4,6,11,8,2,10,1],
-    [1,2,10,3,0,11,0,6,11,0,4,6],[4,11,8,4,6,11,0,2,9,2,10,9],
-    [10,9,3,10,3,2,9,4,3,11,3,6,4,6,3],[8,2,3,8,4,2,4,6,2],
-    [0,4,2,4,6,2],[1,9,0,2,3,4,2,4,6,4,3,8],[1,9,4,1,4,2,2,4,6],
-    [8,1,3,8,6,1,8,4,6,6,10,1],[10,1,0,10,0,6,6,0,4],
-    [4,6,3,4,3,8,6,10,3,0,3,9,10,9,3],[10,9,4,6,10,4],
-    [4,9,5,7,6,11],[0,8,3,4,9,5,11,7,6],[5,0,1,5,4,0,7,6,11],
-    [11,7,6,8,3,4,3,5,4,3,1,5],[9,5,4,10,1,2,7,6,11],
-    [6,11,7,1,2,10,0,8,3,4,9,5],[7,6,11,5,4,10,4,2,10,4,0,2],
-    [3,4,8,3,5,4,3,2,5,10,5,2,11,7,6],[7,2,3,7,6,2,5,4,9],
-    [9,5,4,0,8,6,0,6,2,6,8,7],[3,6,2,3,7,6,1,5,0,5,4,0],
-    [6,2,8,6,8,7,2,1,8,4,8,5,1,5,8],[9,5,4,10,1,6,1,7,6,1,3,7],
-    [1,6,10,1,7,6,1,0,7,8,7,0,9,5,4],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10],
-    [7,6,10,7,10,8,5,4,10,4,8,10],[6,9,5,6,11,9,11,8,9],
-    [3,6,11,0,6,3,0,5,6,0,9,5],[0,11,8,0,5,11,0,1,5,5,6,11],
-    [6,11,3,6,3,5,5,3,1],[1,2,10,9,5,11,9,11,8,11,5,6],
-    [0,11,3,0,6,11,0,9,6,5,6,9,1,2,10],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],
-    [6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],
-    [9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],
-    [1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],
-    [10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],
-    [11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],
-    [10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],
-    [0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],
-    [7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],
-    [8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],
-    [1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],
-    [0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],
-    [5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],
-    [0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],
-    [2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],
-    [0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],
-    [2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],
-    [3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],
-    [8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],
-    [9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],
-    [1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],
-    [4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],
-    [11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],
-    [2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],
-    [3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],
-    [4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],
-    [4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],
-    [0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],
-    [3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],
-    [2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],
-    [1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]
-  ];
-
-  const EP = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-  const CV = [[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
-
-  const THRESH = 0.15;
-  const verts=[], normals=[], uvs=[], indices=[];
-  const vmap = new Map(); let vIdx = 0;
-  const ctrX=(mnX+mxX)/2, ctrZ=(mnZ+mxZ)/2;
-
-  function interp(p1,p2,v1,v2) {
-    const t = (v1===v2) ? 0.5 : clamp((THRESH-v1)/(v2-v1),0,1);
-    return [p1[0]+(p2[0]-p1[0])*t, p1[1]+(p2[1]-p1[1])*t, p1[2]+(p2[2]-p1[2])*t];
+  function interp(p1,p2,v1,v2){
+    const t=(v1===v2)?0.5:clamp((THRESH-v1)/(v2-v1),0,1);
+    return[p1[0]+(p2[0]-p1[0])*t,p1[1]+(p2[1]-p1[1])*t,p1[2]+(p2[2]-p1[2])*t];
   }
-
-  function vert(p, nx, ny, nz) {
-    const u = 0.5 + Math.atan2(p[2]-ctrZ, p[0]-ctrX)/(2*Math.PI);
-    const v = clamp(1-(p[1]-mnY)/(mxY-mnY), 0, 1);
-    const key = `${(p[0]/dx)|0},${(p[1]/dy)|0},${(p[2]/dz)|0}`;
-    if (vmap.has(key)) return vmap.get(key);
-    vmap.set(key, vIdx);
-    verts.push(p[0],p[1],p[2]); normals.push(nx,ny,nz); uvs.push(u,v);
+  function vert(p,nx,ny,nz){
+    const u=0.5+Math.atan2(p[2]-ctrZ,p[0]-ctrX)/(2*Math.PI);
+    const v=clamp(1-(p[1]-mnY)/(mxY-mnY),0,1);
+    const key=`${(p[0]/dx)|0},${(p[1]/dy)|0},${(p[2]/dz)|0}`;
+    if(vmap.has(key))return vmap.get(key);
+    vmap.set(key,vIdx); verts.push(p[0],p[1],p[2]); normals.push(nx,ny,nz); uvs.push(u,v);
     return vIdx++;
   }
-
-  function getNormal(ix,iy,iz) {
-    const gx = occ2[VI(Math.min(ix+1,RES-1),iy,iz)] - occ2[VI(Math.max(ix-1,0),iy,iz)];
-    const gy = occ2[VI(ix,Math.min(iy+1,RES-1),iz)] - occ2[VI(ix,Math.max(iy-1,0),iz)];
-    const gz = occ2[VI(ix,iy,Math.min(iz+1,RES-1))] - occ2[VI(ix,iy,Math.max(iz-1,0))];
-    const len = Math.sqrt(gx*gx+gy*gy+gz*gz)||1;
-    return [-gx/len,-gy/len,-gz/len];
+  function getNormal(ix,iy,iz){
+    const gx=occ2[VI(Math.min(ix+1,RES-1),iy,iz)]-occ2[VI(Math.max(ix-1,0),iy,iz)];
+    const gy=occ2[VI(ix,Math.min(iy+1,RES-1),iz)]-occ2[VI(ix,Math.max(iy-1,0),iz)];
+    const gz=occ2[VI(ix,iy,Math.min(iz+1,RES-1))]-occ2[VI(ix,iy,Math.max(iz-1,0))];
+    const len=Math.sqrt(gx*gx+gy*gy+gz*gz)||1;
+    return[-gx/len,-gy/len,-gz/len];
   }
 
-  for (let ix=0;ix<RES-1;ix++)
-  for (let iy=0;iy<RES-1;iy++)
-  for (let iz=0;iz<RES-1;iz++) {
-    const vals=[
-      occ2[VI(ix,  iy,  iz  )], occ2[VI(ix+1,iy,  iz  )],
-      occ2[VI(ix+1,iy+1,iz  )], occ2[VI(ix,  iy+1,iz  )],
-      occ2[VI(ix,  iy,  iz+1)], occ2[VI(ix+1,iy,  iz+1)],
-      occ2[VI(ix+1,iy+1,iz+1)], occ2[VI(ix,  iy+1,iz+1)],
-    ];
+  for(let ix=0;ix<RES-1;ix++)
+  for(let iy=0;iy<RES-1;iy++)
+  for(let iz=0;iz<RES-1;iz++){
+    const vals=[occ2[VI(ix,iy,iz)],occ2[VI(ix+1,iy,iz)],occ2[VI(ix+1,iy+1,iz)],occ2[VI(ix,iy+1,iz)],occ2[VI(ix,iy,iz+1)],occ2[VI(ix+1,iy,iz+1)],occ2[VI(ix+1,iy+1,iz+1)],occ2[VI(ix,iy+1,iz+1)]];
     let ci=0;
     for(let c=0;c<8;c++) if(vals[c]>THRESH) ci|=(1<<c);
     if(ci===0||ci===255) continue;
     const et=ET[ci]; if(!et) continue;
-
-    const cp = CV.map(([a,b,c2])=>[mnX+(ix+a)*dx, mnY+(iy+b)*dy, mnZ+(iz+c2)*dz]);
-    const ev = new Array(12);
-    for(let e=0;e<12;e++) {
-      if(!(et&(1<<e))) continue;
-      ev[e]=interp(cp[EP[e][0]], cp[EP[e][1]], vals[EP[e][0]], vals[EP[e][1]]);
-    }
+    const cp=CV.map(([a,b,c2])=>[mnX+(ix+a)*dx,mnY+(iy+b)*dy,mnZ+(iz+c2)*dz]);
+    const ev=new Array(12);
+    for(let e=0;e<12;e++){if(!(et&(1<<e)))continue;ev[e]=interp(cp[EP[e][0]],cp[EP[e][1]],vals[EP[e][0]],vals[EP[e][1]]);}
     const tris=TT[ci]; if(!tris||tris.length===0) continue;
     const nm=getNormal(ix,iy,iz);
-    for(let t=0;t<tris.length;t+=3) {
+    for(let t=0;t<tris.length;t+=3){
       if(ev[tris[t]]===undefined||ev[tris[t+1]]===undefined||ev[tris[t+2]]===undefined) continue;
-      indices.push(
-        vert(ev[tris[t]],   nm[0],nm[1],nm[2]),
-        vert(ev[tris[t+1]], nm[0],nm[1],nm[2]),
-        vert(ev[tris[t+2]], nm[0],nm[1],nm[2])
-      );
+      indices.push(vert(ev[tris[t]],nm[0],nm[1],nm[2]),vert(ev[tris[t+1]],nm[0],nm[1],nm[2]),vert(ev[tris[t+2]],nm[0],nm[1],nm[2]));
     }
   }
-
-  return { verts, normals, uvs, indices, stats:{vCount:vIdx, fCount:Math.floor(indices.length/3)} };
+  return{verts,normals,uvs,indices,stats:{vCount:vIdx,fCount:Math.floor(indices.length/3)}};
 }
 
 /* ─── Texture atlas ───────────────────────────── */
 function buildTextureAtlas() {
   const N=frames.length;
-  // Higher resolution cells for more frames
-  const CELL = N >= 24 ? 384 : N >= 16 ? 320 : 256;
-  const COLS=Math.ceil(Math.sqrt(N)), ROWS=Math.ceil(N/COLS);
+  const CELL=N>=24?384:N>=16?320:256;
+  const COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
   const cv=document.createElement('canvas');
   cv.width=COLS*CELL; cv.height=ROWS*CELL;
   const ctx=cv.getContext('2d');
   ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
   frames.forEach((f,i)=>{
     const img=new Image(); img.src=f.dataURL;
-    const col=i%COLS, row=Math.floor(i/COLS);
-    const s=Math.min(f.w,f.h), ox=(f.w-s)/2, oy=(f.h-s)/2;
-    ctx.drawImage(img, ox,oy,s,s, col*CELL,row*CELL, CELL,CELL);
+    const col=i%COLS,row=Math.floor(i/COLS);
+    const s=Math.min(f.w,f.h),ox=(f.w-s)/2,oy=(f.h-s)/2;
+    ctx.drawImage(img,ox,oy,s,s,col*CELL,row*CELL,CELL,CELL);
   });
   return cv;
 }
 
 /* ─── OBJ export ──────────────────────────────── */
 function buildOBJ() {
-  if (!meshData) return '';
-  const { verts, normals, uvs, indices, stats } = meshData;
-  const lines=[
-    '# SCAN3D — AI Depth-Fusion Export',
-    `# Photos: ${frames.length} | Verts: ${stats.vCount} | Faces: ${stats.fCount}`,
-    'mtllib scan3d.mtl', 'o ScannedObject', '',
-  ];
-  for(let i=0;i<verts.length;i+=3)
-    lines.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
+  if(!meshData) return '';
+  const{verts,normals,uvs,indices,stats}=meshData;
+  const lines=['# SCAN3D — AI Depth-Fusion Export',`# Photos: ${frames.length} | Verts: ${stats.vCount} | Faces: ${stats.fCount}`,'mtllib scan3d.mtl','o ScannedObject',''];
+  for(let i=0;i<verts.length;i+=3) lines.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
   lines.push('');
-  for(let i=0;i<uvs.length;i+=2)
-    lines.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
+  for(let i=0;i<uvs.length;i+=2) lines.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
   lines.push('');
-  for(let i=0;i<normals.length;i+=3)
-    lines.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
+  for(let i=0;i<normals.length;i+=3) lines.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
   lines.push('','usemtl Scanned','s 1','');
-  for(let i=0;i<indices.length;i+=3){
-    const a=indices[i]+1, b=indices[i+1]+1, c=indices[i+2]+1;
-    lines.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);
-  }
+  for(let i=0;i<indices.length;i+=3){const a=indices[i]+1,b=indices[i+1]+1,c=indices[i+2]+1;lines.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);}
   return lines.join('\n');
 }
 
 /* ─── Viewer ──────────────────────────────────── */
 function showViewer() {
-  const pv = $('panelViewer');
-  pv.style.display='block';
-  pv.scrollIntoView({behavior:'smooth'});
-
-  const COLS_v=Math.ceil(Math.sqrt(frames.length)), ROWS_v=Math.ceil(frames.length/COLS_v);
+  const pv=$('panelViewer'); pv.style.display='block'; pv.scrollIntoView({behavior:'smooth'});
+  const COLS_v=Math.ceil(Math.sqrt(frames.length)),ROWS_v=Math.ceil(frames.length/COLS_v);
   $('viewerStats').innerHTML=[
     `<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,
     `<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,
     `<div class="vsl">${frames.length} photos fused</div>`,
     `<div class="vsl">${COLS_v}×${ROWS_v} atlas</div>`,
   ].join('');
-
-  $('btnDownload').onclick = () => {
+  $('btnDownload').onclick=()=>{
     const blob=new Blob([buildOBJ()],{type:'text/plain'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download='scan3d_model.obj'; a.click();
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='scan3d_model.obj'; a.click();
     toast('Model downloaded — open in Blender, MeshLab, etc.');
   };
-  $('btnDownloadTex').onclick = () => {
+  $('btnDownloadTex').onclick=()=>{
     if(!atlasCanvas) return;
-    atlasCanvas.toBlob(blob=>{
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob); a.download='scan3d_texture.png'; a.click();
-      toast('Texture atlas downloaded!');
-    });
+    atlasCanvas.toBlob(blob=>{const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='scan3d_texture.png'; a.click(); toast('Texture atlas downloaded!');});
   };
-
   initThree();
 }
 
 function initThree() {
   const wrap=$('threeCanvas').parentElement;
   const W=wrap.clientWidth, H=wrap.clientHeight;
-
   const scene=new THREE.Scene();
   scene.background=new THREE.Color(0x050709);
   scene.fog=new THREE.FogExp2(0x050709,0.12);
-
   const grid=new THREE.GridHelper(8,24,0x1e2530,0x1e2530);
   grid.position.y=-1.3; scene.add(grid);
-
   const cam=new THREE.PerspectiveCamera(50,W/H,0.01,200);
   cam.position.set(0,0.5,3.5);
-
   const renderer=new THREE.WebGLRenderer({canvas:$('threeCanvas'),antialias:true});
-  renderer.setSize(W,H);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(W,H); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.25;
+  scene.add(new THREE.AmbientLight(0x223344,0.7));
+  const key=new THREE.DirectionalLight(0x00d4aa,2.0); key.position.set(2,3,2); key.castShadow=true; scene.add(key);
+  const fill=new THREE.DirectionalLight(0x0066ff,0.9); fill.position.set(-2,1,-2); scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xffffff,0.5); rim.position.set(0,-2,-3); scene.add(rim);
 
-  scene.add(new THREE.AmbientLight(0x223344, 0.7));
-  const key=new THREE.DirectionalLight(0x00d4aa,2.0);
-  key.position.set(2,3,2); key.castShadow=true; scene.add(key);
-  const fill=new THREE.DirectionalLight(0x0066ff,0.9);
-  fill.position.set(-2,1,-2); scene.add(fill);
-  const rim=new THREE.DirectionalLight(0xffffff,0.5);
-  rim.position.set(0,-2,-3); scene.add(rim);
-
-  // Geometry from real mesh data
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(meshData.verts),3));
   geo.setAttribute('normal',  new THREE.BufferAttribute(new Float32Array(meshData.normals),3));
   geo.setAttribute('uv',      new THREE.BufferAttribute(new Float32Array(meshData.uvs),2));
   geo.setIndex(meshData.indices);
-  geo.computeVertexNormals(); // recompute smooth normals
+  geo.computeVertexNormals();
   geo.computeBoundingBox();
-
-  // Centre + fit
   const centre=new THREE.Vector3(); geo.boundingBox.getCenter(centre);
-  const size=new THREE.Vector3();   geo.boundingBox.getSize(size);
+  const size=new THREE.Vector3(); geo.boundingBox.getSize(size);
   const scale=2.2/Math.max(size.x,size.y,size.z);
-
-  // Remap UVs using angle-blended atlas
   const N=frames.length;
-  const COLS=Math.ceil(Math.sqrt(N)), ROWS=Math.ceil(N/COLS);
+  const COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
   const posArr=geo.attributes.position.array;
   const uvArr=new Float32Array(geo.attributes.uv.array.length);
   const vCount=posArr.length/3;
-
   for(let vi=0;vi<vCount;vi++){
-    const x=posArr[vi*3], z=posArr[vi*3+2];
-    const az=Math.atan2(x,z); // azimuth of this vertex
-    // find best-matching frame angle
-    let best=0, bestD=Infinity;
+    const x=posArr[vi*3],z=posArr[vi*3+2];
+    const az=Math.atan2(x,z);
+    let best=0,bestD=Infinity;
     for(let fi=0;fi<N;fi++){
       const capAz=(fi/N)*Math.PI*2-Math.PI;
       let diff=Math.abs(az-capAz);
@@ -1578,169 +1523,73 @@ function initThree() {
       if(diff<bestD){bestD=diff;best=fi;}
     }
     const origV=geo.attributes.uv.array[vi*2+1];
-    const col=best%COLS, row=Math.floor(best/COLS);
-    uvArr[vi*2]  =(col+0.1+origV*0.8)/COLS;
+    const col=best%COLS,row=Math.floor(best/COLS);
+    uvArr[vi*2]=(col+0.1+origV*0.8)/COLS;
     uvArr[vi*2+1]=(row+0.1+(1-origV)*0.8)/ROWS;
   }
   geo.setAttribute('uv',new THREE.BufferAttribute(uvArr,2));
-
   const atlasTex=new THREE.CanvasTexture(atlasCanvas);
-
   const mat=new THREE.MeshStandardMaterial({map:atlasTex,metalness:0.04,roughness:0.65,side:THREE.DoubleSide});
   const wireMat=new THREE.MeshBasicMaterial({color:0x00d4aa,wireframe:true,transparent:true,opacity:0.55});
-
   const mesh=new THREE.Mesh(geo,mat);
   mesh.position.sub(centre.multiplyScalar(scale));
   mesh.scale.setScalar(scale);
   mesh.castShadow=mesh.receiveShadow=true;
   scene.add(mesh);
 
-  // ── Neon green outline shell ──────────────────────────────
-  // Build edge list: for every triangle, emit each edge only once.
-  // Then render as LineSegments with a glowing green material + a slightly
-  // scaled-out copy for the "halo" glow effect.
-  function buildEdgeLines(geometry) {
-    const pos = geometry.attributes.position.array;
-    const idx = geometry.index ? geometry.index.array : null;
-    const edgeSet = new Set();
-    const lineVerts = [];
-
-    const addEdge = (a, b) => {
-      const key = a < b ? `${a}_${b}` : `${b}_${a}`;
-      if (edgeSet.has(key)) return;
-      edgeSet.add(key);
-      lineVerts.push(
-        pos[a*3], pos[a*3+1], pos[a*3+2],
-        pos[b*3], pos[b*3+1], pos[b*3+2]
-      );
-    };
-
-    const faceCount = idx ? idx.length / 3 : pos.length / 9;
-    for (let f = 0; f < faceCount; f++) {
-      const a = idx ? idx[f*3]   : f*3;
-      const b = idx ? idx[f*3+1] : f*3+1;
-      const c = idx ? idx[f*3+2] : f*3+2;
-      addEdge(a, b); addEdge(b, c); addEdge(c, a);
-    }
-
-    const geo2 = new THREE.BufferGeometry();
-    geo2.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVerts), 3));
+  function buildEdgeLines(geometry){
+    const pos=geometry.attributes.position.array;
+    const idx=geometry.index?geometry.index.array:null;
+    const edgeSet=new Set(),lineVerts=[];
+    const addEdge=(a,b)=>{const key=a<b?`${a}_${b}`:`${b}_${a}`;if(edgeSet.has(key))return;edgeSet.add(key);lineVerts.push(pos[a*3],pos[a*3+1],pos[a*3+2],pos[b*3],pos[b*3+1],pos[b*3+2]);};
+    const faceCount=idx?idx.length/3:pos.length/9;
+    for(let f=0;f<faceCount;f++){const a=idx?idx[f*3]:f*3,b=idx?idx[f*3+1]:f*3+1,c=idx?idx[f*3+2]:f*3+2;addEdge(a,b);addEdge(b,c);addEdge(c,a);}
+    const geo2=new THREE.BufferGeometry();
+    geo2.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lineVerts),3));
     return geo2;
   }
+  const edgeGeo=buildEdgeLines(geo);
+  const neonMat=new THREE.LineBasicMaterial({color:0x00ff41,transparent:true,opacity:1.0,depthTest:false,depthWrite:false});
+  const neonLines=new THREE.LineSegments(edgeGeo,neonMat);
+  neonLines.position.copy(mesh.position); neonLines.scale.copy(mesh.scale); neonLines.renderOrder=999; scene.add(neonLines);
+  const haloMat=new THREE.LineBasicMaterial({color:0x00ff88,transparent:true,opacity:0.55,depthTest:false,depthWrite:false});
+  const haloLines=new THREE.LineSegments(edgeGeo,haloMat);
+  haloLines.position.copy(mesh.position); haloLines.scale.copy(mesh.scale).multiplyScalar(1.012); haloLines.renderOrder=998; scene.add(haloLines);
+  const bloomMat=new THREE.LineBasicMaterial({color:0x44ffaa,transparent:true,opacity:0.18,depthTest:false,depthWrite:false});
+  const bloomLines=new THREE.LineSegments(edgeGeo,bloomMat);
+  bloomLines.position.copy(mesh.position); bloomLines.scale.copy(mesh.scale).multiplyScalar(1.032); bloomLines.renderOrder=997; scene.add(bloomLines);
 
-  const edgeGeo = buildEdgeLines(geo);
-
-  // Core neon line — always on top (depthTest: false), full brightness
-  const neonMat = new THREE.LineBasicMaterial({
-    color: 0x00ff41,
-    transparent: true,
-    opacity: 1.0,
-    depthTest: false,   // draws on top of everything
-    depthWrite: false,
-  });
-  const neonLines = new THREE.LineSegments(edgeGeo, neonMat);
-  neonLines.position.copy(mesh.position);
-  neonLines.scale.copy(mesh.scale);
-  neonLines.renderOrder = 999;  // render last = always on top
-  scene.add(neonLines);
-
-  // Inner glow — slightly larger, also on top
-  const haloMat = new THREE.LineBasicMaterial({
-    color: 0x00ff88,
-    transparent: true,
-    opacity: 0.55,
-    depthTest: false,
-    depthWrite: false,
-  });
-  const haloLines = new THREE.LineSegments(edgeGeo, haloMat);
-  haloLines.position.copy(mesh.position);
-  haloLines.scale.copy(mesh.scale).multiplyScalar(1.012);
-  haloLines.renderOrder = 998;
-  scene.add(haloLines);
-
-  // Outer bloom — widest spread, most transparent
-  const bloomMat = new THREE.LineBasicMaterial({
-    color: 0x44ffaa,
-    transparent: true,
-    opacity: 0.18,
-    depthTest: false,
-    depthWrite: false,
-  });
-  const bloomLines = new THREE.LineSegments(edgeGeo, bloomMat);
-  bloomLines.position.copy(mesh.position);
-  bloomLines.scale.copy(mesh.scale).multiplyScalar(1.032);
-  bloomLines.renderOrder = 997;
-  scene.add(bloomLines);
-
-  tlog('Neon outline: ' + (edgeGeo.attributes.position.count/2).toLocaleString() + ' edges · 3-layer glow');
-
-  // Viewer toolbar
-  let wireframe=false, showTex=true, showNeon=true, autoRot=true, autoAngle=0;
-  $('vtbWire').onclick=()=>{
-    wireframe=!wireframe; mesh.material=wireframe?wireMat:mat;
-    $('vtbWire').classList.toggle('on',wireframe);
-  };
-  $('vtbTex').onclick=()=>{
-    showTex=!showTex; mat.map=showTex?atlasTex:null; mat.needsUpdate=true;
-    $('vtbTex').classList.toggle('on',showTex);
-  };
-  $('vtbNeon').onclick=()=>{
-    showNeon=!showNeon;
-    neonLines.visible=haloLines.visible=bloomLines.visible=showNeon;
-    $('vtbNeon').classList.toggle('on',showNeon);
-  };
-  $('vtbRot').onclick=()=>{ autoRot=!autoRot; $('vtbRot').classList.toggle('on',autoRot); };
+  let wireframe=false,showTex=true,showNeon=true,autoRot=true,autoAngle=0;
+  $('vtbWire').onclick=()=>{wireframe=!wireframe;mesh.material=wireframe?wireMat:mat;$('vtbWire').classList.toggle('on',wireframe);};
+  $('vtbTex').onclick=()=>{showTex=!showTex;mat.map=showTex?atlasTex:null;mat.needsUpdate=true;$('vtbTex').classList.toggle('on',showTex);};
+  $('vtbNeon').onclick=()=>{showNeon=!showNeon;neonLines.visible=haloLines.visible=bloomLines.visible=showNeon;$('vtbNeon').classList.toggle('on',showNeon);};
+  $('vtbRot').onclick=()=>{autoRot=!autoRot;$('vtbRot').classList.toggle('on',autoRot);};
   $('vtbTex').classList.add('on');
 
-  // Orbit
   let down=false,rdown=false,lx=0,ly=0;
   let rotX=0,rotY=0,panX=0,panY=0,zoom=3.5;
   const cv=$('threeCanvas');
-
-  cv.onpointerdown=e=>{
-    down=true; rdown=e.button===2;
-    lx=e.clientX; ly=e.clientY; autoRot=false; $('vtbRot').classList.remove('on');
-    e.preventDefault();
-  };
-  window.addEventListener('pointermove',e=>{
-    if(!down) return;
-    const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
-    if(rdown){panX+=dx*0.003;panY-=dy*0.003;}
-    else{rotY+=dx*0.38; rotX=clamp(rotX+dy*0.38,-82,82);}
-  });
+  cv.onpointerdown=e=>{down=true;rdown=e.button===2;lx=e.clientX;ly=e.clientY;autoRot=false;$('vtbRot').classList.remove('on');e.preventDefault();};
+  window.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;if(rdown){panX+=dx*0.003;panY-=dy*0.003;}else{rotY+=dx*0.38;rotX=clamp(rotX+dy*0.38,-82,82);}});
   window.addEventListener('pointerup',()=>down=false);
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   cv.addEventListener('wheel',e=>{zoom=clamp(zoom+e.deltaY*0.005,0.4,10);},{passive:true});
-  window.addEventListener('resize',()=>{
-    const w=wrap.clientWidth,h=wrap.clientHeight;
-    cam.aspect=w/h; cam.updateProjectionMatrix(); renderer.setSize(w,h);
-  });
+  window.addEventListener('resize',()=>{const w=wrap.clientWidth,h=wrap.clientHeight;cam.aspect=w/h;cam.updateProjectionMatrix();renderer.setSize(w,h);});
 
   (function animate(){
     requestAnimationFrame(animate);
     if(autoRot) autoAngle+=0.28;
-    const ry=(rotY+autoAngle)*Math.PI/180, rx=rotX*Math.PI/180;
-    cam.position.set(
-      Math.sin(ry)*Math.cos(rx)*zoom+panX,
-      Math.sin(rx)*zoom+panY,
-      Math.cos(ry)*Math.cos(rx)*zoom
-    );
+    const ry=(rotY+autoAngle)*Math.PI/180,rx=rotX*Math.PI/180;
+    cam.position.set(Math.sin(ry)*Math.cos(rx)*zoom+panX,Math.sin(rx)*zoom+panY,Math.cos(ry)*Math.cos(rx)*zoom);
     cam.lookAt(panX,panY,0);
-    // Pulse neon opacity gently
-    if(showNeon){
-      const t=Date.now()*0.0018;
-      neonMat.opacity  = 0.88 + Math.sin(t)*0.12;
-      haloMat.opacity  = 0.42 + Math.sin(t+1)*0.13;
-      bloomMat.opacity = 0.13 + Math.sin(t+2)*0.06;
-    }
+    if(showNeon){const t=Date.now()*0.0018;neonMat.opacity=0.88+Math.sin(t)*0.12;haloMat.opacity=0.42+Math.sin(t+1)*0.13;bloomMat.opacity=0.13+Math.sin(t+2)*0.06;}
     renderer.render(scene,cam);
   })();
 }
 
 /* ─── Reset ───────────────────────────────────── */
 function doReset() {
-  cancelCapture();
-  stopOutlineLoop();
+  cancelCapture(); stopOutlineLoop();
   frames=[]; depthMaps=[]; meshData=null; atlasCanvas=null;
   $('frameStrip').innerHTML='';
   $('captureProgress').classList.remove('show');
@@ -1755,10 +1604,8 @@ function doReset() {
   $('btnReset').style.display='none';
   $('slFrames').disabled=$('slInterval').disabled=false;
   $('btnStopCam').style.display=stream?'inline-flex':'none';
-  $('hudCount') && ($('hudCount').textContent='0 photos');
-  $('hudInstruction').textContent=stream?'Centre object in ring · press Start Scanning':'Enable camera to begin';
-  $('hudRing').classList.remove('active');
-  if (stream) startOutlineLoop();
+  $('hudInstruction').textContent=stream?'Point at object · green outline will appear':'Enable camera to begin';
+  if(stream) startOutlineLoop();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1766,7 +1613,6 @@ $('btnStartScan').onclick=startScan;
 $('btnReset').onclick=doReset;
 $('btnNewScan').onclick=doReset;
 
-/* ─── Boot ─────────────────────────────────────── */
 (async()=>{
   if(navigator.mediaDevices?.getUserMedia){
     try{ await startCamera(); }catch(e){}
