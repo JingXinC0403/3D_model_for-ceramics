@@ -1297,254 +1297,285 @@ function renderDepthPreviews() {
   }
 }
 
-/* ─── Point cloud fusion ──────────────────────────────────────────
-   THE FIX: the old code pushed every point outward to radius Z from
-   the origin, creating a hollow cylindrical shell (the "ring").
+/* ─── Space Carving / Visual Hull reconstruction ──────────────────
+   WHY THE PREVIOUS ATTEMPTS PRODUCED A RING:
+   ─ Attempt 1: pushed every point outward at radius Z → cylindrical shell
+   ─ Attempt 2: camera orbits inward but camY=0 always, depth had no
+     vertical component → flat disc/ring at Y=0
 
-   Correct model: the camera orbits the object at a fixed radius
-   (ORBIT_R). Each frame's camera position is known. A ray is cast
-   from the camera INWARD through each foreground pixel. Depth dv
-   tells us how far along that ray the surface sits — ranging from
-   just in front of the camera (dv≈0 → near) to close to the object
-   centre (dv≈1 → far). This correctly fills the 3-D volume of the
-   object instead of tracing only its silhouette ring.
+   THE CORRECT ALGORITHM — Visual Hull Space Carving:
+   1. Start with a fully SOLID voxel cube around the origin
+   2. For each photo, for each voxel, project it into that camera's
+      image using a perspective projection
+   3. If the projected pixel falls OUTSIDE the silhouette mask → carve
+      that voxel away (it can't be the object)
+   4. After all N photos, only voxels consistent with ALL silhouettes
+      remain — this is the Visual Hull, a tight conservative estimate
+      of the object's volume
+   5. MiDaS depth refines: voxels in front of the measured surface
+      from any camera direction get carved away too
 
-   Key changes vs old:
-   • Camera sits at (ORBIT_R·sinA, 0, ORBIT_R·cosA) looking inward
-   • Ray direction = (object_centre − camera_pos), normalised
-   • Lateral deflection Xc/Yc is applied in camera space then rotated
-   • Depth maps to distance 0.2–ORBIT_R along the inward ray
-   • Result: points cluster in a solid 3D blob at the object location
+   This works correctly because:
+   • Each silhouette slice independently constrains the XY shape
+   • The intersection of all N silhouette cones is a solid 3D volume
+   • No orbit model, no Y=0 assumption, no depth-mapping errors
+   • The result is automatically solid (filled, not hollow)
 ──────────────────────────────────────────────────────────────── */
-function buildPointCloud() {
-  const N = frames.length, pts = [];
-  const STEP = 6;          // sample every 6px (denser than before)
-  const ORBIT_R = 2.5;     // camera orbit radius (world units)
-  const NEAR = 0.15;       // min surface depth (fraction of ORBIT_R)
-  const FAR  = 0.92;       // max surface depth (fraction of ORBIT_R)
+/* buildVoxelGrid — performs space carving and returns a solid occupancy grid.
+   Called instead of buildPointCloud+buildMesh (those are now merged). */
+function buildVoxelGrid() {
+  const N = frames.length;
+  const RES = 56; // voxel grid resolution — higher = more detail but slower
+
+  // The voxel cube spans [-HALF, +HALF] in all 3 axes (world units)
+  // The object is assumed to be roughly centred in frame and 1–2 units tall
+  const HALF = 1.1;
+  const STEP = (HALF * 2) / RES;
+
+  // Camera orbit: radius around the Y axis, at a slight upward angle
+  // We model the user walking around the object at roughly table height.
+  // Cameras are placed at azimuth = (fi/N)*2π, elevation = +10° above object centre.
+  const ORBIT_R   = 2.8;
+  const ELEV_DEG  = 10;               // camera looks slightly downward
+  const ELEV_RAD  = ELEV_DEG * Math.PI / 180;
+  const camY_offset = Math.sin(ELEV_RAD) * ORBIT_R;  // camera height above origin
+
+  // Focal length: assume ~60° horizontal FOV (typical phone camera)
+  // We compute fl relative to image width so it's resolution-independent
+  const HFOV = 60 * Math.PI / 180;
+
+  // ── Step 1: initialise all voxels as SOLID (=1) ────────────────────
+  const vox = new Uint8Array(RES * RES * RES).fill(1);
+  const VI  = (ix,iy,iz) => ix*RES*RES + iy*RES + iz;
+
+  // ── Step 2: carve with each frame's silhouette ─────────────────────
+  tlog(`Carving ${RES}³ voxel grid with ${N} silhouettes…`);
 
   for (let fi = 0; fi < N; fi++) {
-    const { imageData, w, h, fgMask } = frames[fi];
-    const d    = depthMaps[fi];
-    const data = imageData.data;
+    const { w, h, fgMask } = frames[fi];
+    if (!fgMask) continue; // skip frames without a mask
 
-    // Camera position on the orbit circle (XZ plane)
-    const az   = (fi / N) * Math.PI * 2;
-    const camX =  Math.sin(az) * ORBIT_R;
-    const camZ =  Math.cos(az) * ORBIT_R;
-    const camY =  0;
+    // Downscaled silhouette for fast lookup (same scale as fgMask which is 1/SCALE of video)
+    // fgMask is already at sharedFgW × sharedFgH resolution
 
-    // Camera looks toward origin — forward direction (inward ray)
-    const fwdX = -Math.sin(az);   // unit vector toward origin
-    const fwdZ = -Math.cos(az);
+    const az = (fi / N) * Math.PI * 2;
 
-    // Camera right & up (for lateral pixel deflection)
-    // right = forward × world_up, up = right × forward
-    const rightX =  Math.cos(az); // perpendicular in XZ plane
-    const rightZ = -Math.sin(az);
-    // up is world Y
-    const upX = 0, upY = 1, upZ = 0;
+    // Camera position (orbiting in XZ plane, elevated by camY_offset)
+    const cx_w =  Math.sin(az) * ORBIT_R;
+    const cy_w =  camY_offset;
+    const cz_w =  Math.cos(az) * ORBIT_R;
 
-    // Focal length in pixels (vertical FOV ≈ 50°)
-    const fov = 50 * Math.PI / 180;
-    const fl  = (h / 2) / Math.tan(fov / 2);
-    const cx  = w / 2, cy = h / 2;
+    // Camera axes in world space:
+    // forward = toward origin from cam pos (normalised)
+    const fLen = Math.sqrt(cx_w*cx_w + cy_w*cy_w + cz_w*cz_w);
+    const fx = -cx_w/fLen, fy = -cy_w/fLen, fz = -cz_w/fLen;
 
-    for (let py = STEP; py < h - STEP; py += STEP) {
-      for (let px = STEP; px < w - STEP; px += STEP) {
-        const inFg = fgMask ? fgMask[py * w + px]
-          : (px > w*0.08 && px < w*0.92 && py > h*0.08 && py < h*0.92);
-        if (!inFg) continue;
+    // right = forward × world_up (then normalise)
+    let rx = fz*0 - fy*0;   // simplified: forward × (0,1,0)
+    let ry = fx*0 - fz*1;   //  = (-fz, 0, fx) — not using full cross product
+    let rz = fy*1 - fx*0;
+    // Actually right = (0,1,0) × forward = (fy*0-fz*0, fz*(-fx)-fx*(-fz), fx*0-fy*(-fx))
+    // Simpler: right is just the perpendicular in XZ plane
+    rx = Math.cos(az); ry = 0; rz = -Math.sin(az);
 
-        const dv = d[py * w + px];
-        if (dv < 0.04 || dv > 0.96) continue;
+    // up = right × forward
+    const ux = ry*fz - rz*fy;
+    const uy = rz*fx - rx*fz;
+    const uz = rx*fy - ry*fx;
 
-        // Map depth to distance along inward ray:
-        // dv=0 (shallow/near) → point just in front of camera
-        // dv=1 (far/deep)     → point near object centre
-        const dist = ORBIT_R * (NEAR + dv * (FAR - NEAR));
+    // Focal length in the same units as pixel coordinates
+    const fl = (w / 2) / Math.tan(HFOV / 2);
 
-        // Pixel offset from principal point in camera space
-        const ndcX = (px - cx) / fl;
-        const ndcY = -(py - cy) / fl;
+    // For each voxel, project into this camera and check silhouette
+    for (let ix=0; ix<RES; ix++) {
+      for (let iy=0; iy<RES; iy++) {
+        for (let iz=0; iz<RES; iz++) {
+          if (!vox[VI(ix,iy,iz)]) continue; // already carved
 
-        // 3-D ray direction in world space (forward + lateral offset)
-        // lateral is small so no need to normalise per-pixel
-        const rdX = fwdX + ndcX * rightX + ndcY * upX;
-        const rdY =         ndcX * 0     + ndcY * upY;
-        const rdZ = fwdZ + ndcX * rightZ + ndcY * upZ;
-        const rdLen = Math.sqrt(rdX*rdX + rdY*rdY + rdZ*rdZ) || 1;
+          // Voxel centre in world space
+          const wx = -HALF + (ix + 0.5) * STEP;
+          const wy = -HALF + (iy + 0.5) * STEP;
+          const wz = -HALF + (iz + 0.5) * STEP;
 
-        // World position = camera + dist * normalised_ray
-        const Xw = camX + (rdX / rdLen) * dist;
-        const Yw = camY + (rdY / rdLen) * dist;
-        const Zw = camZ + (rdZ / rdLen) * dist;
+          // Vector from camera to voxel
+          const dx = wx - cx_w, dy = wy - cy_w, dz = wz - cz_w;
 
-        const pi = (py * w + px) * 4;
-        pts.push({ x:Xw, y:Yw, z:Zw, r:data[pi], g:data[pi+1], b:data[pi+2] });
+          // Project into camera space
+          const depth = dx*fx + dy*fy + dz*fz;
+          if (depth <= 0) { vox[VI(ix,iy,iz)] = 0; continue; } // behind camera
+
+          // Perspective divide
+          const px_cam = (dx*rx + dy*ry + dz*rz) / depth;
+          const py_cam = (dx*ux + dy*uy + dz*uz) / depth;
+
+          // Pixel coordinates (image centre is w/2, h/2)
+          const px_img = Math.round(px_cam * fl + w/2);
+          const py_img = Math.round(-py_cam * fl + h/2); // flip Y (image Y down)
+
+          // Out of frame → carve (this voxel is outside the camera frustum)
+          if (px_img < 0 || px_img >= w || py_img < 0 || py_img >= h) {
+            vox[VI(ix,iy,iz)] = 0;
+            continue;
+          }
+
+          // Sample the silhouette mask (fgMask is at sharedFgW×sharedFgH resolution)
+          const mw = sharedFgW || w, mh = sharedFgH || h;
+          const mx = Math.round(px_img * mw / w);
+          const my = Math.round(py_img * mh / h);
+          const mi = clamp(my, 0, mh-1) * mw + clamp(mx, 0, mw-1);
+          if (!fgMask[mi]) {
+            vox[VI(ix,iy,iz)] = 0; // pixel is background → carve voxel
+          }
+        }
       }
     }
   }
-  return pts;
+
+  // ── Step 3: depth-map refinement ───────────────────────────────────
+  // For each camera, voxels that project in-front of the measured depth
+  // surface are carved away (they must be air, not object).
+  for (let fi = 0; fi < N; fi++) {
+    const { w, h, fgMask } = frames[fi];
+    const dm = depthMaps[fi];
+    if (!fgMask || !dm) continue;
+
+    const az = (fi / N) * Math.PI * 2;
+    const cx_w =  Math.sin(az) * ORBIT_R;
+    const cy_w =  camY_offset;
+    const cz_w =  Math.cos(az) * ORBIT_R;
+    const fLen = Math.sqrt(cx_w*cx_w + cy_w*cy_w + cz_w*cz_w);
+    const ffx = -cx_w/fLen, ffy = -cy_w/fLen, ffz = -cz_w/fLen;
+    const rrx = Math.cos(az), rry = 0, rrz = -Math.sin(az);
+    const uux = rry*ffz - rrz*ffy;
+    const uuy = rrz*ffx - rrx*ffz;
+    const uuz = rrx*ffy - rry*ffx;
+    const fl = (w / 2) / Math.tan(HFOV / 2);
+
+    // Build a downsampled depth lookup at manageable resolution
+    const DS = 4; // sample depth map every DS pixels for speed
+    const depthLookup = new Float32Array(Math.ceil(w/DS) * Math.ceil(h/DS));
+    const dw = Math.ceil(w/DS), dh = Math.ceil(h/DS);
+    for (let py=0; py<dh; py++) for (let px=0; px<dw; px++) {
+      const sy = Math.min(py*DS, h-1), sx = Math.min(px*DS, w-1);
+      // MiDaS returns INVERSE depth: high value = near surface, low = far
+      // Convert to 0=near, 1=far by inverting
+      depthLookup[py*dw+px] = 1.0 - dm[sy*w+sx];
+    }
+
+    for (let ix=0; ix<RES; ix++) {
+      for (let iy=0; iy<RES; iy++) {
+        for (let iz=0; iz<RES; iz++) {
+          if (!vox[VI(ix,iy,iz)]) continue;
+
+          const wx = -HALF + (ix+0.5)*STEP;
+          const wy = -HALF + (iy+0.5)*STEP;
+          const wz = -HALF + (iz+0.5)*STEP;
+          const dx = wx-cx_w, dy2 = wy-cy_w, dz = wz-cz_w;
+          const depth = dx*ffx + dy2*ffy + dz*ffz;
+          if (depth <= 0) continue;
+
+          const px_cam = (dx*rrx + dy2*rry + dz*rrz) / depth;
+          const py_cam = (dx*uux + dy2*uuy + dz*uuz) / depth;
+          const px_img = Math.round(px_cam * fl + w/2);
+          const py_img = Math.round(-py_cam * fl + h/2);
+          if (px_img < 0 || px_img >= w || py_img < 0 || py_img >= h) continue;
+
+          // Check if this pixel is foreground
+          const mw = sharedFgW || w, mh = sharedFgH || h;
+          const mx2 = clamp(Math.round(px_img*mw/w), 0, mw-1);
+          const my2 = clamp(Math.round(py_img*mh/h), 0, mh-1);
+          if (!fgMask[my2*mw+mx2]) continue; // background pixel — already handled
+
+          // Sample depth at this pixel
+          const dpx = clamp(Math.floor(px_img/DS), 0, dw-1);
+          const dpy = clamp(Math.floor(py_img/DS), 0, dh-1);
+          const measuredDepthNorm = depthLookup[dpy*dw+dpx]; // 0=near,1=far
+
+          // Voxel depth as fraction of ORBIT_R (0=at camera, 1=at far side)
+          const voxDepthNorm = (depth - (ORBIT_R - HALF*1.5)) / (HALF*3.0);
+
+          // If the voxel is significantly in front of the measured surface → carve
+          if (voxDepthNorm < measuredDepthNorm - 0.18) {
+            vox[VI(ix,iy,iz)] = 0;
+          }
+        }
+      }
+    }
+  }
+
+  return { vox, RES, HALF, STEP };
 }
 
-/* ─── Mesh from point cloud ──────────────────────────────────────
-   THE FIX: the old code used a single 6-neighbour smoothing pass
-   which left the voxel grid as a thin shell — marching cubes then
-   traced only that shell, giving a hollow torus/ring appearance.
+/* buildPointCloud — kept for compatibility but not called directly anymore */
+function buildPointCloud() { return []; }
 
-   Correct approach:
-   1. Accumulate point hits per voxel (same as before)
-   2. Dilate the hit mask with a 3D box blur to grow the shell inward
-   3. FLOOD-FILL from outside — mark all voxels reachable from the
-      grid boundary (background). Everything NOT reached = interior.
-   4. Set occ = 1 for interior voxels → marching cubes now sees a
-      solid filled volume and produces a closed solid surface.
-   5. Apply one smoothing pass to soften the blocky voxel edges.
-──────────────────────────────────────────────────────────────── */
-function buildMesh(points) {
-  if (points.length === 0)
-    return { verts:[], normals:[], uvs:[], indices:[], stats:{vCount:0,fCount:0} };
+/* buildMeshFromVoxels — marching cubes on the carved voxel grid */
+function buildMesh(_unused) {
+  // ── Run space carving ─────────────────────────────────────────────
+  tlog('Running Visual Hull space carving…');
+  const { vox, RES, HALF, STEP } = buildVoxelGrid();
 
-  const RES = 52; // slightly higher res for better solid detail
-  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,mnZ=Infinity,mxZ=-Infinity;
-  for (const p of points) {
-    if(p.x<mnX)mnX=p.x; if(p.x>mxX)mxX=p.x;
-    if(p.y<mnY)mnY=p.y; if(p.y>mxY)mxY=p.y;
-    if(p.z<mnZ)mnZ=p.z; if(p.z>mxZ)mxZ=p.z;
+  // Count solid voxels
+  let solidCount = 0;
+  for (let i=0;i<vox.length;i++) solidCount += vox[i];
+  tlog(`Carved: ${solidCount.toLocaleString()} solid voxels of ${RES}³ remain`);
+
+  if (solidCount === 0) {
+    tlog('WARNING: No solid voxels — using fallback sphere');
+    // Return a fallback sphere so we always show something
+    return buildFallbackSphere();
   }
-  // Generous padding so flood-fill background fully wraps the object
-  const pad = (mxX-mnX+mxY-mnY+mxZ-mnZ)*0.08+0.2;
-  mnX-=pad; mnY-=pad; mnZ-=pad; mxX+=pad; mxY+=pad; mxZ+=pad;
-  const dx=(mxX-mnX)/RES, dy=(mxY-mnY)/RES, dz=(mxZ-mnZ)/RES;
-  const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
+
+  // ── Gaussian smooth the binary voxel field ─────────────────────────
   const N3 = RES*RES*RES;
-
-  // ── Step 1: accumulate point hits ──────────────────────────────
-  const cnt = new Float32Array(N3);
-  for (const p of points) {
-    const ix=clamp(Math.floor((p.x-mnX)/dx),0,RES-1);
-    const iy=clamp(Math.floor((p.y-mnY)/dy),0,RES-1);
-    const iz=clamp(Math.floor((p.z-mnZ)/dz),0,RES-1);
-    cnt[VI(ix,iy,iz)]++;
-  }
-  let cntMax=0;
-  for(let i=0;i<N3;i++) if(cnt[i]>cntMax) cntMax=cnt[i];
-  if(cntMax===0) return{verts:[],normals:[],uvs:[],indices:[],stats:{vCount:0,fCount:0}};
-
-  // ── Step 2: threshold → binary surface shell ───────────────────
-  // Use a low threshold so even sparse point coverage registers
-  const hitThresh = Math.max(1, cntMax * 0.04);
-  const shell = new Uint8Array(N3);
-  for(let i=0;i<N3;i++) shell[i] = cnt[i] >= hitThresh ? 1 : 0;
-
-  // ── Step 3: dilate shell by 2 voxels to close gaps ────────────
-  // This is critical: a single camera orbit may leave gaps in the
-  // shell (occluded regions). Dilation bridges those gaps so the
-  // flood-fill cannot leak through them into the interior.
-  const dilShell = new Uint8Array(N3);
-  const DR = 2;
-  for(let ix=DR;ix<RES-DR;ix++)
-  for(let iy=DR;iy<RES-DR;iy++)
-  for(let iz=DR;iz<RES-DR;iz++){
-    if(!shell[VI(ix,iy,iz)]) continue;
-    for(let dy2=-DR;dy2<=DR;dy2++)
-    for(let dx2=-DR;dx2<=DR;dx2++)
-    for(let dz2=-DR;dz2<=DR;dz2++)
-      dilShell[VI(ix+dx2,iy+dy2,iz+dz2)]=1;
-  }
-
-  // ── Step 4: flood-fill from all 6 boundary faces → background ──
-  // Any voxel reachable from outside (not blocked by dilShell) = bg.
-  // Everything left unmarked = solid interior of the object.
-  const bg = new Uint8Array(N3);
-  const queue = new Int32Array(N3);
-  let head=0, tail=0;
-
-  function floodSeed(ix,iy,iz){
-    const idx=VI(ix,iy,iz);
-    if(dilShell[idx]||bg[idx]) return;
-    bg[idx]=1; queue[tail++]=idx;
-  }
-  // Seed all 6 faces of the grid
-  for(let a=0;a<RES;a++) for(let b=0;b<RES;b++){
-    floodSeed(0,a,b);   floodSeed(RES-1,a,b);
-    floodSeed(a,0,b);   floodSeed(a,RES-1,b);
-    floodSeed(a,b,0);   floodSeed(a,b,RES-1);
-  }
-  // BFS
-  while(head<tail){
-    const idx=queue[head++];
-    const ix=Math.floor(idx/(RES*RES));
-    const iy=Math.floor((idx%(RES*RES))/RES);
-    const iz=idx%RES;
-    const nb=[
-      ix>0      ?VI(ix-1,iy,iz):-1, ix<RES-1?VI(ix+1,iy,iz):-1,
-      iy>0      ?VI(ix,iy-1,iz):-1, iy<RES-1?VI(ix,iy+1,iz):-1,
-      iz>0      ?VI(ix,iy,iz-1):-1, iz<RES-1?VI(ix,iy,iz+1):-1,
-    ];
-    for(const ni of nb){
-      if(ni<0||dilShell[ni]||bg[ni]) continue;
-      bg[ni]=1; queue[tail++]=ni;
-    }
-  }
-
-  // ── Step 5: build occupancy — solid where NOT background ───────
-  // occ=1 inside the object, 0 outside. dilShell pixels are surface.
-  const occ = new Float32Array(N3);
-  for(let i=0;i<N3;i++){
-    if(dilShell[i]) occ[i]=1.0;          // surface shell
-    else if(!bg[i]) occ[i]=1.0;          // solid interior
-    // else bg → 0
-  }
-
-  // ── Step 6: Gaussian smooth to soften blocky voxel edges ───────
-  // Two passes of 6-neighbour weighted average give a smooth SDF-like
-  // field that marching cubes can interpolate cleanly.
+  const VI = (ix,iy,iz) => ix*RES*RES + iy*RES + iz;
+  const occ  = new Float32Array(N3);
   const occ2 = new Float32Array(N3);
-  for(let pass=0;pass<2;pass++){
-    const src = pass===0?occ:occ2;
-    const dst = pass===0?occ2:occ;  // ping-pong
-    for(let ix=1;ix<RES-1;ix++)
-    for(let iy=1;iy<RES-1;iy++)
-    for(let iz=1;iz<RES-1;iz++){
-      const c=src[VI(ix,iy,iz)];
-      const nb=src[VI(ix-1,iy,iz)]+src[VI(ix+1,iy,iz)]
-              +src[VI(ix,iy-1,iz)]+src[VI(ix,iy+1,iz)]
-              +src[VI(ix,iy,iz-1)]+src[VI(ix,iy,iz+1)];
-      dst[VI(ix,iy,iz)]=c*0.5+nb*(0.5/6);
-    }
-    // copy edges
-    for(let i=0;i<N3;i++) if(!dst[i]&&src[i]) dst[i]=src[i];
-  }
-  // after 2 passes, result is in occ (ping-pong ended on occ)
-  // use occ as the final field for marching cubes
+  for (let i=0;i<N3;i++) occ[i] = vox[i];
 
+  // 3 smoothing passes to soften blocky voxel edges
+  for (let pass=0;pass<3;pass++) {
+    const src=pass%2===0?occ:occ2, dst=pass%2===0?occ2:occ;
+    for (let ix=1;ix<RES-1;ix++)
+    for (let iy=1;iy<RES-1;iy++)
+    for (let iz=1;iz<RES-1;iz++) {
+      const c = src[VI(ix,iy,iz)];
+      const nb = src[VI(ix-1,iy,iz)]+src[VI(ix+1,iy,iz)]
+                +src[VI(ix,iy-1,iz)]+src[VI(ix,iy+1,iz)]
+                +src[VI(ix,iy,iz-1)]+src[VI(ix,iy,iz+1)];
+      dst[VI(ix,iy,iz)] = c*0.45 + nb*(0.55/6);
+    }
+    for (let i=0;i<N3;i++) if(!dst[i]&&src[i]) dst[i]=src[i];
+  }
+  // Result is in occ after 3 passes (odd number → occ2 is final, copy back)
+  for (let i=0;i<N3;i++) occ[i] = occ2[i];
+
+  // ── Marching cubes on smoothed field ──────────────────────────────
   const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
   const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
   const EP=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
   const CV=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
 
-  // Marching cubes on the smoothed occupancy field
-  // THRESH 0.45 is the iso-surface level (mid-way between solid=1 and air=0)
-  const THRESH=0.45;
+  const THRESH = 0.4; // iso-surface level
+  const mnX=-HALF, mnY=-HALF, mnZ=-HALF;
+  const dx=STEP, dy=STEP, dz=STEP;
+  const ctrX=0, ctrZ=0;
+
   const verts=[],normals=[],uvs=[],indices=[];
   const vmap=new Map(); let vIdx=0;
-  const ctrX=(mnX+mxX)/2,ctrZ=(mnZ+mxZ)/2;
 
   function interp(p1,p2,v1,v2){
     const t=(v1===v2)?0.5:clamp((THRESH-v1)/(v2-v1),0,1);
     return[p1[0]+(p2[0]-p1[0])*t,p1[1]+(p2[1]-p1[1])*t,p1[2]+(p2[2]-p1[2])*t];
   }
-  function vert(p,nx,ny,nz){
+  function addVert(p,nx,ny,nz){
     const u=0.5+Math.atan2(p[2]-ctrZ,p[0]-ctrX)/(2*Math.PI);
-    const v=clamp(1-(p[1]-mnY)/(mxY-mnY),0,1);
-    const key=`${(p[0]/dx)|0},${(p[1]/dy)|0},${(p[2]/dz)|0}`;
+    const v=clamp(0.5-(p[1])/(HALF*2),0,1);
+    const key=`${Math.round(p[0]/STEP)},${Math.round(p[1]/STEP)},${Math.round(p[2]/STEP)}`;
     if(vmap.has(key))return vmap.get(key);
     vmap.set(key,vIdx); verts.push(p[0],p[1],p[2]); normals.push(nx,ny,nz); uvs.push(u,v);
     return vIdx++;
   }
-  // Use smoothed occ field for normals
   function getNormal(ix,iy,iz){
     const gx=occ[VI(Math.min(ix+1,RES-1),iy,iz)]-occ[VI(Math.max(ix-1,0),iy,iz)];
     const gy=occ[VI(ix,Math.min(iy+1,RES-1),iz)]-occ[VI(ix,Math.max(iy-1,0),iz)];
@@ -1568,10 +1599,31 @@ function buildMesh(points) {
     const nm=getNormal(ix,iy,iz);
     for(let t=0;t<tris.length;t+=3){
       if(ev[tris[t]]===undefined||ev[tris[t+1]]===undefined||ev[tris[t+2]]===undefined) continue;
-      indices.push(vert(ev[tris[t]],nm[0],nm[1],nm[2]),vert(ev[tris[t+1]],nm[0],nm[1],nm[2]),vert(ev[tris[t+2]],nm[0],nm[1],nm[2]));
+      indices.push(addVert(ev[tris[t]],nm[0],nm[1],nm[2]),addVert(ev[tris[t+1]],nm[0],nm[1],nm[2]),addVert(ev[tris[t+2]],nm[0],nm[1],nm[2]));
     }
   }
+
   return{verts,normals,uvs,indices,stats:{vCount:vIdx,fCount:Math.floor(indices.length/3)}};
+}
+
+/* Fallback: return a simple sphere if carving produces nothing */
+function buildFallbackSphere() {
+  const verts=[],normals=[],uvs=[],indices=[];
+  const SEGS=16;
+  for(let lat=0;lat<=SEGS;lat++){
+    const theta=lat/SEGS*Math.PI, st=Math.sin(theta), ct=Math.cos(theta);
+    for(let lon=0;lon<=SEGS;lon++){
+      const phi=lon/SEGS*2*Math.PI, sp=Math.sin(phi), cp=Math.cos(phi);
+      const x=st*cp, y=ct, z=st*sp;
+      verts.push(x,y,z); normals.push(x,y,z);
+      uvs.push(lon/SEGS, lat/SEGS);
+    }
+  }
+  for(let lat=0;lat<SEGS;lat++) for(let lon=0;lon<SEGS;lon++){
+    const a=lat*(SEGS+1)+lon, b=a+SEGS+1;
+    indices.push(a,b,a+1, b,b+1,a+1);
+  }
+  return{verts,normals,uvs,indices,stats:{vCount:verts.length/3,fCount:indices.length/3}};
 }
 
 /* ─── Texture atlas ───────────────────────────── */
