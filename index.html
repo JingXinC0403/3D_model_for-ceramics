@@ -7,160 +7,415 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#0a0c0f;--bg2:#0f1217;--bg3:#161b22;
-  --bdr:#1e2530;--bdr2:#2a3444;
-  --acc:#00d4aa;--acc2:#0099ff;
-  --warn:#ffaa00;--err:#ff4444;
-  --tx:#c8d4e0;--tx2:#7a8fa6;--tx3:#3d4f61;
-  --mono:'Share Tech Mono',monospace;
-  --cond:'Barlow Condensed',sans-serif;
-  --sans:'Barlow',sans-serif;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:    #0a0c0f;
+  --bg2:   #0f1217;
+  --bg3:   #161b22;
+  --bdr:   #1e2530;
+  --bdr2:  #2a3444;
+  --acc:   #00d4aa;
+  --acc2:  #0099ff;
+  --warn:  #ffaa00;
+  --err:   #ff4444;
+  --tx:    #c8d4e0;
+  --tx2:   #7a8fa6;
+  --tx3:   #3d4f61;
+  --mono:  'Share Tech Mono', monospace;
+  --cond:  'Barlow Condensed', sans-serif;
+  --sans:  'Barlow', sans-serif;
 }
-html{font-size:16px;}
-body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,var(--bdr) 39px,var(--bdr) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,var(--bdr) 39px,var(--bdr) 40px);opacity:.15;pointer-events:none;z-index:0;}
-.header{position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:.75rem 2rem;background:rgba(10,12,15,.95);border-bottom:1px solid var(--bdr);backdrop-filter:blur(12px);}
-.logo{display:flex;align-items:center;gap:.5rem;font-family:var(--cond);font-size:1.5rem;font-weight:900;letter-spacing:.1em;color:var(--tx);}
-.logo-icon{color:var(--acc);animation:spin 8s linear infinite;display:inline-block;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.acc{color:var(--acc);}
-.header-meta{display:flex;align-items:center;gap:.6rem;}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.status-label{font-family:var(--mono);font-size:.65rem;color:var(--tx2);}
-.free-badge{font-family:var(--mono);font-size:.6rem;color:var(--acc);border:1px solid var(--acc);padding:.2rem .55rem;border-radius:2px;letter-spacing:.1em;}
-main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem;display:flex;flex-direction:column;gap:2rem;}
-.panel{background:var(--bg2);border:1px solid var(--bdr);border-radius:2px;padding:1.5rem;position:relative;overflow:hidden;}
-.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--acc2),transparent);}
-.panel-label{font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;color:var(--acc);margin-bottom:1.25rem;}
-.tip-box{background:var(--bg3);border:1px solid var(--bdr2);border-left:3px solid var(--acc);border-radius:2px;padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;gap:.75rem;align-items:flex-start;}
-.tip-icon{font-size:1rem;margin-top:.1rem;flex-shrink:0;}
-.tip-box p{font-size:.8rem;color:var(--tx2);line-height:1.6;}
-.tip-box p strong{color:var(--acc);}
-.camera-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:1.25rem;}
-#video{width:100%;height:100%;object-fit:cover;display:block;}
-#captureCanvas{display:none;}
-#outlineCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:.97;}
-.camera-hud{position:absolute;inset:0;pointer-events:none;}
-.hud-corner{position:absolute;width:20px;height:20px;border-color:var(--acc);border-style:solid;opacity:.6;}
-.hud-corner.tl{top:12px;left:12px;border-width:2px 0 0 2px;}
-.hud-corner.tr{top:12px;right:12px;border-width:2px 2px 0 0;}
-.hud-corner.bl{bottom:12px;left:12px;border-width:0 0 2px 2px;}
-.hud-corner.br{bottom:12px;right:12px;border-width:0 2px 2px 0;}
-.hud-scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.35;animation:scanline 3s ease-in-out infinite;}
-@keyframes scanline{0%{top:10%}50%{top:90%}100%{top:10%}}
-.hud-counter{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);backdrop-filter:blur(6px);color:var(--acc);font-family:var(--mono);font-size:.68rem;padding:.28rem .75rem;border-radius:2px;border:1px solid var(--bdr2);display:none;}
-.hud-counter.visible{display:block;}
-.hud-instruction{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);backdrop-filter:blur(6px);color:rgba(0,212,170,.9);font-family:var(--mono);font-size:.63rem;padding:.28rem .9rem;border-radius:2px;border:1px solid var(--bdr2);white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis;}
-.hud-info{position:absolute;top:12px;right:12px;font-family:var(--mono);font-size:.6rem;color:rgba(0,212,170,.6);}
-.hud-quality{position:absolute;top:12px;left:12px;font-family:var(--mono);font-size:.6rem;color:rgba(0,212,170,.7);background:rgba(0,0,0,.55);padding:.2rem .5rem;border-radius:2px;transition:color .3s;}
-.hud-quality.good{color:#00ff88;}
-.hud-quality.fair{color:var(--warn);}
-.hud-quality.none{color:var(--tx3);}
-.flash-el{position:absolute;inset:0;background:rgba(0,212,170,.15);opacity:0;pointer-events:none;transition:opacity .06s;}
-.flash-el.go{opacity:1;}
-.no-cam{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.85rem;background:var(--bg);font-family:var(--cond);text-align:center;padding:1.5rem;}
-.no-cam.hidden{display:none;}
-.no-cam-icon{font-size:2.5rem;color:var(--tx3);}
-.no-cam h3{font-size:1.1rem;font-weight:700;color:var(--tx);}
-.no-cam p{font-size:.78rem;color:var(--tx2);max-width:280px;line-height:1.5;}
-.controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;}
-@media(max-width:500px){.controls-grid{grid-template-columns:1fr;}}
-.ctrl-label{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;color:var(--tx2);margin-bottom:.5rem;}
-.ctrl-hint{font-size:.68rem;color:var(--tx3);margin-top:.35rem;}
-.slider-row{display:flex;align-items:center;gap:.75rem;}
-input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--bdr2);border-radius:2px;outline:none;cursor:pointer;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);cursor:pointer;}
-.slider-val{font-family:var(--mono);font-size:.8rem;color:var(--acc);min-width:2.5rem;text-align:right;}
-.capture-progress{margin-bottom:1.25rem;display:none;}
-.capture-progress.show{display:block;}
-.progress-bar-wrap{height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:.5rem;}
-.progress-bar-wrap.lg{height:6px;}
-.progress-bar{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0%;transition:width .35s ease;border-radius:2px;}
-.progress-bar.glow{box-shadow:0 0 12px var(--acc);}
-.progress-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:var(--tx2);margin-bottom:.75rem;}
-.frame-strip{display:flex;gap:4px;flex-wrap:wrap;}
-.frame-thumb{width:48px;height:36px;object-fit:cover;border:1px solid var(--bdr2);border-radius:1px;animation:fadeIn .3s forwards;}
-.frame-thumb.fresh{border-color:var(--acc);box-shadow:0 0 6px var(--acc);}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.btn-row{display:flex;gap:.75rem;flex-wrap:wrap;}
-.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.65rem 1.4rem;font-family:var(--cond);font-size:.9rem;font-weight:700;letter-spacing:.08em;border:none;border-radius:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
-.btn-primary{background:var(--acc);color:#000;}
-.btn-primary:hover:not(:disabled){background:#00ffcc;box-shadow:0 0 20px var(--acc);transform:translateY(-1px);}
-.btn-primary:disabled{opacity:.35;cursor:not-allowed;}
-.btn-danger{background:transparent;color:var(--err);border:1px solid var(--err);opacity:.85;}
-.btn-danger:hover{opacity:1;box-shadow:0 0 12px var(--err);}
-.btn-secondary{background:transparent;color:var(--tx2);border:1px solid var(--bdr2);}
-.btn-secondary:hover{border-color:var(--acc);color:var(--acc);}
-.btn-icon{font-size:1em;}
-.panel-process{animation:panelIn .4s ease;}
-@keyframes panelIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.pipeline-stages{display:flex;gap:3px;margin-bottom:1.5rem;}
-.stage-block{flex:1;height:8px;background:var(--bdr2);border-radius:1px;transition:all .4s;}
-.stage-block.active{background:var(--acc2);box-shadow:0 0 8px var(--acc2);animation:stageFlash .5s ease-in-out infinite alternate;}
-.stage-block.done{background:var(--acc);}
-@keyframes stageFlash{to{opacity:.5}}
-.process-info{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem;}
-@media(max-width:500px){.process-info{grid-template-columns:1fr 1fr;}}
-.info-block{display:flex;flex-direction:column;gap:.25rem;}
-.info-key{font-family:var(--mono);font-size:.55rem;letter-spacing:.15em;color:var(--tx3);}
-.info-val{font-family:var(--cond);font-size:1rem;font-weight:600;color:var(--tx);}
-.depth-section{margin-top:1.25rem;display:none;}
-.depth-section.show{display:block;}
-.depth-label-row{font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;color:var(--tx3);margin-bottom:.5rem;}
-.depth-strip{display:flex;gap:4px;flex-wrap:wrap;}
-.depth-cell{position:relative;width:60px;height:45px;border:1px solid var(--bdr2);border-radius:1px;overflow:hidden;flex-shrink:0;}
-.depth-cell img,.depth-cell canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
-.depth-cell img{opacity:.25;}
-.depth-cell .depth-tag{position:absolute;bottom:0;left:0;right:0;font-family:var(--mono);font-size:.45rem;background:rgba(0,0,0,.7);color:var(--acc);padding:1px 3px;text-align:center;}
-.terminal{background:#000;border:1px solid var(--bdr);border-radius:2px;padding:.75rem 1rem;margin-top:1.25rem;max-height:160px;overflow-y:auto;font-family:var(--mono);font-size:.68rem;color:var(--acc);line-height:1.8;scrollbar-width:thin;scrollbar-color:var(--bdr2) transparent;}
-.panel-viewer{animation:panelIn .4s ease;}
-.viewer-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:1.25rem;}
-#threeCanvas{width:100%;height:100%;display:block;}
-.viewer-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.6rem;color:rgba(200,212,224,.35);white-space:nowrap;pointer-events:none;}
-.viewer-stats{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:.25rem;font-family:var(--mono);font-size:.62rem;color:var(--acc);text-shadow:0 0 6px var(--acc);pointer-events:none;}
-.vsl::before{content:'› ';opacity:.5;}
-.viewer-toolbar{position:absolute;top:12px;left:12px;display:flex;gap:4px;}
-.vtb{width:28px;height:28px;background:rgba(10,12,15,.8);backdrop-filter:blur(6px);border:1px solid var(--bdr2);border-radius:2px;font-family:var(--mono);font-size:.55rem;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.vtb:hover{border-color:var(--acc);color:var(--acc);}
-.vtb.on{background:rgba(0,212,170,.15);border-color:var(--acc);color:var(--acc);}
-.toasts{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:999;}
-.toast{padding:.6rem 1rem;border-radius:2px;font-family:var(--mono);font-size:.72rem;color:#000;animation:toastIn .3s ease;max-width:300px;}
-.toast.ok{background:var(--acc);}
-.toast.err{background:var(--err);color:#fff;}
-.toast.warn{background:var(--warn);}
-@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-::-webkit-scrollbar{width:6px;height:6px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px;}
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, var(--bdr) 39px, var(--bdr) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, var(--bdr) 39px, var(--bdr) 40px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem 2rem;
+  background: rgba(10,12,15,0.95);
+  border-bottom: 1px solid var(--bdr);
+  backdrop-filter: blur(12px);
+}
+.logo {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--cond);
+  font-size: 1.5rem; font-weight: 900; letter-spacing: 0.1em;
+  color: var(--tx);
+}
+.logo-icon { color: var(--acc); animation: spin 8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.acc { color: var(--acc); }
+.header-meta { display: flex; align-items: center; gap: 0.6rem; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 8px var(--acc);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.status-label { font-family: var(--mono); font-size: 0.65rem; color: var(--tx2); }
+.free-badge {
+  font-family: var(--mono); font-size: 0.6rem;
+  color: var(--acc); border: 1px solid var(--acc);
+  padding: 0.2rem 0.55rem; border-radius: 2px;
+  letter-spacing: 0.1em;
+}
+
+main {
+  position: relative; z-index: 1;
+  max-width: 900px; margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: flex; flex-direction: column; gap: 2rem;
+}
+
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--bdr);
+  border-radius: 2px;
+  padding: 1.5rem;
+  position: relative; overflow: hidden;
+}
+.panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--acc), var(--acc2), transparent);
+}
+.panel-label {
+  font-family: var(--mono); font-size: 0.65rem;
+  letter-spacing: 0.2em; color: var(--acc);
+  margin-bottom: 1.25rem;
+}
+
+.tip-box {
+  background: var(--bg3);
+  border: 1px solid var(--bdr2);
+  border-left: 3px solid var(--acc);
+  border-radius: 2px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+  display: flex; gap: 0.75rem; align-items: flex-start;
+}
+.tip-icon { font-size: 1rem; margin-top: 0.1rem; flex-shrink: 0; }
+.tip-box p { font-size: 0.8rem; color: var(--tx2); line-height: 1.6; }
+.tip-box p strong { color: var(--acc); }
+
+.camera-wrap {
+  position: relative;
+  width: 100%; aspect-ratio: 16/9;
+  background: #000;
+  border: 1px solid var(--bdr2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+#video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#captureCanvas { display: none; }
+#outlineCanvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.95;
+}
+
+.camera-hud { position: absolute; inset: 0; pointer-events: none; }
+.hud-corner {
+  position: absolute; width: 20px; height: 20px;
+  border-color: var(--acc); border-style: solid; opacity: 0.6;
+}
+.hud-corner.tl { top:12px; left:12px; border-width:2px 0 0 2px; }
+.hud-corner.tr { top:12px; right:12px; border-width:2px 2px 0 0; }
+.hud-corner.bl { bottom:12px; left:12px; border-width:0 0 2px 2px; }
+.hud-corner.br { bottom:12px; right:12px; border-width:0 2px 2px 0; }
+
+.hud-scanline {
+  position: absolute; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--acc), transparent);
+  opacity: 0.35; animation: scanline 3s ease-in-out infinite;
+}
+@keyframes scanline { 0%{top:10%} 50%{top:90%} 100%{top:10%} }
+
+.hud-counter {
+  position: absolute; top:12px; left:50%; transform:translateX(-50%);
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  color: var(--acc); font-family: var(--mono); font-size: 0.68rem;
+  padding: 0.28rem 0.75rem; border-radius: 2px;
+  border: 1px solid var(--bdr2);
+  display: none;
+}
+.hud-counter.visible { display: block; }
+
+.hud-instruction {
+  position: absolute; bottom: 12px; left:50%; transform:translateX(-50%);
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  color: rgba(0,212,170,0.9); font-family: var(--mono); font-size: 0.63rem;
+  padding: 0.28rem 0.9rem; border-radius: 2px;
+  border: 1px solid var(--bdr2);
+  white-space: nowrap; max-width: 90%;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
+.hud-info {
+  position: absolute; top:12px; right:12px;
+  font-family: var(--mono); font-size: 0.6rem;
+  color: rgba(0,212,170,0.6);
+}
+
+/* Outline quality indicator */
+.hud-quality {
+  position: absolute; top:12px; left:12px;
+  font-family: var(--mono); font-size: 0.6rem;
+  color: rgba(0,212,170,0.7);
+  background: rgba(0,0,0,0.55);
+  padding: 0.2rem 0.5rem; border-radius: 2px;
+  transition: color 0.4s;
+}
+.hud-quality.good { color: #00ff88; }
+.hud-quality.fair { color: var(--warn); }
+.hud-quality.none { color: var(--tx3); }
+
+.flash-el {
+  position: absolute; inset: 0;
+  background: rgba(0,212,170,0.15); opacity: 0;
+  pointer-events: none; transition: opacity 0.06s;
+}
+.flash-el.go { opacity: 1; }
+
+.no-cam {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.85rem; background: var(--bg);
+  font-family: var(--cond); text-align: center; padding: 1.5rem;
+}
+.no-cam.hidden { display: none; }
+.no-cam-icon { font-size: 2.5rem; color: var(--tx3); }
+.no-cam h3 { font-size: 1.1rem; font-weight: 700; color: var(--tx); }
+.no-cam p { font-size: 0.78rem; color: var(--tx2); max-width: 260px; line-height: 1.5; }
+
+.controls-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1rem; margin-bottom: 1.25rem;
+}
+@media(max-width:500px) { .controls-grid { grid-template-columns: 1fr; } }
+.ctrl-label {
+  display: block;
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.15em; color: var(--tx2);
+  margin-bottom: 0.5rem;
+}
+.ctrl-hint { font-size: 0.68rem; color: var(--tx3); margin-top: 0.35rem; }
+.slider-row { display: flex; align-items: center; gap: 0.75rem; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none;
+  height: 3px; background: var(--bdr2); border-radius: 2px;
+  outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 8px var(--acc); cursor: pointer;
+}
+.slider-val { font-family: var(--mono); font-size: 0.8rem; color: var(--acc); min-width: 2.5rem; text-align: right; }
+
+.capture-progress { margin-bottom: 1.25rem; display: none; }
+.capture-progress.show { display: block; }
+.progress-bar-wrap { height: 4px; background: var(--bdr2); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem; }
+.progress-bar-wrap.lg { height: 6px; }
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--acc), var(--acc2));
+  width: 0%; transition: width 0.35s ease; border-radius: 2px;
+}
+.progress-bar.glow { box-shadow: 0 0 12px var(--acc); }
+.progress-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--tx2);
+  margin-bottom: 0.75rem;
+}
+.frame-strip { display: flex; gap: 4px; flex-wrap: wrap; }
+.frame-thumb {
+  width: 48px; height: 36px; object-fit: cover;
+  border: 1px solid var(--bdr2); border-radius: 1px;
+  animation: fadeIn 0.3s forwards;
+}
+.frame-thumb.fresh { border-color: var(--acc); box-shadow: 0 0 6px var(--acc); }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.65rem 1.4rem;
+  font-family: var(--cond); font-size: 0.9rem; font-weight: 700;
+  letter-spacing: 0.08em; border: none; border-radius: 2px;
+  cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+}
+.btn-primary { background: var(--acc); color: #000; }
+.btn-primary:hover:not(:disabled) { background: #00ffcc; box-shadow: 0 0 20px var(--acc); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-danger { background: transparent; color: var(--err); border: 1px solid var(--err); opacity: 0.85; }
+.btn-danger:hover { opacity: 1; box-shadow: 0 0 12px var(--err); }
+.btn-secondary { background: transparent; color: var(--tx2); border: 1px solid var(--bdr2); }
+.btn-secondary:hover { border-color: var(--acc); color: var(--acc); }
+.btn-icon { font-size: 1em; }
+
+.panel-process { animation: panelIn 0.4s ease; }
+@keyframes panelIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+
+.pipeline-stages { display: flex; gap: 3px; margin-bottom: 1.5rem; }
+.stage-block { flex: 1; height: 8px; background: var(--bdr2); border-radius: 1px; transition: all 0.4s; }
+.stage-block.active { background: var(--acc2); box-shadow: 0 0 8px var(--acc2); animation: stageFlash 0.5s ease-in-out infinite alternate; }
+.stage-block.done { background: var(--acc); box-shadow: none; }
+@keyframes stageFlash { to{opacity:0.5} }
+
+.process-info {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1rem; margin-bottom: 1.25rem;
+}
+@media(max-width:500px) { .process-info { grid-template-columns: 1fr 1fr; } }
+.info-block { display: flex; flex-direction: column; gap: 0.25rem; }
+.info-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; color: var(--tx3); }
+.info-val { font-family: var(--cond); font-size: 1rem; font-weight: 600; color: var(--tx); }
+
+.depth-section { margin-top: 1.25rem; display: none; }
+.depth-section.show { display: block; }
+.depth-label-row { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--tx3); margin-bottom: 0.5rem; }
+.depth-strip { display: flex; gap: 4px; flex-wrap: wrap; }
+.depth-cell {
+  position: relative; width: 60px; height: 45px;
+  border: 1px solid var(--bdr2); border-radius: 1px; overflow: hidden;
+  flex-shrink: 0;
+}
+.depth-cell img, .depth-cell canvas {
+  position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;
+}
+.depth-cell img { opacity: 0.25; }
+.depth-cell .depth-tag {
+  position: absolute; bottom:0; left:0; right:0;
+  font-family: var(--mono); font-size: 0.45rem;
+  background: rgba(0,0,0,0.7); color: var(--acc);
+  padding: 1px 3px; text-align:center;
+}
+
+.terminal {
+  background: #000;
+  border: 1px solid var(--bdr); border-radius: 2px;
+  padding: 0.75rem 1rem; margin-top: 1.25rem;
+  max-height: 160px; overflow-y: auto;
+  font-family: var(--mono); font-size: 0.68rem;
+  color: var(--acc); line-height: 1.8;
+  scrollbar-width: thin; scrollbar-color: var(--bdr2) transparent;
+}
+
+.panel-viewer { animation: panelIn 0.4s ease; }
+.viewer-wrap {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  background: #000; border: 1px solid var(--bdr2);
+  border-radius: 2px; overflow: hidden; margin-bottom: 1.25rem;
+}
+#threeCanvas { width: 100%; height: 100%; display: block; }
+.viewer-hint {
+  position: absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  font-family: var(--mono); font-size: 0.6rem;
+  color: rgba(200,212,224,0.35); white-space: nowrap; pointer-events: none;
+}
+.viewer-stats {
+  position: absolute; top:12px; right:12px;
+  display: flex; flex-direction: column; gap: 0.25rem;
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--acc); text-shadow: 0 0 6px var(--acc);
+  pointer-events: none;
+}
+.vsl::before { content: '› '; opacity: 0.5; }
+
+.viewer-toolbar {
+  position: absolute; top:12px; left:12px;
+  display: flex; gap: 4px;
+}
+.vtb {
+  width: 28px; height: 28px;
+  background: rgba(10,12,15,0.8); backdrop-filter: blur(6px);
+  border: 1px solid var(--bdr2); border-radius: 2px;
+  font-family: var(--mono); font-size: 0.55rem;
+  color: var(--tx2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.vtb:hover { border-color: var(--acc); color: var(--acc); }
+.vtb.on { background: rgba(0,212,170,0.15); border-color: var(--acc); color: var(--acc); }
+
+.toasts {
+  position: fixed; bottom:1.5rem; right:1.5rem;
+  display: flex; flex-direction: column; gap: 0.5rem; z-index: 999;
+}
+.toast {
+  padding: 0.6rem 1rem; border-radius: 2px;
+  font-family: var(--mono); font-size: 0.72rem; color: #000;
+  animation: toastIn 0.3s ease; max-width: 300px;
+}
+.toast.ok   { background: var(--acc); }
+.toast.err  { background: var(--err); color: #fff; }
+.toast.warn { background: var(--warn); }
+@keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:none} }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
 </style>
 </head>
 <body>
+
 <header class="header">
-  <div class="logo"><span class="logo-icon">⬡</span>SCAN<span class="acc">3D</span></div>
+  <div class="logo">
+    <span class="logo-icon">⬡</span>
+    SCAN<span class="acc">3D</span>
+  </div>
   <div class="header-meta">
     <span class="status-dot"></span>
     <span class="status-label">AI Depth Engine</span>
     <span class="free-badge">FREE · NO UPLOAD</span>
   </div>
 </header>
+
 <main>
+
+  <!-- STEP 1 -->
   <section class="panel" id="panelCamera">
     <div class="panel-label">01 — CAPTURE YOUR OBJECT</div>
+
     <div class="tip-box">
       <span class="tip-icon">💡</span>
-      <p><strong>For best detection:</strong> Place object on a plain surface that contrasts with it. Keep <strong>still for 2–3 seconds</strong> before pressing Start so the background is learned. Then walk slowly in a full 360° circle. The green outline should wrap only the object — wait for <strong>TRACKING ✓</strong>.</p>
+      <p><strong>Best results:</strong> Place your object on a plain, contrasting surface. Walk slowly in a full 360° circle. Works with any object — mouse, battery, pottery, keys, shoes. <strong>20–30 photos</strong> gives the best 3D detail. The green outline shows what the AI is tracking.</p>
     </div>
+
     <div class="camera-wrap">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="captureCanvas"></canvas>
       <canvas id="outlineCanvas"></canvas>
       <div class="camera-hud">
-        <div class="hud-corner tl"></div><div class="hud-corner tr"></div>
-        <div class="hud-corner bl"></div><div class="hud-corner br"></div>
-        <div class="hud-quality none" id="hudQuality">LEARNING BG…</div>
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+        <div class="hud-quality none" id="hudQuality">SCANNING…</div>
         <div class="hud-scanline" id="scanLine" style="display:none"></div>
         <div class="hud-counter" id="hudCounter"></div>
         <div class="hud-info" id="hudRes">—</div>
@@ -170,10 +425,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <div class="no-cam" id="noCam">
         <span class="no-cam-icon">⬡</span>
         <h3>Camera not enabled</h3>
-        <p>Photos stay on your device — nothing is uploaded. Everything runs locally in your browser.</p>
+        <p>Your photos stay on your device and are never uploaded anywhere. Everything runs locally.</p>
         <button class="btn btn-primary" id="btnEnableCam"><span class="btn-icon">◉</span> Enable Camera</button>
       </div>
     </div>
+
     <div class="controls-grid">
       <div>
         <label class="ctrl-label">NUMBER OF PHOTOS</label>
@@ -189,634 +445,887 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
           <input type="range" id="slInterval" min="500" max="3000" value="1400" step="100">
           <span class="slider-val" id="svInterval">1.4s</span>
         </div>
-        <div class="ctrl-hint">More time = easier to walk around</div>
+        <div class="ctrl-hint">More time = easier to move around the object</div>
       </div>
     </div>
+
     <div class="capture-progress" id="captureProgress">
-      <div class="progress-bar-wrap"><div class="progress-bar" id="captureBar"></div></div>
-      <div class="progress-labels"><span id="capLabel">Capturing…</span><span id="capCount">0 / 0</span></div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="captureBar"></div>
+      </div>
+      <div class="progress-labels">
+        <span id="capLabel">Capturing…</span>
+        <span id="capCount">0 / 0</span>
+      </div>
       <div class="frame-strip" id="frameStrip"></div>
     </div>
+
     <div class="btn-row">
       <button class="btn btn-primary" id="btnStartScan" disabled><span class="btn-icon">◉</span> Start Scanning</button>
-      <button class="btn btn-danger" id="btnStopCam" style="display:none"><span class="btn-icon">⊘</span> Stop Camera</button>
-      <button class="btn btn-secondary" id="btnReset" style="display:none"><span class="btn-icon">↺</span> Start Over</button>
+      <button class="btn btn-danger"  id="btnStopCam"   style="display:none"><span class="btn-icon">⊘</span> Stop Camera</button>
+      <button class="btn btn-secondary" id="btnReset"   style="display:none"><span class="btn-icon">↺</span> Start Over</button>
     </div>
   </section>
 
+  <!-- STEP 2 -->
   <section class="panel panel-process" id="panelProcess" style="display:none">
     <div class="panel-label">02 — AI RECONSTRUCTION PIPELINE</div>
     <div class="pipeline-stages" id="pipelineStages"></div>
     <div class="process-info">
-      <div class="info-block"><span class="info-key">CURRENT STEP</span><span class="info-val" id="procStage">—</span></div>
-      <div class="info-block"><span class="info-key">PROGRESS</span><span class="info-val" id="procPct">0%</span></div>
-      <div class="info-block"><span class="info-key">PHOTOS</span><span class="info-val" id="procFrames">—</span></div>
+      <div class="info-block">
+        <span class="info-key">CURRENT STEP</span>
+        <span class="info-val" id="procStage">—</span>
+      </div>
+      <div class="info-block">
+        <span class="info-key">PROGRESS</span>
+        <span class="info-val" id="procPct">0%</span>
+      </div>
+      <div class="info-block">
+        <span class="info-key">PHOTOS</span>
+        <span class="info-val" id="procFrames">—</span>
+      </div>
     </div>
-    <div class="progress-bar-wrap lg"><div class="progress-bar glow" id="procBar"></div></div>
+    <div class="progress-bar-wrap lg">
+      <div class="progress-bar glow" id="procBar"></div>
+    </div>
     <div class="depth-section" id="depthSection">
       <div class="depth-label-row">AI DEPTH MAPS (sample)</div>
       <div class="depth-strip" id="depthStrip"></div>
     </div>
-    <div class="terminal" id="terminal"><div>$ Initialising AI reconstruction pipeline…</div></div>
+    <div class="terminal" id="terminal">
+      <div>$ Initialising AI reconstruction pipeline…</div>
+    </div>
   </section>
 
+  <!-- STEP 3 -->
   <section class="panel panel-viewer" id="panelViewer" style="display:none">
     <div class="panel-label">03 — YOUR 3D MODEL IS READY 🎉</div>
     <div class="viewer-wrap">
       <canvas id="threeCanvas"></canvas>
       <div class="viewer-toolbar">
-        <button class="vtb" id="vtbWire">WF</button>
-        <button class="vtb" id="vtbTex">TX</button>
-        <button class="vtb on" id="vtbNeon">NE</button>
-        <button class="vtb on" id="vtbRot">⟳</button>
+        <button class="vtb" id="vtbWire"  title="Wireframe">WF</button>
+        <button class="vtb" id="vtbTex"   title="Texture"   >TX</button>
+        <button class="vtb on" id="vtbNeon" title="Neon outline">NE</button>
+        <button class="vtb on" id="vtbRot" title="Auto-rotate">⟳</button>
       </div>
       <div class="viewer-hint">🖱 Drag · Scroll to zoom · Right-drag to pan</div>
       <div class="viewer-stats" id="viewerStats"></div>
     </div>
     <div class="btn-row">
-      <button class="btn btn-primary" id="btnDownload"><span class="btn-icon">⬇</span> Download .obj</button>
+      <button class="btn btn-primary"   id="btnDownload"><span class="btn-icon">⬇</span> Download .obj</button>
       <button class="btn btn-secondary" id="btnDownloadTex"><span class="btn-icon">⬇</span> Download Texture</button>
       <button class="btn btn-secondary" id="btnNewScan"><span class="btn-icon">⬡</span> New Scan</button>
     </div>
   </section>
+
 </main>
+
 <div class="toasts" id="toasts"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
 <script>
 'use strict';
-const $=id=>document.getElementById(id);
-const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-const lerp=(a,b,t)=>a+(b-a)*t;
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const $ = id => document.getElementById(id);
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const lerp   = (a,b,t)  => a+(b-a)*t;
+const wait   = ms => new Promise(r => setTimeout(r, ms));
 
-let stream=null,capturing=false,captureTimer=null;
-let frames=[],depthMaps=[],meshData=null,atlasCanvas=null,midasModel=null;
-let sharedFgMask=null,sharedFgW=0,sharedFgH=0;
-let outlineRAF=null;
+/* ─── State ─────────────────────────────────── */
+let stream = null, capturing = false, captureTimer = null;
+let frames = [];
+let depthMaps = [];
+let meshData  = null;
+let atlasCanvas = null;
+let midasModel  = null;
 
-/* ═══════════════════════════════════════════════════════════════════
-   DETECTION ENGINE — Object-only foreground segmentation
+/* ─── Shared foreground mask (written by outline loop, read by grabFrame) ─── */
+let sharedFgMask = null;
+let sharedFgW = 0, sharedFgH = 0;
+let outlineQualityScore = 0; // 0–1, used to drive the HUD badge
 
-   The core problem with all previous versions: they detect "things
-   that changed from the first frame" which includes the user's hands,
-   cast shadows, and environmental movement.
-
-   This version uses a layered approach:
+/* ═══════════════════════════════════════════════════════════════════════
+   IMPROVED OUTLINE ENGINE
    
-   LAYER 1 — Stable background model (per-pixel Gaussian)
-   The background is learned over the FIRST 60 FRAMES with no object
-   present (user points camera at empty surface). After learning,
-   anything that deviates from the learned background is foreground.
-   
-   LAYER 2 — Depth-saliency prior
-   Objects placed on a flat surface sit ABOVE it. We use a centre-
-   distance-from-horizon prior: the top 30% of frame is always
-   background (sky/wall), the bottom 20% is always background (floor).
-   This alone eliminates most false positives from the environment.
-   
-   LAYER 3 — Coherence filter
-   Only the single largest connected blob touching the image centre
-   is kept. Fragmented noise and edge blobs are discarded.
+   Key improvements over the original:
+   1. Dual-layer background model: per-pixel Gaussian (slow, accurate) +
+      a fast "first-frame snapshot" for cold-start speed.
+   2. No ring-gate suppression — replaced with a soft centre-weight that
+      allows any shape (rectangular, elongated, irregular) to be detected.
+   3. Adaptive threshold: auto-tunes every 30 frames to handle objects
+      with low contrast against the background.
+   4. Gap-bridging BFS: expands the flood-fill by a dilation radius so
+      thin parts (mouse cable, pottery handle, battery cap) stay connected.
+   5. Multi-layer neon rendering: core 1px line + 3px blur glow + 8px
+      bloom, all composited via screen blend — works on any background colour.
+   6. Quality score drives the HUD badge: green/yellow/grey.
+═══════════════════════════════════════════════════════════════════════ */
 
-   LAYER 4 — Stability gate
-   The mask is only written to sharedFgMask when it has been stable
-   (low frame-to-frame change) for 3+ consecutive frames. This prevents
-   the jittery mask that causes bad 3D model voxels.
+let outlineRAF = null;
 
-   Result: the green line wraps only the object, not the background.
-═══════════════════════════════════════════════════════════════════ */
-function startOutlineLoop(){
-  const video=$('video');
-  const cvOut=$('outlineCanvas');
-  const cvSrc=document.createElement('canvas');
-  const ctxOut=cvOut.getContext('2d');
-  const ctxSrc=cvSrc.getContext('2d',{willReadFrequently:true});
-  const SCALE=4; // process at 1/4 res for speed
+function startOutlineLoop() {
+  const video     = $('video');
+  const cvOut     = $('outlineCanvas');
+  const cvScratch = document.createElement('canvas');
+  const ctxOut    = cvOut.getContext('2d');
+  const ctxSrc    = cvScratch.getContext('2d', { willReadFrequently: true });
 
-  // ── Background model ───────────────────────────────────────────
-  let bgR=null,bgG=null,bgB=null;
-  let bgVR=null,bgVG=null,bgVB=null;
-  let bgReady=false,bgWarm=false; // warm = learned enough to be trusted
-  let frameCount=0,lastSW=0,lastSH=0;
-  let prevGrey=null,fgAccum=null;
-  let adaptThresh=0.16;
-  
-  // Stability tracking: how many frames in a row has the mask been stable?
-  let prevBlobSize=0,stableFrames=0;
-  let stableMask=null; // last stable mask — written to sharedFgMask
+  // Process at 1/3 resolution for speed; render back at full res
+  const SCALE = 3;
 
-  function initModel(d,N,SW,SH){
-    bgR=new Float32Array(N);bgG=new Float32Array(N);bgB=new Float32Array(N);
-    // High initial variance = high uncertainty, so background doesn't overwhelm
-    bgVR=new Float32Array(N).fill(3000);
-    bgVG=new Float32Array(N).fill(3000);
-    bgVB=new Float32Array(N).fill(3000);
-    for(let i=0;i<N;i++){bgR[i]=d[i*4];bgG[i]=d[i*4+1];bgB[i]=d[i*4+2];}
-    bgReady=true;bgWarm=false;lastSW=SW;lastSH=SH;
-    frameCount=0;fgAccum=null;prevGrey=null;adaptThresh=0.16;
-    prevBlobSize=0;stableFrames=0;stableMask=null;
-  }
+  // ── Background model state ──────────────────────────────────────────
+  let bgMeanR = null, bgMeanG = null, bgMeanB = null;
+  let bgVarR  = null, bgVarG  = null, bgVarB  = null;
+  let bgReady = false;
 
-  // Mahalanobis distance from per-pixel Gaussian background model
-  function bgDist(d,i){
-    const dR=d[i*4]-bgR[i],dG=d[i*4+1]-bgG[i],dB=d[i*4+2]-bgB[i];
-    return (dR*dR/Math.max(bgVR[i],30))+(dG*dG/Math.max(bgVG[i],30))+(dB*dB/Math.max(bgVB[i],30));
-  }
+  // Cold-start: snapshot of the very first frame used as an instant bg reference
+  // This lets the outline appear within 1–2 frames of camera start.
+  let snapR = null, snapG = null, snapB = null;
 
-  // Update background model — only for pixels classified as background
-  function updateBg(d,N){
-    // During warm-up (first 80 frames): fast learning regardless
-    // After warm-up: slow update, only for stable bg pixels
-    const lr=frameCount<80?0.15:0.008;
-    for(let i=0;i<N;i++){
-      if(frameCount>=80&&bgDist(d,i)>4.5) continue; // skip fg during inference
-      const dR=d[i*4]-bgR[i],dG=d[i*4+1]-bgG[i],dB=d[i*4+2]-bgB[i];
-      bgR[i]+=lr*dR;bgG[i]+=lr*dG;bgB[i]+=lr*dB;
-      bgVR[i]=(1-lr)*bgVR[i]+lr*dR*dR;
-      bgVG[i]=(1-lr)*bgVG[i]+lr*dG*dG;
-      bgVB[i]=(1-lr)*bgVB[i]+lr*dB*dB;
+  let frameCount   = 0;
+  let prevGrey     = null;
+  let fgAccum      = null;         // IIR temporal accumulator
+  let adaptThresh  = 0.22;         // auto-tuned threshold
+  let lastSW = 0, lastSH = 0;
+
+  // ── Per-pixel Gaussian background model ─────────────────────────────
+  function initModel(d, N, SW, SH) {
+    bgMeanR = new Float32Array(N); bgMeanG = new Float32Array(N); bgMeanB = new Float32Array(N);
+    bgVarR  = new Float32Array(N).fill(1600); // high initial variance = "uncertain"
+    bgVarG  = new Float32Array(N).fill(1600);
+    bgVarB  = new Float32Array(N).fill(1600);
+    snapR   = new Float32Array(N);
+    snapG   = new Float32Array(N);
+    snapB   = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      bgMeanR[i] = snapR[i] = d[i*4];
+      bgMeanG[i] = snapG[i] = d[i*4+1];
+      bgMeanB[i] = snapB[i] = d[i*4+2];
     }
-    // Model is "warm" after 80 frames of learning — enough to trust it
-    if(!bgWarm&&frameCount>=80) bgWarm=true;
+    bgReady = true;
+    lastSW = SW; lastSH = SH;
+    frameCount = 0; fgAccum = null; prevGrey = null;
+    adaptThresh = 0.22;
   }
 
-  // ── Spatial prior: object is in the middle band of the frame ───
-  // Top 25% → almost certainly background (wall/ceiling)
-  // Bottom 18% → almost certainly background (floor/table surface)
-  // Sides → slightly suppressed
-  // Centre → full weight
-  function spatialPrior(x,y,SW,SH){
-    const fy=y/SH; // 0=top, 1=bottom
-    // Kill top strip (wall/ceiling) and bottom strip (floor)
-    if(fy<0.22) return 0.0;
-    if(fy>0.84) return 0.05;
-    const nx=Math.abs(x/SW-0.5)*2; // 0=centre, 1=edge
-    // Gentle side suppression: objects near centre of frame
-    const sideW=Math.max(0.30,1.0-nx*0.45);
-    // Vertical: strongest weight in middle third of frame
-    const vertW=fy<0.50?lerp(0.3,1.0,(fy-0.22)/0.28):lerp(1.0,0.3,(fy-0.50)/0.34);
-    return Math.min(1,sideW*vertW*1.15);
+  // Mahalanobis-like distance from the Gaussian model (normalised to ~0-1)
+  function bgDistGauss(d, i) {
+    const dR = d[i*4]   - bgMeanR[i];
+    const dG = d[i*4+1] - bgMeanG[i];
+    const dB = d[i*4+2] - bgMeanB[i];
+    return (dR*dR / Math.max(bgVarR[i], 36)) +
+           (dG*dG / Math.max(bgVarG[i], 36)) +
+           (dB*dB / Math.max(bgVarB[i], 36));
   }
 
-  function tuneThresh(acc,N){
-    let above=0;for(let i=0;i<N;i++) if(acc[i]>adaptThresh) above++;
-    const r=above/N;
-    // Target 3–30% of pixels as foreground (a single object on a plain surface)
-    if(r<0.010) adaptThresh=Math.max(0.04,adaptThresh-0.022);
-    else if(r>0.38) adaptThresh=Math.min(0.62,adaptThresh+0.022);
+  // Distance from the cold-start snapshot (instant, no learning needed)
+  function bgDistSnap(d, i) {
+    const dR = d[i*4]   - snapR[i];
+    const dG = d[i*4+1] - snapG[i];
+    const dB = d[i*4+2] - snapB[i];
+    return Math.sqrt(dR*dR + dG*dG + dB*dB) / 441.67; // normalise to 0-1 (max=√(3×255²))
   }
 
-  // Morphological ops
-  function dilate(m,SW,SH,r){
-    const o=new Uint8Array(SW*SH);
-    for(let y=r;y<SH-r;y++) for(let x=r;x<SW-r;x++){
-      if(!m[y*SW+x]) continue;
-      for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++) o[(y+dy)*SW+(x+dx)]=1;
+  function updateModel(d, N) {
+    // Fast learning in first 60 frames, slow once settled
+    const lr = frameCount < 30 ? 0.18 : frameCount < 60 ? 0.06 : 0.012;
+    for (let i = 0; i < N; i++) {
+      if (bgDistGauss(d, i) > 3.5) continue; // skip fg pixels
+      const dR = d[i*4]   - bgMeanR[i];
+      const dG = d[i*4+1] - bgMeanG[i];
+      const dB = d[i*4+2] - bgMeanB[i];
+      bgMeanR[i] += lr * dR;  bgMeanG[i] += lr * dG;  bgMeanB[i] += lr * dB;
+      bgVarR[i]   = (1-lr) * bgVarR[i] + lr * dR * dR;
+      bgVarG[i]   = (1-lr) * bgVarG[i] + lr * dG * dG;
+      bgVarB[i]   = (1-lr) * bgVarB[i] + lr * dB * dB;
     }
-    return o;
   }
-  function erode(m,SW,SH,r){
-    const o=new Uint8Array(SW*SH);
-    for(let y=r;y<SH-r;y++) for(let x=r;x<SW-r;x++){
-      let ok=true;
-      for(let dy=-r;dy<=r&&ok;dy++) for(let dx=-r;dx<=r&&ok;dx++) if(!m[(y+dy)*SW+(x+dx)]) ok=false;
-      if(ok) o[y*SW+x]=1;
-    }
-    return o;
+
+  // ── Soft centre-weight: full weight in middle 70%, gentle falloff to edges ──
+  // This replaces the hard ring-gate, allowing any object shape.
+  // Rectangular objects won't be clipped; objects near the edge still detected.
+  function centreWeight(x, y, SW, SH) {
+    const nx = Math.abs((x / SW - 0.5) * 2);   // 0=centre, 1=edge
+    const ny = Math.abs((y / SH - 0.5) * 2);
+    const d  = Math.max(nx, ny);                 // L∞ distance (square falloff)
+    // Full weight inside d=0.72, smooth falloff to 0.3 at edges
+    return Math.max(0.3, Math.min(1.0, (0.92 - d) / 0.20));
   }
-  const close=(m,SW,SH,r)=>erode(dilate(m,SW,SH,r),SW,SH,r);
 
-  // Connected component: find largest blob touching central region
-  // Returns the blob mask. 'relaxed' = search wider if needed.
-  function findCentralBlob(bin,SW,SH){
-    // Dilate slightly to bridge small gaps (mouse scroll wheel gap etc)
-    const br=dilate(bin,SW,SH,3);
-    const cx=SW>>1,cy=SH>>1;
+  // ── Adaptive threshold tuner ─────────────────────────────────────────
+  // Every 30 frames, look at the distribution of fgAccum values.
+  // If too few or too many pixels are above threshold, nudge it.
+  function tuneThreshold(fgAccum, N) {
+    let above = 0;
+    for (let i = 0; i < N; i++) if (fgAccum[i] > adaptThresh) above++;
+    const ratio = above / N;
+    // Target: 2–25% of pixels as foreground (reasonable for most objects)
+    if (ratio < 0.01) adaptThresh = Math.max(0.08, adaptThresh - 0.015);
+    else if (ratio > 0.35) adaptThresh = Math.min(0.55, adaptThresh + 0.015);
+  }
 
-    // First try: spiral from exact centre
-    let seed=-1;
-    const maxR=Math.floor(Math.min(SW,SH)*0.46);
+  // ── Gap-bridging BFS ─────────────────────────────────────────────────
+  // 1. Dilate the binary mask by BRIDGE_R pixels first
+  // 2. BFS from centre (bridged mask)
+  // 3. Erode back by BRIDGE_R to recover original shape
+  // This ensures thin connectors (mouse scroll wheel area, handle, cord) stay attached.
+  const BRIDGE_R = 4; // pixels in processing resolution
+
+  function dilate(mask, SW, SH, r) {
+    const out = new Uint8Array(SW * SH);
+    for (let y = r; y < SH - r; y++)
+      for (let x = r; x < SW - r; x++) {
+        if (!mask[y * SW + x]) continue;
+        for (let dy = -r; dy <= r; dy++)
+          for (let dx = -r; dx <= r; dx++)
+            out[(y + dy) * SW + (x + dx)] = 1;
+      }
+    return out;
+  }
+
+  function erode(mask, SW, SH, r) {
+    const out = new Uint8Array(SW * SH);
+    for (let y = r; y < SH - r; y++)
+      for (let x = r; x < SW - r; x++) {
+        let ok = true;
+        for (let dy = -r; dy <= r && ok; dy++)
+          for (let dx = -r; dx <= r && ok; dx++)
+            if (!mask[(y + dy) * SW + (x + dx)]) ok = false;
+        if (ok) out[y * SW + x] = 1;
+      }
+    return out;
+  }
+
+  // Morphological close (dilate then erode) — fills holes inside object
+  function morphClose(mask, SW, SH, r) {
+    return erode(dilate(mask, SW, SH, r), SW, SH, r);
+  }
+
+  // Gap-bridging connected-component: dilate, BFS, erode
+  function centralBlobBridged(binary, SW, SH) {
+    // Step 1: dilate to bridge gaps
+    const bridged = dilate(binary, SW, SH, BRIDGE_R);
+
+    // Step 2: BFS from centre on the bridged mask
+    const visited = new Uint8Array(SW * SH);
+    const bfsResult = new Uint8Array(SW * SH);
+    const cx = Math.floor(SW / 2), cy = Math.floor(SH / 2);
+
+    // Spiral search from centre to find a foreground seed
+    let seed = -1;
+    const maxR = Math.floor(Math.min(SW, SH) * 0.48);
     outer:
-    for(let r=0;r<=maxR;r++){
-      const steps=Math.max(8,r*7);
-      for(let s=0;s<steps;s++){
-        const a=(s/steps)*Math.PI*2;
-        const sx=cx+Math.round(r*Math.cos(a)),sy=cy+Math.round(r*Math.sin(a));
-        if(sx<1||sy<1||sx>=SW-1||sy>=SH-1) continue;
-        if(br[sy*SW+sx]){seed=sy*SW+sx;break outer;}
+    for (let r = 0; r <= maxR; r++) {
+      // Check in a circle of radius r
+      const steps = Math.max(8, r * 6);
+      for (let s = 0; s < steps; s++) {
+        const ang = (s / steps) * Math.PI * 2;
+        const sx  = cx + Math.round(r * Math.cos(ang));
+        const sy  = cy + Math.round(r * Math.sin(ang));
+        if (sx < 1 || sy < 1 || sx >= SW - 1 || sy >= SH - 1) continue;
+        if (bridged[sy * SW + sx]) { seed = sy * SW + sx; break outer; }
       }
     }
-    if(seed<0) return new Uint8Array(SW*SH);
+    if (seed < 0) return new Uint8Array(SW * SH);
 
-    // BFS on dilated mask
-    const vis=new Uint8Array(SW*SH),bfs=new Uint8Array(SW*SH);
-    const q=new Int32Array(SW*SH);let h=0,t=0;
-    q[t++]=seed;vis[seed]=1;
-    while(h<t){
-      const idx=q[h++];bfs[idx]=1;
-      const x=idx%SW;
-      for(const ni of[idx-1,idx+1,idx-SW,idx+SW]){
-        if(ni<0||ni>=SW*SH||Math.abs(ni%SW-x)>1||vis[ni]||!br[ni]) continue;
-        vis[ni]=1;q[t++]=ni;
+    const q = new Int32Array(SW * SH);
+    let head = 0, tail = 0;
+    q[tail++] = seed; visited[seed] = 1;
+
+    while (head < tail) {
+      const idx = q[head++];
+      bfsResult[idx] = 1;
+      const x = idx % SW;
+      for (const ni of [idx - 1, idx + 1, idx - SW, idx + SW]) {
+        if (ni < 0 || ni >= SW * SH) continue;
+        if (Math.abs((ni % SW) - x) > 1) continue;
+        if (!visited[ni] && bridged[ni]) { visited[ni] = 1; q[tail++] = ni; }
       }
     }
 
-    // Intersect BFS with original binary, close holes, add shrunk BFS fill
-    const comb=new Uint8Array(SW*SH);
-    for(let i=0;i<SW*SH;i++) comb[i]=bfs[i]&bin[i];
-    const closed=close(comb,SW,SH,2);
-    const shrunk=erode(bfs,SW,SH,3);
-    const fin=new Uint8Array(SW*SH);
-    for(let i=0;i<SW*SH;i++) fin[i]=closed[i]|shrunk[i];
-    return fin;
+    // Step 3: AND the BFS result with the bridged mask, then erode back
+    // This recovers the original shape while keeping bridged parts
+    const combined = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++) combined[i] = bfsResult[i] & binary[i];
+
+    // Close again to fill any remaining holes from the AND
+    const closed2 = morphClose(combined, SW, SH, 2);
+
+    // Also include bridge region intersected with original: catches any
+    // thin connectors that survived the bridge but not the original threshold
+    const bridge_contrib = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++)
+      bridge_contrib[i] = bfsResult[i] ? 1 : 0;
+    // Erode the BFS result by BRIDGE_R to undo the dilation
+    const shrunk = erode(bridge_contrib, SW, SH, BRIDGE_R);
+
+    // Final: union of closed original pixels + shrunk bridge fill
+    const final = new Uint8Array(SW * SH);
+    for (let i = 0; i < SW * SH; i++)
+      final[i] = closed2[i] | shrunk[i];
+
+    return final;
   }
 
-  // Moore-neighbour contour tracing → ordered polygon
-  const MX=[1,1,0,-1,-1,-1,0,1],MY=[0,1,1,1,0,-1,-1,-1];
-  function traceContour(mask,SW,SH){
-    let sx=-1,sy=-1;
-    for(let y=0;y<SH&&sx<0;y++) for(let x=0;x<SW;x++) if(mask[y*SW+x]){sx=x;sy=y;break;}
-    if(sx<0) return [];
-    const pts=[];let cx=sx,cy=sy,pDir=6,iter=0;
-    do{
-      pts.push(cx,cy);
-      const sd=(pDir+6)%8;let moved=false;
-      for(let d=0;d<8;d++){
-        const dir=(sd+d)%8,nx=cx+MX[dir],ny=cy+MY[dir];
-        if(nx<0||ny<0||nx>=SW||ny>=SH) continue;
-        if(mask[ny*SW+nx]){pDir=dir;cx=nx;cy=ny;moved=true;break;}
+  // ── Silhouette extraction ────────────────────────────────────────────
+  // Extract a thick silhouette border that looks good even on small objects.
+  // Uses a variable thickness based on object size.
+  function silhouette(mask, SW, SH) {
+    // Count fg pixels to estimate object size
+    let fgCount = 0;
+    for (let i = 0; i < SW * SH; i++) fgCount += mask[i];
+    const objFrac = fgCount / (SW * SH);
+    // Thickness: 1px for tiny objects, up to 3px for large ones
+    const thickness = objFrac < 0.02 ? 1 : objFrac < 0.08 ? 2 : 3;
+
+    const edge = new Uint8Array(SW * SH);
+    for (let y = thickness; y < SH - thickness; y++) {
+      for (let x = thickness; x < SW - thickness; x++) {
+        if (!mask[y * SW + x]) continue;
+        let isEdge = false;
+        outer3:
+        for (let dy = -thickness; dy <= thickness; dy++)
+          for (let dx = -thickness; dx <= thickness; dx++)
+            if (!mask[(y + dy) * SW + (x + dx)]) { isEdge = true; break outer3; }
+        if (isEdge) edge[y * SW + x] = 1;
       }
-      if(!moved) break;
-    }while((cx!==sx||cy!==sy)&&++iter<SW*SH*4);
-    return pts;
+    }
+    return edge;
   }
 
-  // Smooth polygon — moving average, N passes
-  function smoothPoly(pts,passes){
-    if(pts.length<6) return pts;
-    let p=new Float32Array(pts);const n=p.length>>1;
-    for(let pass=0;pass<passes;pass++){
-      const o=new Float32Array(p.length);
-      for(let i=0;i<n;i++){
-        const pr=(i-1+n)%n,nx=(i+1)%n;
-        o[i*2  ]=(p[pr*2  ]+p[i*2  ]+p[nx*2  ])/3;
-        o[i*2+1]=(p[pr*2+1]+p[i*2+1]+p[nx*2+1])/3;
+  // ── Multi-layer neon renderer ────────────────────────────────────────
+  // Renders 3 passes: core line (bright), inner glow (medium), outer bloom (soft).
+  // All on one canvas via compositing. Works on any background colour.
+  function renderNeon(edge, SW, SH, VW, VH, ctxOut) {
+    // Build a small edge canvas at processing resolution
+    const edgeCv  = document.createElement('canvas');
+    edgeCv.width  = SW; edgeCv.height = SH;
+    const edgeCtx = edgeCv.getContext('2d');
+    const edgeImg = edgeCtx.createImageData(SW, SH);
+    const ed = edgeImg.data;
+    for (let i = 0; i < SW * SH; i++) {
+      if (!edge[i]) continue;
+      ed[i*4]   = 0;
+      ed[i*4+1] = 255;
+      ed[i*4+2] = 80;
+      ed[i*4+3] = 255;
+    }
+    edgeCtx.putImageData(edgeImg, 0, 0);
+
+    ctxOut.clearRect(0, 0, VW, VH);
+
+    // Layer 3 — outer bloom (widest, most transparent)
+    ctxOut.save();
+    ctxOut.filter = 'blur(8px)';
+    ctxOut.globalAlpha = 0.45;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(edgeCv, 0, 0, VW, VH);
+    ctxOut.restore();
+
+    // Layer 2 — inner glow
+    ctxOut.save();
+    ctxOut.filter = 'blur(3px)';
+    ctxOut.globalAlpha = 0.80;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(edgeCv, 0, 0, VW, VH);
+    ctxOut.restore();
+
+    // Layer 1 — crisp core line (no blur)
+    ctxOut.save();
+    ctxOut.filter = 'none';
+    ctxOut.globalAlpha = 1.0;
+    ctxOut.globalCompositeOperation = 'screen';
+    ctxOut.drawImage(edgeCv, 0, 0, VW, VH);
+    ctxOut.restore();
+  }
+
+  // ── Main render loop ──────────────────────────────────────────────────
+  function frame() {
+    outlineRAF = requestAnimationFrame(frame);
+    if (!video.videoWidth) return;
+
+    const VW = video.videoWidth, VH = video.videoHeight;
+    const SW = Math.floor(VW / SCALE), SH = Math.floor(VH / SCALE);
+    const N  = SW * SH;
+
+    cvScratch.width = SW; cvScratch.height = SH;
+    cvOut.width     = VW; cvOut.height     = VH;
+
+    ctxSrc.drawImage(video, 0, 0, SW, SH);
+    const src = ctxSrc.getImageData(0, 0, SW, SH);
+    const d   = src.data;
+
+    // Init or reinit if resolution changed
+    if (!bgReady || lastSW !== SW || lastSH !== SH) {
+      initModel(d, N, SW, SH);
+    }
+
+    // ── Motion mask via frame differencing ──────────────────────────
+    const grey = new Float32Array(N);
+    for (let i = 0; i < N; i++)
+      grey[i] = 0.299 * d[i*4] + 0.587 * d[i*4+1] + 0.114 * d[i*4+2];
+    const motion = new Float32Array(N);
+    if (prevGrey && prevGrey.length === N)
+      for (let i = 0; i < N; i++)
+        motion[i] = Math.min(Math.abs(grey[i] - prevGrey[i]) / 55, 1);
+    prevGrey = grey.slice();
+
+    // ── Per-pixel fg score ──────────────────────────────────────────
+    // Blend two bg-distance signals:
+    //   snapDist  — fast cold-start, compares to first frame
+    //   gaussDist — learned over time, more accurate
+    // After frameCount > 60, trust gaussDist more.
+    const gaussWeight = Math.min(frameCount / 60, 1.0);
+    const snapWeight  = 1.0 - gaussWeight;
+
+    const fgRaw = new Float32Array(N);
+    for (let y = 0; y < SH; y++) {
+      for (let x = 0; x < SW; x++) {
+        const i  = y * SW + x;
+        const gD = Math.min(bgDistGauss(d, i) / 9, 1);
+        const sD = bgDistSnap(d, i);
+        // Blend the two signals
+        const bgD = gD * gaussWeight + sD * snapWeight;
+        const mot = motion[i];
+        const cw  = centreWeight(x, y, SW, SH); // soft spatial prior
+        fgRaw[i]  = (bgD * 0.72 + mot * 0.28) * cw;
       }
-      p=o;
-    }
-    return p;
-  }
-
-  // 3-layer neon contour path
-  function renderNeon(pts,SW,SH,VW,VH,ctx){
-    if(!pts||pts.length<6){ctx.clearRect(0,0,VW,VH);return;}
-    const n=pts.length>>1,scX=VW/SW,scY=VH/SH;
-    ctx.clearRect(0,0,VW,VH);
-    const path=()=>{
-      ctx.beginPath();ctx.moveTo(pts[0]*scX,pts[1]*scY);
-      for(let i=1;i<n;i++) ctx.lineTo(pts[i*2]*scX,pts[i*2+1]*scY);
-      ctx.closePath();
-    };
-    // Outer bloom
-    ctx.save();ctx.shadowBlur=22;ctx.shadowColor='#00ff88';
-    ctx.strokeStyle='rgba(0,255,100,0.14)';ctx.lineWidth=11;
-    ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
-    // Mid glow
-    ctx.save();ctx.shadowBlur=8;ctx.shadowColor='#00ff88';
-    ctx.strokeStyle='rgba(0,255,140,0.62)';ctx.lineWidth=3;
-    ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
-    // Core crisp line
-    ctx.save();ctx.strokeStyle='rgba(50,255,100,0.98)';ctx.lineWidth=1.5;
-    ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
-  }
-
-  function frame(){
-    outlineRAF=requestAnimationFrame(frame);
-    if(!video.videoWidth) return;
-    const VW=video.videoWidth,VH=video.videoHeight;
-    const SW=VW>>2,SH=VH>>2;  // 1/4 resolution
-    const N=SW*SH;
-    cvSrc.width=SW;cvSrc.height=SH;
-    cvOut.width=VW;cvOut.height=VH;
-    ctxSrc.drawImage(video,0,0,SW,SH);
-    const src=ctxSrc.getImageData(0,0,SW,SH);
-    const d=src.data;
-
-    if(!bgReady||lastSW!==SW||lastSH!==SH) initModel(d,N,SW,SH);
-
-    // Grey + motion
-    const grey=new Float32Array(N);
-    for(let i=0;i<N;i++) grey[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
-    const mot=new Float32Array(N);
-    if(prevGrey&&prevGrey.length===N)
-      for(let i=0;i<N;i++) mot[i]=Math.min(Math.abs(grey[i]-prevGrey[i])/50,1);
-    prevGrey=grey.slice();
-
-    updateBg(d,N);
-
-    const qEl=$('hudQuality');
-
-    // During warm-up: show learning state, don't output mask
-    if(!bgWarm){
-      const prog=Math.round(frameCount/80*100);
-      if(qEl){qEl.className='hud-quality none';qEl.textContent=`LEARNING BG ${prog}%`;}
-      cvOut.getContext('2d').clearRect(0,0,VW,VH);
-      frameCount++;
-      return;
     }
 
-    // Build fg score: background distance × spatial prior + motion bonus
-    const fgRaw=new Float32Array(N);
-    for(let y=0;y<SH;y++) for(let x=0;x<SW;x++){
-      const i=y*SW+x;
-      const bgD=Math.min(bgDist(d,i)/10,1); // normalise to 0-1
-      const sp=spatialPrior(x,y,SW,SH);
-      // Motion adds to the score but doesn't dominate (prevents environment bleed)
-      fgRaw[i]=bgD*sp + mot[i]*0.12*sp;
+    updateModel(d, N);
+
+    // ── Temporal IIR smoothing ──────────────────────────────────────
+    if (!fgAccum || fgAccum.length !== N) fgAccum = fgRaw.slice();
+    const iirAlpha = 0.35;  // how fast to react to changes
+    for (let i = 0; i < N; i++)
+      fgAccum[i] = fgAccum[i] * (1 - iirAlpha) + fgRaw[i] * iirAlpha;
+
+    // Tune threshold every 30 frames
+    if (frameCount % 30 === 0) tuneThreshold(fgAccum, N);
+
+    // ── Hard threshold → binary ──────────────────────────────────────
+    const binary = new Uint8Array(N);
+    for (let i = 0; i < N; i++) binary[i] = fgAccum[i] > adaptThresh ? 1 : 0;
+
+    // ── Morphological close (fills holes inside object) ──────────────
+    const closed = morphClose(binary, SW, SH, 3);
+
+    // ── Gap-bridging BFS: keep only central blob, bridge thin parts ──
+    const blob = centralBlobBridged(closed, SW, SH);
+
+    // ── Share fg mask with grabFrame() ──────────────────────────────
+    sharedFgMask = blob;
+    sharedFgW    = SW;
+    sharedFgH    = SH;
+
+    // ── Quality score ────────────────────────────────────────────────
+    let blobCount = 0;
+    for (let i = 0; i < N; i++) blobCount += blob[i];
+    const blobFrac = blobCount / N;
+    // A reasonable object covers 2–60% of the frame
+    outlineQualityScore = blobFrac < 0.005 ? 0
+                        : blobFrac < 0.02  ? blobFrac / 0.02 * 0.5
+                        : blobFrac > 0.65  ? Math.max(0, 1 - (blobFrac - 0.65) / 0.2)
+                        : 1.0;
+
+    // Update HUD quality badge
+    const qEl = $('hudQuality');
+    if (qEl) {
+      if (outlineQualityScore > 0.6) {
+        qEl.className = 'hud-quality good';
+        qEl.textContent = 'TRACKING ✓';
+      } else if (outlineQualityScore > 0.15) {
+        qEl.className = 'hud-quality fair';
+        qEl.textContent = 'ADJUSTING…';
+      } else {
+        qEl.className = 'hud-quality none';
+        qEl.textContent = frameCount < 45 ? 'LEARNING BG…' : 'NO OBJECT';
+      }
     }
 
-    // IIR smoothing: alpha=0.50 — reactive but not jittery
-    if(!fgAccum||fgAccum.length!==N) fgAccum=fgRaw.slice();
-    for(let i=0;i<N;i++) fgAccum[i]=fgAccum[i]*0.50+fgRaw[i]*0.50;
+    // ── Silhouette edge ──────────────────────────────────────────────
+    const edge = silhouette(blob, SW, SH);
 
-    if(frameCount%20===0) tuneThresh(fgAccum,N);
-
-    const bin=new Uint8Array(N);
-    for(let i=0;i<N;i++) bin[i]=fgAccum[i]>adaptThresh?1:0;
-
-    // Remove any foreground pixels in the spatial-prior dead zones
-    // (belt-and-suspenders: the prior already suppresses them but this cleans up)
-    for(let y=0;y<SH;y++) for(let x=0;x<SW;x++){
-      if(spatialPrior(x,y,SW,SH)<0.05) bin[y*SW+x]=0;
-    }
-
-    const closed=close(bin,SW,SH,3);
-    const blob=findCentralBlob(closed,SW,SH);
-
-    // Stability gate: only update shared mask when blob is stable
-    let blobCount=0;for(let i=0;i<N;i++) blobCount+=blob[i];
-    const blobFrac=blobCount/N;
-    const sizeDelta=Math.abs(blobCount-prevBlobSize)/(N+1);
-    prevBlobSize=blobCount;
-
-    if(sizeDelta<0.015) stableFrames=Math.min(stableFrames+1,10);
-    else stableFrames=Math.max(0,stableFrames-2);
-
-    // Write to shared mask only when stable (3+ consecutive stable frames)
-    if(stableFrames>=3){
-      stableMask=blob;
-      sharedFgMask=blob;sharedFgW=SW;sharedFgH=SH;
-    }
-
-    // Quality badge
-    const qs=blobFrac<0.004?0:blobFrac<0.015?blobFrac/0.015*0.5:blobFrac>0.68?Math.max(0,1-(blobFrac-0.68)/0.2):1.0;
-    if(qEl){
-      if(qs>0.50&&stableFrames>=3){qEl.className='hud-quality good';qEl.textContent='TRACKING ✓';}
-      else if(qs>0.08){qEl.className='hud-quality fair';qEl.textContent=stableFrames<3?'STABILISING…':'ADJUSTING…';}
-      else{qEl.className='hud-quality none';qEl.textContent='NO OBJECT';}
-    }
-
-    // Trace contour of current blob (show even when not yet stable — visual feedback)
-    const contour=traceContour(blob,SW,SH);
-    const smooth=smoothPoly(contour,3);
-    renderNeon(smooth,SW,SH,VW,VH,ctxOut);
+    // ── Render multi-layer neon outline ─────────────────────────────
+    renderNeon(edge, SW, SH, VW, VH, ctxOut);
 
     frameCount++;
   }
+
   frame();
 }
 
-function stopOutlineLoop(){
-  if(outlineRAF){cancelAnimationFrame(outlineRAF);outlineRAF=null;}
-  const cv=$('outlineCanvas');
-  if(cv) cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
-  sharedFgMask=null;
-  const qEl=$('hudQuality');
-  if(qEl){qEl.className='hud-quality none';qEl.textContent='—';}
+function stopOutlineLoop() {
+  if (outlineRAF) { cancelAnimationFrame(outlineRAF); outlineRAF = null; }
+  const cv = $('outlineCanvas');
+  if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  sharedFgMask = null;
+  const qEl = $('hudQuality');
+  if (qEl) { qEl.className = 'hud-quality none'; qEl.textContent = '—'; }
 }
 
-function toast(msg,type='ok'){
-  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;
-  $('toasts').appendChild(el);setTimeout(()=>el.remove(),3800);
-}
-function tlog(msg){
-  const d=document.createElement('div');d.textContent='$ '+msg;
-  $('terminal').appendChild(d);$('terminal').scrollTop=99999;
+/* ─── Toast ───────────────────────────────────── */
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3600);
 }
 
-$('slFrames').oninput=()=>$('svFrames').textContent=$('slFrames').value;
-$('slInterval').oninput=()=>$('svInterval').textContent=(parseInt($('slInterval').value)/1000).toFixed(1)+'s';
+/* ─── Terminal ─────────────────────────────────── */
+function tlog(msg) {
+  const d = document.createElement('div');
+  d.textContent = '$ ' + msg;
+  $('terminal').appendChild(d);
+  $('terminal').scrollTop = 99999;
+}
 
-async function startCamera(){
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},facingMode:'environment'},audio:false});
-    $('video').srcObject=stream;
-    await new Promise(r=>$('video').onloadedmetadata=r);
-    $('hudRes').textContent=$('video').videoWidth+'×'+$('video').videoHeight;
+/* ─── Sliders ──────────────────────────────────── */
+$('slFrames').oninput   = () => $('svFrames').textContent = $('slFrames').value;
+$('slInterval').oninput = () => $('svInterval').textContent = (parseInt($('slInterval').value)/1000).toFixed(1)+'s';
+
+/* ─── Camera ───────────────────────────────────── */
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width:{ideal:1920}, height:{ideal:1080}, facingMode:'environment' },
+      audio: false
+    });
+    $('video').srcObject = stream;
+    await new Promise(r => $('video').onloadedmetadata = r);
+    $('hudRes').textContent = $('video').videoWidth + '×' + $('video').videoHeight;
     $('noCam').classList.add('hidden');
-    $('btnStartScan').disabled=false;
-    $('btnStopCam').style.display='inline-flex';
-    $('scanLine').style.display='block';
-    $('hudInstruction').textContent='Hold still 3 sec · AI is learning background…';
-    toast('Camera ready — keep still while background is learned');
+    $('btnStartScan').disabled = false;
+    $('btnStopCam').style.display = 'inline-flex';
+    $('scanLine').style.display = 'block';
+    $('hudInstruction').textContent = 'Point at object · green outline will appear';
+    toast('Camera ready — point it at your object');
     startOutlineLoop();
-  }catch(e){
-    toast('Camera error: '+e.message,'err');
-    $('noCam').querySelector('p').textContent='Camera blocked. Click 🔒 in the address bar, allow camera, then refresh.';
+  } catch(e) {
+    toast('Camera error: ' + e.message, 'err');
+    $('noCam').querySelector('p').textContent =
+      'Camera access blocked. Click 🔒 in the address bar, allow camera, then refresh.';
   }
 }
-function stopCamera(){
-  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  $('video').srcObject=null;
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $('video').srcObject = null;
   $('noCam').classList.remove('hidden');
-  $('noCam').querySelector('h3').textContent='Camera stopped';
-  $('noCam').querySelector('p').textContent='Click below to re-enable.';
-  $('btnStartScan').disabled=true;$('btnStopCam').style.display='none';$('scanLine').style.display='none';
-  stopOutlineLoop();toast('Camera off','warn');
+  $('noCam').querySelector('h3').textContent = 'Camera stopped';
+  $('noCam').querySelector('p').textContent = 'Click below to re-enable.';
+  $('btnStartScan').disabled = true;
+  $('btnStopCam').style.display = 'none';
+  $('scanLine').style.display = 'none';
+  stopOutlineLoop();
+  toast('Camera off', 'warn');
 }
-$('btnEnableCam').onclick=startCamera;$('btnStopCam').onclick=stopCamera;
 
-const CAM_INSTRUCTIONS=['Keep object centred · move slowly','Step a little to the right →','Keep circling around the object','Halfway there — keep going!','Capture the back of the object','Almost full circle — nearly done!','Last few shots — complete the loop'];
+$('btnEnableCam').onclick = startCamera;
+$('btnStopCam').onclick   = stopCamera;
 
-function grabFrame(){
-  const v=$('video'),cv=$('captureCanvas');
-  cv.width=v.videoWidth||640;cv.height=v.videoHeight||480;
-  const ctx=cv.getContext('2d');ctx.drawImage(v,0,0);
-  const f=$('flashEl');f.classList.add('go');setTimeout(()=>f.classList.remove('go'),100);
-  const dataURL=cv.toDataURL('image/jpeg',0.92);
-  const imageData=ctx.getImageData(0,0,cv.width,cv.height);
-  // Scale fg mask to full frame resolution
-  let fgMaskFull=null;
-  if(sharedFgMask&&sharedFgW>0&&sharedFgH>0){
-    fgMaskFull=new Uint8Array(cv.width*cv.height);
-    const scX=sharedFgW/cv.width,scY=sharedFgH/cv.height;
-    for(let y=0;y<cv.height;y++) for(let x=0;x<cv.width;x++){
-      const sx=clamp(Math.floor(x*scX),0,sharedFgW-1);
-      const sy=clamp(Math.floor(y*scY),0,sharedFgH-1);
-      fgMaskFull[y*cv.width+x]=sharedFgMask[sy*sharedFgW+sx];
+/* ─── Capture ──────────────────────────────────── */
+const CAM_INSTRUCTIONS = [
+  'Keep object centred · move slowly',
+  'Step a little to the right →',
+  'Keep circling around the object',
+  'Halfway — keep going!',
+  'Capture the back of the object',
+  'Almost full circle — nearly done!',
+  'Last few shots — complete the loop',
+];
+
+function grabFrame() {
+  const v = $('video'), cv = $('captureCanvas');
+  cv.width  = v.videoWidth  || 640;
+  cv.height = v.videoHeight || 480;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(v, 0, 0);
+
+  const f = $('flashEl'); f.classList.add('go');
+  setTimeout(() => f.classList.remove('go'), 100);
+
+  const dataURL   = cv.toDataURL('image/jpeg', 0.9);
+  const imageData = ctx.getImageData(0, 0, cv.width, cv.height);
+
+  // Scale the shared fg mask up to full frame resolution
+  let fgMaskFull = null;
+  if (sharedFgMask && sharedFgW > 0 && sharedFgH > 0) {
+    fgMaskFull = new Uint8Array(cv.width * cv.height);
+    const scaleX = sharedFgW / cv.width;
+    const scaleY = sharedFgH / cv.height;
+    for (let y = 0; y < cv.height; y++) {
+      for (let x = 0; x < cv.width; x++) {
+        const sx = clamp(Math.floor(x * scaleX), 0, sharedFgW - 1);
+        const sy = clamp(Math.floor(y * scaleY), 0, sharedFgH - 1);
+        fgMaskFull[y * cv.width + x] = sharedFgMask[sy * sharedFgW + sx];
+      }
     }
   }
-  frames.push({dataURL,imageData,w:cv.width,h:cv.height,fgMask:fgMaskFull});
-  const img=document.createElement('img');img.className='frame-thumb fresh';img.src=cv.toDataURL('image/jpeg',0.4);
-  $('frameStrip').appendChild(img);setTimeout(()=>img.classList.remove('fresh'),500);$('frameStrip').scrollLeft=99999;
+
+  frames.push({ dataURL, imageData, w: cv.width, h: cv.height, fgMask: fgMaskFull });
+
+  const img = document.createElement('img');
+  img.className = 'frame-thumb fresh';
+  img.src = cv.toDataURL('image/jpeg', 0.4);
+  $('frameStrip').appendChild(img);
+  setTimeout(() => img.classList.remove('fresh'), 500);
+  $('frameStrip').scrollLeft = 99999;
 }
 
-async function startScan(){
-  if(!stream){toast('Enable camera first','warn');return;}
-  frames=[];capturing=true;
-  const total=parseInt($('slFrames').value),interval=parseInt($('slInterval').value);
-  $('frameStrip').innerHTML='';$('captureProgress').classList.add('show');
-  $('btnStartScan').disabled=true;$('btnReset').style.display='inline-flex';
-  $('btnStopCam').style.display='none';$('slFrames').disabled=$('slInterval').disabled=true;
+async function startScan() {
+  if (!stream) { toast('Enable camera first', 'warn'); return; }
+  frames = []; capturing = true;
+  const total    = parseInt($('slFrames').value);
+  const interval = parseInt($('slInterval').value);
+
+  $('frameStrip').innerHTML = '';
+  $('captureProgress').classList.add('show');
+  $('btnStartScan').disabled = true;
+  $('btnReset').style.display = 'inline-flex';
+  $('btnStopCam').style.display = 'none';
+  $('slFrames').disabled = $('slInterval').disabled = true;
   toast('Scanning — walk slowly in a full circle around your object');
-  for(let i=0;i<total;i++){
-    if(!capturing) break;
-    $('captureBar').style.width=Math.round(i/total*100)+'%';
-    $('capLabel').textContent=`Taking photo ${i+1} of ${total}…`;
-    $('capCount').textContent=`${i+1} / ${total}`;
-    $('hudCounter').textContent=`Photo ${i+1}/${total}`;$('hudCounter').classList.add('visible');
-    $('hudInstruction').textContent=CAM_INSTRUCTIONS[clamp(Math.floor(i/total*CAM_INSTRUCTIONS.length),0,CAM_INSTRUCTIONS.length-1)];
+
+  for (let i = 0; i < total; i++) {
+    if (!capturing) break;
+    const pct = Math.round((i / total) * 100);
+    $('captureBar').style.width = pct + '%';
+    $('capLabel').textContent   = `Taking photo ${i+1} of ${total}…`;
+    $('capCount').textContent   = `${i+1} / ${total}`;
+    $('hudCounter').textContent = `Photo ${i+1}/${total}`;
+    $('hudCounter').classList.add('visible');
+    const step = Math.floor((i/total) * CAM_INSTRUCTIONS.length);
+    $('hudInstruction').textContent = CAM_INSTRUCTIONS[clamp(step, 0, CAM_INSTRUCTIONS.length-1)];
     grabFrame();
-    if(i<total-1) await new Promise(r=>captureTimer=setTimeout(r,interval));
+    if (i < total-1) await new Promise(r => captureTimer = setTimeout(r, interval));
   }
-  if(capturing){
-    capturing=false;$('hudCounter').classList.remove('visible');
-    $('captureBar').style.width='100%';
-    $('capLabel').textContent=`✓ ${frames.length} photos captured — starting AI pipeline…`;
+
+  if (capturing) {
+    capturing = false;
+    $('hudCounter').classList.remove('visible');
+    $('captureBar').style.width = '100%';
+    $('capLabel').textContent = `✓ ${frames.length} photos captured — starting AI pipeline…`;
     toast(`${frames.length} photos ready · AI reconstruction starting`);
-    await wait(700);startProcessing();
+    await wait(700);
+    startProcessing();
   }
 }
-function cancelCapture(){capturing=false;if(captureTimer)clearTimeout(captureTimer);}
 
-const STAGES=[
-  {name:'Loading AI depth model',key:'s0'},{name:'Estimating depth per photo',key:'s1'},
-  {name:'Space carving Visual Hull',key:'s2'},{name:'Surface reconstruction',key:'s3'},
-  {name:'Building texture atlas',key:'s4'},{name:'Finalising',key:'s5'},
+function cancelCapture() {
+  capturing = false;
+  if (captureTimer) clearTimeout(captureTimer);
+}
+
+/* ─── Processing pipeline ──────────────────────── */
+const STAGES = [
+  { name: 'Loading AI depth model',      key: 's0' },
+  { name: 'Estimating depth per photo',  key: 's1' },
+  { name: 'Building point cloud',        key: 's2' },
+  { name: 'Reconstructing surface',      key: 's3' },
+  { name: 'Projecting photo textures',   key: 's4' },
+  { name: 'Finalising',                  key: 's5' },
 ];
-function setPipeline(ai,pct,label){
-  STAGES.forEach((s,i)=>{const b=$(s.key);if(!b)return;b.className=i<ai?'stage-block done':i===ai?'stage-block active':'stage-block';});
-  $('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';if(label)$('procStage').textContent=label;
+
+function setPipeline(activeIdx, pct, label) {
+  STAGES.forEach((s, i) => {
+    const b = $(s.key);
+    if (!b) return;
+    b.className = i < activeIdx ? 'stage-block done'
+                : i === activeIdx ? 'stage-block active'
+                : 'stage-block';
+  });
+  $('procBar').style.width = pct + '%';
+  $('procPct').textContent = pct + '%';
+  if (label) $('procStage').textContent = label;
 }
 
-async function startProcessing(){
-  const panel=$('panelProcess');panel.style.display='block';panel.scrollIntoView({behavior:'smooth'});
-  const stEl=$('pipelineStages');stEl.innerHTML='';
-  STAGES.forEach(s=>{const b=document.createElement('div');b.className='stage-block';b.id=s.key;stEl.appendChild(b);});
-  $('procFrames').textContent=frames.length+' photos';depthMaps=[];
+async function startProcessing() {
+  const panel = $('panelProcess');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth' });
 
-  setPipeline(0,4,'Loading AI depth model…');
-  tlog('Loading MiDaS depth model…');
-  const t0=Date.now();
-  try{midasModel=await loadMiDaS();tlog(`MiDaS loaded in ${((Date.now()-t0)/1000).toFixed(1)}s`);}
-  catch(e){tlog('MiDaS unavailable — using edge-based fallback');midasModel=null;}
+  const stagesEl = $('pipelineStages'); stagesEl.innerHTML = '';
+  STAGES.forEach(s => {
+    const b = document.createElement('div');
+    b.className = 'stage-block'; b.id = s.key;
+    stagesEl.appendChild(b);
+  });
 
-  setPipeline(1,8,'Depth estimation…');
-  tlog(`Estimating depth for ${frames.length} photos…`);
-  for(let i=0;i<frames.length;i++){
-    $('procBar').style.width=(8+Math.round(i/frames.length*24))+'%';
-    $('procPct').textContent=(8+Math.round(i/frames.length*24))+'%';
-    $('procStage').textContent=`Depth map ${i+1}/${frames.length}`;
-    await wait(0);
-    depthMaps.push(midasModel?await runMiDaS(frames[i]):fallbackDepth(frames[i]));
+  $('procFrames').textContent = frames.length + ' photos';
+  depthMaps = [];
+
+  setPipeline(0, 4, 'Loading AI model…');
+  tlog('Loading MiDaS depth estimation model (TensorFlow.js)…');
+  const t0 = Date.now();
+  try {
+    midasModel = await loadMiDaS();
+    tlog(`MiDaS loaded in ${((Date.now()-t0)/1000).toFixed(1)}s`);
+  } catch(e) {
+    tlog('AI model unavailable — using edge-based fallback');
+    midasModel = null;
   }
-  tlog(`${frames.length} depth maps complete`);renderDepthPreviews();
 
-  setPipeline(2,34,'Visual hull carving…');
-  const mc=frames.filter(f=>f.fgMask).length;
-  tlog(`Space carving: ${mc}/${frames.length} frames have silhouette masks`);
+  setPipeline(1, 8, 'Depth estimation…');
+  tlog(`Running depth estimation on ${frames.length} photos…`);
+  for (let i = 0; i < frames.length; i++) {
+    const pct = 8 + Math.round((i / frames.length) * 24);
+    $('procBar').style.width = pct + '%';
+    $('procPct').textContent = pct + '%';
+    $('procStage').textContent = `Depth map ${i+1}/${frames.length}`;
+    await wait(0);
+    depthMaps.push(midasModel ? await runMiDaS(frames[i]) : fallbackDepth(frames[i]));
+  }
+  tlog(`${frames.length} depth maps complete`);
+  renderDepthPreviews();
+
+  setPipeline(2, 34, 'Visual hull space carving…');
+  const maskedFrames = frames.filter(f => f.fgMask).length;
+  tlog(`Space carving: ${maskedFrames}/${frames.length} frames have silhouette masks`);
   await wait(40);
 
-  setPipeline(3,54,'Surface reconstruction…');
-  tlog('Carving voxels → smooth → marching cubes…');
+  setPipeline(3, 54, 'Surface reconstruction…');
+  tlog('Carving voxel grid → flood-fill → Laplacian smooth → marching cubes…');
   await wait(40);
-  meshData=buildMesh();
+  meshData = buildMesh();
   tlog(`Mesh: ${meshData.stats.vCount.toLocaleString()} verts, ${meshData.stats.fCount.toLocaleString()} faces`);
 
-  setPipeline(4,76,'Building texture atlas…');
-  tlog('Packing texture atlas…');await wait(40);
-  atlasCanvas=buildTextureAtlas();
-  const AC=Math.ceil(Math.sqrt(frames.length));
-  tlog(`Atlas: ${frames.length} → ${AC}×${Math.ceil(frames.length/AC)}`);
+  setPipeline(4, 76, 'Building texture atlas…');
+  tlog('Packing photos into multi-angle texture atlas…');
+  await wait(40);
+  atlasCanvas = buildTextureAtlas();
+  const AC = Math.ceil(Math.sqrt(frames.length));
+  tlog(`Atlas: ${frames.length} photos → ${AC}×${Math.ceil(frames.length/AC)} grid`);
 
-  setPipeline(5,93,'Finalising…');await wait(50);
-  STAGES.forEach(s=>{const b=$(s.key);if(b)b.className='stage-block done';});
-  $('procBar').style.width='100%';$('procPct').textContent='100%';$('procStage').textContent='Done!';
-  tlog('✓ Reconstruction complete!');toast('Your 3D model is ready! 🎉');
-  await wait(500);showViewer();
+  setPipeline(5, 93, 'Finalising…');
+  await wait(50);
+
+  STAGES.forEach(s => { const b=$(s.key); if(b) b.className='stage-block done'; });
+  $('procBar').style.width = '100%';
+  $('procPct').textContent = '100%';
+  $('procStage').textContent = 'Done!';
+  tlog('✓ 3D model reconstruction complete!');
+  toast('Your 3D model is ready! 🎉');
+  await wait(500);
+  showViewer();
 }
 
-async function loadMiDaS(){
-  if(typeof tf==='undefined') throw new Error('TF.js not loaded');
-  return await tf.loadGraphModel('https://tfhub.dev/intel/midas/v2_1_small/1/model.json',{fromTFHub:true});
+/* ─── MiDaS depth ──────────────────────────────── */
+async function loadMiDaS() {
+  if (typeof tf === 'undefined') throw new Error('TF.js not loaded');
+  return await tf.loadGraphModel(
+    'https://tfhub.dev/intel/midas/v2_1_small/1/model.json',
+    { fromTFHub: true }
+  );
 }
-async function runMiDaS(frame){
-  const{imageData,w,h}=frame;
-  return tf.tidy(()=>{
-    const img=tf.browser.fromPixels(imageData);
-    const rs=tf.image.resizeBilinear(img,[256,256]);
-    const nm=rs.toFloat().div(255).sub(tf.tensor([0.485,0.456,0.406])).div(tf.tensor([0.229,0.224,0.225]));
-    const res=midasModel.predict(nm.expandDims(0));
-    const dep=(Array.isArray(res)?res[0]:res).squeeze();
-    const fr=tf.image.resizeBilinear(dep.expandDims(-1),[h,w]).squeeze();
-    const arr=fr.arraySync();
-    const flat=new Float32Array(w*h);let mn=Infinity,mx=-Infinity;
-    for(let y=0;y<h;y++) for(let x=0;x<w;x++){const v=arr[y][x];flat[y*w+x]=v;if(v<mn)mn=v;if(v>mx)mx=v;}
-    const rng=mx-mn||1;for(let i=0;i<flat.length;i++) flat[i]=(flat[i]-mn)/rng;
+
+async function runMiDaS(frame) {
+  const { imageData, w, h } = frame;
+  return tf.tidy(() => {
+    const img     = tf.browser.fromPixels(imageData);
+    const resized = tf.image.resizeBilinear(img, [256, 256]);
+    const normed  = resized.toFloat().div(255)
+                    .sub(tf.tensor([0.485,0.456,0.406]))
+                    .div(tf.tensor([0.229,0.224,0.225]));
+    const result  = midasModel.predict(normed.expandDims(0));
+    const depth   = (Array.isArray(result) ? result[0] : result).squeeze();
+    const fullRes = tf.image.resizeBilinear(depth.expandDims(-1), [h, w]).squeeze();
+    const arr     = fullRes.arraySync();
+    const flat    = new Float32Array(w * h);
+    let mn = Infinity, mx = -Infinity;
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
+      const v = arr[y][x]; flat[y*w+x] = v;
+      if (v<mn) mn=v; if (v>mx) mx=v;
+    }
+    const rng = mx-mn || 1;
+    for (let i=0;i<flat.length;i++) flat[i] = (flat[i]-mn)/rng;
     return flat;
   });
 }
-function fallbackDepth(frame){
-  const{imageData:id,w,h}=frame,data=id.data;
-  const dep=new Float32Array(w*h);
-  const g=(y,x)=>{const i=(y*w+x)*4;return 0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];};
-  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
-    const lap=Math.abs(4*g(y,x)-g(y-1,x)-g(y+1,x)-g(y,x-1)-g(y,x+1))/255;
-    const nx=(x/w-.5)*2,ny=(y/h-.5)*2;
-    dep[y*w+x]=clamp(lap*0.55+Math.max(0,1-Math.sqrt(nx*nx+ny*ny))*0.45,0,1);
+
+function fallbackDepth(frame) {
+  const { imageData: id, w, h } = frame;
+  const data = id.data;
+  const depth = new Float32Array(w * h);
+  const g = (y,x) => {
+    const i=(y*w+x)*4;
+    return 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+  };
+  for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++) {
+    const lap = Math.abs(4*g(y,x) - g(y-1,x) - g(y+1,x) - g(y,x-1) - g(y,x+1)) / 255;
+    const nx=(x/w-.5)*2, ny=(y/h-.5)*2;
+    const cb = Math.max(0, 1-Math.sqrt(nx*nx+ny*ny));
+    depth[y*w+x] = clamp(lap*0.55 + cb*0.45, 0, 1);
   }
-  const out=new Float32Array(w*h);
-  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
-    let s=0;for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) s+=dep[(y+dy)*w+(x+dx)];
+  const out = new Float32Array(w*h);
+  for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++) {
+    let s=0;
+    for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) s+=depth[(y+dy)*w+(x+dx)];
     out[y*w+x]=s/9;
   }
   return out;
 }
-function renderDepthPreviews(){
-  $('depthSection').classList.add('show');const strip=$('depthStrip');strip.innerHTML='';
-  for(let i=0;i<Math.min(frames.length,10);i++){
-    const wrap=document.createElement('div');wrap.className='depth-cell';
-    const photo=document.createElement('img');photo.src=frames[i].dataURL;
-    const cv2=document.createElement('canvas');cv2.width=60;cv2.height=45;
-    const ctx2=cv2.getContext('2d');const{w,h}=frames[i];const d=depthMaps[i];
-    const id2=ctx2.createImageData(60,45);
-    for(let py=0;py<45;py++) for(let px=0;px<60;px++){
-      const v=d[Math.floor(py/45*h)*w+Math.floor(px/60*w)];const ii=(py*60+px)*4;
-      id2.data[ii]=Math.round(lerp(lerp(10,0,v),lerp(0,255,v),v));
-      id2.data[ii+1]=Math.round(lerp(lerp(20,180,v),lerp(180,230,v),v));
-      id2.data[ii+2]=Math.round(lerp(lerp(80,140,v),lerp(140,0,v),v));
-      id2.data[ii+3]=210;
+
+function renderDepthPreviews() {
+  $('depthSection').classList.add('show');
+  const strip = $('depthStrip'); strip.innerHTML = '';
+  const show = Math.min(frames.length, 10);
+  for (let i=0;i<show;i++) {
+    const wrap = document.createElement('div'); wrap.className='depth-cell';
+    const photo = document.createElement('img'); photo.src = frames[i].dataURL;
+    const cv2 = document.createElement('canvas'); cv2.width=60; cv2.height=45;
+    const ctx2 = cv2.getContext('2d');
+    const { w, h } = frames[i]; const d = depthMaps[i];
+    const id2 = ctx2.createImageData(60,45);
+    for (let py=0;py<45;py++) for (let px=0;px<60;px++) {
+      const sx=Math.floor(px/60*w), sy=Math.floor(py/45*h);
+      const v = d[sy*w+sx];
+      const ii=(py*60+px)*4;
+      id2.data[ii]   = Math.round(lerp(lerp(10,0,v),  lerp(0,255,v), v));
+      id2.data[ii+1] = Math.round(lerp(lerp(20,180,v),lerp(180,230,v),v));
+      id2.data[ii+2] = Math.round(lerp(lerp(80,140,v),lerp(140,0,v),  v));
+      id2.data[ii+3] = 210;
     }
     ctx2.putImageData(id2,0,0);
-    const tag=document.createElement('div');tag.className='depth-tag';tag.textContent=`F${i+1}`;
-    wrap.appendChild(photo);wrap.appendChild(cv2);wrap.appendChild(tag);strip.appendChild(wrap);
+    const tag = document.createElement('div'); tag.className='depth-tag';
+    tag.textContent = `F${i+1}`;
+    wrap.appendChild(photo); wrap.appendChild(cv2); wrap.appendChild(tag);
+    strip.appendChild(wrap);
   }
 }
 
+/* ─── Point cloud fusion ──────────────────────────────────────────
+   THE FIX: the old code pushed every point outward to radius Z from
+   the origin, creating a hollow cylindrical shell (the "ring").
+
+   Correct model: the camera orbits the object at a fixed radius
+   (ORBIT_R). Each frame's camera position is known. A ray is cast
+   from the camera INWARD through each foreground pixel. Depth dv
+   tells us how far along that ray the surface sits — ranging from
+   just in front of the camera (dv≈0 → near) to close to the object
+   centre (dv≈1 → far). This correctly fills the 3-D volume of the
+   object instead of tracing only its silhouette ring.
+
+   Key changes vs old:
+   • Camera sits at (ORBIT_R·sinA, 0, ORBIT_R·cosA) looking inward
+   • Ray direction = (object_centre − camera_pos), normalised
+   • Lateral deflection Xc/Yc is applied in camera space then rotated
+   • Depth maps to distance 0.2–ORBIT_R along the inward ray
+   • Result: points cluster in a solid 3D blob at the object location
+──────────────────────────────────────────────────────────────── */
 /* ═══════════════════════════════════════════════════════════════════
    3D RECONSTRUCTION — Visual Hull Space Carving v4
 
-   Improvements over v3:
-   1. fgMask is dilated by 2px before carving — prevents over-carving
-      at silhouette boundaries caused by mask-to-projection misalignment
-   2. RES=80 (up from 72) — finer detail (~50% more voxels per axis)
-   3. Depth carve threshold 0.28 — more conservative, keeps rounded
-      surfaces like pottery intact
-   4. 6 Laplacian smoothing passes with clamp (smoother organic surface)
-   5. Fallback: depth-point-cloud with flood-fill interior fill
-   6. Both fgMask and depth use the same camera model — no mismatch
+   Key improvements over previous version:
+   1. fgMask is DILATED 2px before carving — prevents over-carving
+      at silhouette boundaries from mask-to-projection misalignment
+   2. RES=80 — 44% more voxels per axis = sharper, finer shape
+   3. Depth carve threshold 0.28 — more conservative, preserves
+      rounded/convex surfaces like pottery and rounded objects
+   4. 6 Laplacian smooth passes → smoother organic surface
+   5. marchingCubes extracted as shared function (no code duplication)
+   6. Fallback has proper flood-fill interior fill
 ═══════════════════════════════════════════════════════════════════ */
 function buildMesh(){
   const N=frames.length;
@@ -833,9 +1342,7 @@ function buildMesh(){
   const N3=RES*RES*RES;
   const vox=new Uint8Array(N3).fill(1);
 
-  // Pre-compute per-frame dilated silhouettes for carving
-  // Dilation: 2px in full-res space = very conservative safety margin
-  // This prevents hair-thin carving at object boundaries
+  // Pre-dilate each silhouette mask by 2px — safety margin at boundaries
   function dilateMask(mask,w,h,r){
     if(!mask) return null;
     const out=new Uint8Array(w*h);
@@ -849,13 +1356,13 @@ function buildMesh(){
   let maskedCount=0;
   tlog(`Space carving: ${RES}³ voxels × ${N} frames…`);
 
-  // Silhouette carving pass
+  // ── Silhouette carving pass ──────────────────────────────────────
   for(let fi=0;fi<N;fi++){
     const{w,h,fgMask}=frames[fi];
     if(!fgMask) continue;
     maskedCount++;
 
-    // Dilate mask 2px before using it for carving (safer boundary)
+    // Dilate mask 2px before carving (safer boundary treatment)
     const dilMask=dilateMask(fgMask,w,h,2);
 
     const az=(fi/N)*Math.PI*2;
@@ -882,7 +1389,7 @@ function buildMesh(){
           const pxi=Math.round(pxc*fl+w/2);
           const pyi=Math.round(-pyc*fl+h/2);
           if(pxi<0||pxi>=w||pyi<0||pyi>=h){vox[VI(ix,iy,iz)]=0;continue;}
-          // Use dilated mask — pixel is background → carve
+          // Use dilated mask — background pixel → carve voxel
           if(!dilMask[pyi*w+pxi]) vox[VI(ix,iy,iz)]=0;
         }
       }
@@ -893,11 +1400,11 @@ function buildMesh(){
   tlog(`After silhouette carving: ${solid1.toLocaleString()} solid voxels (${maskedCount} masks)`);
 
   if(solid1<100){
-    tlog('Too few voxels — using depth fallback');
+    tlog('Too few voxels after silhouette carving — using depth fallback');
     return buildDepthFallback();
   }
 
-  // Depth refinement: conservative threshold 0.28
+  // ── Depth refinement (conservative threshold 0.28) ──────────────
   for(let fi=0;fi<N;fi++){
     const{w,h,fgMask}=frames[fi];
     const dm=depthMaps[fi];
@@ -924,10 +1431,10 @@ function buildMesh(){
           const pxi=clamp(Math.round(pxc*fl+w/2),0,w-1);
           const pyi=clamp(Math.round(-pyc*fl+h/2),0,h-1);
           if(!fgMask[pyi*w+pxi]) continue;
-          // MiDaS: high=near, low=far → invert
+          // MiDaS: high=near, low=far → invert to 0=near, 1=far
           const measNorm=1.0-dm[pyi*w+pxi];
           const voxNorm=(depth-(ORBIT_R-HALF*1.8))/(HALF*3.6);
-          // Conservative threshold 0.28 (was 0.22) — preserves convex surfaces
+          // Conservative threshold 0.28 — preserves convex/rounded surfaces
           if(voxNorm<measNorm-0.28) vox[VI(ix,iy,iz)]=0;
         }
       }
@@ -937,7 +1444,7 @@ function buildMesh(){
   let solid2=0;for(let i=0;i<N3;i++) solid2+=vox[i];
   tlog(`After depth refinement: ${solid2.toLocaleString()} solid voxels`);
 
-  // Build smooth occupancy field — 6 passes of volume-preserving Laplacian
+  // ── Smooth field — 6 Laplacian passes ───────────────────────────
   const occ=new Float32Array(N3);
   const tmp=new Float32Array(N3);
   for(let i=0;i<N3;i++) occ[i]=vox[i];
@@ -953,6 +1460,7 @@ function buildMesh(){
   return marchingCubes(occ,RES,HALF,STEP,VI);
 }
 
+/* Shared marching cubes — takes a smooth float occupancy field */
 function marchingCubes(occ,RES,HALF,STEP,VI){
   const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
   const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
@@ -992,9 +1500,9 @@ function marchingCubes(occ,RES,HALF,STEP,VI){
   return{verts,normals,uvs,indices,stats:{vCount:vIdx,fCount:Math.floor(indices.length/3)}};
 }
 
-// Depth-point-cloud fallback with flood-fill interior
+/* Fallback: depth-point-cloud with flood-fill interior solidification */
 function buildDepthFallback(){
-  tlog('Running depth-point-cloud fallback…');
+  tlog('Running depth-point-cloud fallback with flood-fill…');
   const N=frames.length,RES=56,HALF=1.15,STEP=(HALF*2)/RES;
   const ORBIT_R=2.6,HFOV=58*Math.PI/180;
   const VI2=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz,N3=RES*RES*RES;
@@ -1018,7 +1526,7 @@ function buildDepthFallback(){
   let cntMax=0;for(let i=0;i<N3;i++) if(cnt[i]>cntMax) cntMax=cnt[i];
   const occ=new Float32Array(N3);
   if(cntMax>0){const thr=Math.max(1,cntMax*.04);for(let i=0;i<N3;i++) occ[i]=cnt[i]>=thr?1:0;}
-  // Dilate then flood-fill exterior
+  // Dilate then flood-fill exterior to solidify interior
   const dil=new Uint8Array(N3),DR=2;
   for(let ix=DR;ix<RES-DR;ix++) for(let iy=DR;iy<RES-DR;iy++) for(let iz=DR;iz<RES-DR;iz++){
     if(!occ[VI2(ix,iy,iz)]) continue;
@@ -1046,134 +1554,201 @@ function buildDepthFallback(){
   return marchingCubes(occ,RES,HALF,STEP,VI2);
 }
 
-function buildTextureAtlas(){
-  const N=frames.length,CELL=N>=24?384:N>=16?320:256;
+/* ─── Texture atlas ───────────────────────────── */
+function buildTextureAtlas() {
+  const N=frames.length;
+  const CELL=N>=24?384:N>=16?320:256;
   const COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
-  const cv=document.createElement('canvas');cv.width=COLS*CELL;cv.height=ROWS*CELL;
-  const ctx=cv.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
+  const cv=document.createElement('canvas');
+  cv.width=COLS*CELL; cv.height=ROWS*CELL;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
   frames.forEach((f,i)=>{
-    const img=new Image();img.src=f.dataURL;
+    const img=new Image(); img.src=f.dataURL;
     const col=i%COLS,row=Math.floor(i/COLS);
     const s=Math.min(f.w,f.h),ox=(f.w-s)/2,oy=(f.h-s)/2;
     ctx.drawImage(img,ox,oy,s,s,col*CELL,row*CELL,CELL,CELL);
   });
   return cv;
 }
-function buildOBJ(){
-  if(!meshData) return'';
+
+/* ─── OBJ export ──────────────────────────────── */
+function buildOBJ() {
+  if(!meshData) return '';
   const{verts,normals,uvs,indices,stats}=meshData;
-  const L=['# SCAN3D Export',`# Photos:${frames.length} Verts:${stats.vCount} Faces:${stats.fCount}`,'mtllib scan3d.mtl','o ScannedObject',''];
-  for(let i=0;i<verts.length;i+=3) L.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
-  L.push('');for(let i=0;i<uvs.length;i+=2) L.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
-  L.push('');for(let i=0;i<normals.length;i+=3) L.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
-  L.push('','usemtl Scanned','s 1','');
-  for(let i=0;i<indices.length;i+=3){const a=indices[i]+1,b=indices[i+1]+1,c=indices[i+2]+1;L.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);}
-  return L.join('\n');
+  const lines=['# SCAN3D — AI Depth-Fusion Export',`# Photos: ${frames.length} | Verts: ${stats.vCount} | Faces: ${stats.fCount}`,'mtllib scan3d.mtl','o ScannedObject',''];
+  for(let i=0;i<verts.length;i+=3) lines.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
+  lines.push('');
+  for(let i=0;i<uvs.length;i+=2) lines.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
+  lines.push('');
+  for(let i=0;i<normals.length;i+=3) lines.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
+  lines.push('','usemtl Scanned','s 1','');
+  for(let i=0;i<indices.length;i+=3){const a=indices[i]+1,b=indices[i+1]+1,c=indices[i+2]+1;lines.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);}
+  return lines.join('\n');
 }
 
-function showViewer(){
-  const pv=$('panelViewer');pv.style.display='block';pv.scrollIntoView({behavior:'smooth'});
-  const CV2=Math.ceil(Math.sqrt(frames.length)),RV=Math.ceil(frames.length/CV2);
-  $('viewerStats').innerHTML=[`<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,`<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,`<div class="vsl">${frames.length} photos</div>`,`<div class="vsl">${CV2}×${RV} atlas</div>`].join('');
-  $('btnDownload').onclick=()=>{const bl=new Blob([buildOBJ()],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_model.obj';a.click();toast('Downloaded — open in Blender or MeshLab');};
-  $('btnDownloadTex').onclick=()=>{if(!atlasCanvas)return;atlasCanvas.toBlob(bl=>{const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_texture.png';a.click();toast('Texture downloaded!');});};
+/* ─── Viewer ──────────────────────────────────── */
+function showViewer() {
+  const pv=$('panelViewer'); pv.style.display='block'; pv.scrollIntoView({behavior:'smooth'});
+  const COLS_v=Math.ceil(Math.sqrt(frames.length)),ROWS_v=Math.ceil(frames.length/COLS_v);
+  $('viewerStats').innerHTML=[
+    `<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,
+    `<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,
+    `<div class="vsl">${frames.length} photos fused</div>`,
+    `<div class="vsl">${COLS_v}×${ROWS_v} atlas</div>`,
+  ].join('');
+  $('btnDownload').onclick=()=>{
+    const blob=new Blob([buildOBJ()],{type:'text/plain'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='scan3d_model.obj'; a.click();
+    toast('Model downloaded — open in Blender, MeshLab, etc.');
+  };
+  $('btnDownloadTex').onclick=()=>{
+    if(!atlasCanvas) return;
+    atlasCanvas.toBlob(blob=>{const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='scan3d_texture.png'; a.click(); toast('Texture atlas downloaded!');});
+  };
   initThree();
 }
 
-function initThree(){
-  const wrap=$('threeCanvas').parentElement,W=wrap.clientWidth,H=wrap.clientHeight;
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x050709);scene.fog=new THREE.FogExp2(0x050709,.12);
-  const grid=new THREE.GridHelper(8,24,0x1e2530,0x1e2530);grid.position.y=-1.3;scene.add(grid);
-  const cam=new THREE.PerspectiveCamera(50,W/H,.01,200);cam.position.set(0,.5,3.5);
+function initThree() {
+  const wrap=$('threeCanvas').parentElement;
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x050709);
+  scene.fog=new THREE.FogExp2(0x050709,0.12);
+  const grid=new THREE.GridHelper(8,24,0x1e2530,0x1e2530);
+  grid.position.y=-1.3; scene.add(grid);
+  const cam=new THREE.PerspectiveCamera(50,W/H,0.01,200);
+  cam.position.set(0,0.5,3.5);
   const renderer=new THREE.WebGLRenderer({canvas:$('threeCanvas'),antialias:true});
-  renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.shadowMap.enabled=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
-  scene.add(new THREE.AmbientLight(0x223344,.7));
-  const key=new THREE.DirectionalLight(0x00d4aa,2.0);key.position.set(2,3,2);key.castShadow=true;scene.add(key);
-  const fill=new THREE.DirectionalLight(0x0066ff,.9);fill.position.set(-2,1,-2);scene.add(fill);
-  const rim=new THREE.DirectionalLight(0xffffff,.5);rim.position.set(0,-2,-3);scene.add(rim);
+  renderer.setSize(W,H); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.25;
+  scene.add(new THREE.AmbientLight(0x223344,0.7));
+  const key=new THREE.DirectionalLight(0x00d4aa,2.0); key.position.set(2,3,2); key.castShadow=true; scene.add(key);
+  const fill=new THREE.DirectionalLight(0x0066ff,0.9); fill.position.set(-2,1,-2); scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xffffff,0.5); rim.position.set(0,-2,-3); scene.add(rim);
+
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(meshData.verts),3));
-  geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(meshData.normals),3));
-  geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(meshData.uvs),2));
-  geo.setIndex(meshData.indices);geo.computeVertexNormals();geo.computeBoundingBox();
-  const centre=new THREE.Vector3();geo.boundingBox.getCenter(centre);
-  const size=new THREE.Vector3();geo.boundingBox.getSize(size);
+  geo.setAttribute('normal',  new THREE.BufferAttribute(new Float32Array(meshData.normals),3));
+  geo.setAttribute('uv',      new THREE.BufferAttribute(new Float32Array(meshData.uvs),2));
+  geo.setIndex(meshData.indices);
+  geo.computeVertexNormals();
+  geo.computeBoundingBox();
+  const centre=new THREE.Vector3(); geo.boundingBox.getCenter(centre);
+  const size=new THREE.Vector3(); geo.boundingBox.getSize(size);
   const scale=2.2/Math.max(size.x,size.y,size.z);
-  const N=frames.length,COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
+  const N=frames.length;
+  const COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
   const posArr=geo.attributes.position.array;
   const uvArr=new Float32Array(geo.attributes.uv.array.length);
-  for(let vi=0;vi<posArr.length/3;vi++){
-    const x=posArr[vi*3],z=posArr[vi*3+2],az=Math.atan2(x,z);
+  const vCount=posArr.length/3;
+  for(let vi=0;vi<vCount;vi++){
+    const x=posArr[vi*3],z=posArr[vi*3+2];
+    const az=Math.atan2(x,z);
     let best=0,bestD=Infinity;
-    for(let fi=0;fi<N;fi++){const ca=(fi/N)*Math.PI*2-Math.PI;let d=Math.abs(az-ca);if(d>Math.PI)d=2*Math.PI-d;if(d<bestD){bestD=d;best=fi;}}
-    const ov=geo.attributes.uv.array[vi*2+1],col=best%COLS,row=Math.floor(best/COLS);
-    uvArr[vi*2]=(col+.1+ov*.8)/COLS;uvArr[vi*2+1]=(row+.1+(1-ov)*.8)/ROWS;
+    for(let fi=0;fi<N;fi++){
+      const capAz=(fi/N)*Math.PI*2-Math.PI;
+      let diff=Math.abs(az-capAz);
+      if(diff>Math.PI) diff=2*Math.PI-diff;
+      if(diff<bestD){bestD=diff;best=fi;}
+    }
+    const origV=geo.attributes.uv.array[vi*2+1];
+    const col=best%COLS,row=Math.floor(best/COLS);
+    uvArr[vi*2]=(col+0.1+origV*0.8)/COLS;
+    uvArr[vi*2+1]=(row+0.1+(1-origV)*0.8)/ROWS;
   }
   geo.setAttribute('uv',new THREE.BufferAttribute(uvArr,2));
   const atlasTex=new THREE.CanvasTexture(atlasCanvas);
-  const mat=new THREE.MeshStandardMaterial({map:atlasTex,metalness:.04,roughness:.65,side:THREE.DoubleSide});
-  const wireMat=new THREE.MeshBasicMaterial({color:0x00d4aa,wireframe:true,transparent:true,opacity:.55});
+  const mat=new THREE.MeshStandardMaterial({map:atlasTex,metalness:0.04,roughness:0.65,side:THREE.DoubleSide});
+  const wireMat=new THREE.MeshBasicMaterial({color:0x00d4aa,wireframe:true,transparent:true,opacity:0.55});
   const mesh=new THREE.Mesh(geo,mat);
-  mesh.position.sub(centre.multiplyScalar(scale));mesh.scale.setScalar(scale);
-  mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);
-  function buildEdges(g){
-    const pos=g.attributes.position.array,idx=g.index?g.index.array:null;
-    const es=new Set(),lv=[];
-    const ae=(a,b)=>{const k=a<b?`${a}_${b}`:`${b}_${a}`;if(es.has(k))return;es.add(k);lv.push(pos[a*3],pos[a*3+1],pos[a*3+2],pos[b*3],pos[b*3+1],pos[b*3+2]);};
-    const fc=idx?idx.length/3:pos.length/9;
-    for(let f=0;f<fc;f++){const a=idx?idx[f*3]:f*3,b=idx?idx[f*3+1]:f*3+1,c=idx?idx[f*3+2]:f*3+2;ae(a,b);ae(b,c);ae(c,a);}
-    const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lv),3));return g2;
+  mesh.position.sub(centre.multiplyScalar(scale));
+  mesh.scale.setScalar(scale);
+  mesh.castShadow=mesh.receiveShadow=true;
+  scene.add(mesh);
+
+  function buildEdgeLines(geometry){
+    const pos=geometry.attributes.position.array;
+    const idx=geometry.index?geometry.index.array:null;
+    const edgeSet=new Set(),lineVerts=[];
+    const addEdge=(a,b)=>{const key=a<b?`${a}_${b}`:`${b}_${a}`;if(edgeSet.has(key))return;edgeSet.add(key);lineVerts.push(pos[a*3],pos[a*3+1],pos[a*3+2],pos[b*3],pos[b*3+1],pos[b*3+2]);};
+    const faceCount=idx?idx.length/3:pos.length/9;
+    for(let f=0;f<faceCount;f++){const a=idx?idx[f*3]:f*3,b=idx?idx[f*3+1]:f*3+1,c=idx?idx[f*3+2]:f*3+2;addEdge(a,b);addEdge(b,c);addEdge(c,a);}
+    const geo2=new THREE.BufferGeometry();
+    geo2.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lineVerts),3));
+    return geo2;
   }
-  const eg=buildEdges(geo);
-  const nm=new THREE.LineBasicMaterial({color:0x00ff41,transparent:true,opacity:1,depthTest:false,depthWrite:false});
-  const nl=new THREE.LineSegments(eg,nm);nl.position.copy(mesh.position);nl.scale.copy(mesh.scale);nl.renderOrder=999;scene.add(nl);
-  const hm=new THREE.LineBasicMaterial({color:0x00ff88,transparent:true,opacity:.55,depthTest:false,depthWrite:false});
-  const hl=new THREE.LineSegments(eg,hm);hl.position.copy(mesh.position);hl.scale.copy(mesh.scale).multiplyScalar(1.012);hl.renderOrder=998;scene.add(hl);
-  const bm=new THREE.LineBasicMaterial({color:0x44ffaa,transparent:true,opacity:.18,depthTest:false,depthWrite:false});
-  const bl_=new THREE.LineSegments(eg,bm);bl_.position.copy(mesh.position);bl_.scale.copy(mesh.scale).multiplyScalar(1.032);bl_.renderOrder=997;scene.add(bl_);
-  let wf=false,st=true,sn=true,ar=true,aa=0;
-  $('vtbWire').onclick=()=>{wf=!wf;mesh.material=wf?wireMat:mat;$('vtbWire').classList.toggle('on',wf);};
-  $('vtbTex').onclick=()=>{st=!st;mat.map=st?atlasTex:null;mat.needsUpdate=true;$('vtbTex').classList.toggle('on',st);};
-  $('vtbNeon').onclick=()=>{sn=!sn;nl.visible=hl.visible=bl_.visible=sn;$('vtbNeon').classList.toggle('on',sn);};
-  $('vtbRot').onclick=()=>{ar=!ar;$('vtbRot').classList.toggle('on',ar);};
+  const edgeGeo=buildEdgeLines(geo);
+  const neonMat=new THREE.LineBasicMaterial({color:0x00ff41,transparent:true,opacity:1.0,depthTest:false,depthWrite:false});
+  const neonLines=new THREE.LineSegments(edgeGeo,neonMat);
+  neonLines.position.copy(mesh.position); neonLines.scale.copy(mesh.scale); neonLines.renderOrder=999; scene.add(neonLines);
+  const haloMat=new THREE.LineBasicMaterial({color:0x00ff88,transparent:true,opacity:0.55,depthTest:false,depthWrite:false});
+  const haloLines=new THREE.LineSegments(edgeGeo,haloMat);
+  haloLines.position.copy(mesh.position); haloLines.scale.copy(mesh.scale).multiplyScalar(1.012); haloLines.renderOrder=998; scene.add(haloLines);
+  const bloomMat=new THREE.LineBasicMaterial({color:0x44ffaa,transparent:true,opacity:0.18,depthTest:false,depthWrite:false});
+  const bloomLines=new THREE.LineSegments(edgeGeo,bloomMat);
+  bloomLines.position.copy(mesh.position); bloomLines.scale.copy(mesh.scale).multiplyScalar(1.032); bloomLines.renderOrder=997; scene.add(bloomLines);
+
+  let wireframe=false,showTex=true,showNeon=true,autoRot=true,autoAngle=0;
+  $('vtbWire').onclick=()=>{wireframe=!wireframe;mesh.material=wireframe?wireMat:mat;$('vtbWire').classList.toggle('on',wireframe);};
+  $('vtbTex').onclick=()=>{showTex=!showTex;mat.map=showTex?atlasTex:null;mat.needsUpdate=true;$('vtbTex').classList.toggle('on',showTex);};
+  $('vtbNeon').onclick=()=>{showNeon=!showNeon;neonLines.visible=haloLines.visible=bloomLines.visible=showNeon;$('vtbNeon').classList.toggle('on',showNeon);};
+  $('vtbRot').onclick=()=>{autoRot=!autoRot;$('vtbRot').classList.toggle('on',autoRot);};
   $('vtbTex').classList.add('on');
-  let dn=false,rd=false,lx=0,ly=0,rX=0,rY=0,pX=0,pY=0,zm=3.5;
+
+  let down=false,rdown=false,lx=0,ly=0;
+  let rotX=0,rotY=0,panX=0,panY=0,zoom=3.5;
   const cv=$('threeCanvas');
-  cv.onpointerdown=e=>{dn=true;rd=e.button===2;lx=e.clientX;ly=e.clientY;ar=false;$('vtbRot').classList.remove('on');e.preventDefault();};
-  window.addEventListener('pointermove',e=>{if(!dn)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;if(rd){pX+=dx*.003;pY-=dy*.003;}else{rY+=dx*.38;rX=clamp(rX+dy*.38,-82,82);}});
-  window.addEventListener('pointerup',()=>dn=false);
+  cv.onpointerdown=e=>{down=true;rdown=e.button===2;lx=e.clientX;ly=e.clientY;autoRot=false;$('vtbRot').classList.remove('on');e.preventDefault();};
+  window.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;if(rdown){panX+=dx*0.003;panY-=dy*0.003;}else{rotY+=dx*0.38;rotX=clamp(rotX+dy*0.38,-82,82);}});
+  window.addEventListener('pointerup',()=>down=false);
   cv.addEventListener('contextmenu',e=>e.preventDefault());
-  cv.addEventListener('wheel',e=>{zm=clamp(zm+e.deltaY*.005,.4,10);},{passive:true});
+  cv.addEventListener('wheel',e=>{zoom=clamp(zoom+e.deltaY*0.005,0.4,10);},{passive:true});
   window.addEventListener('resize',()=>{const w=wrap.clientWidth,h=wrap.clientHeight;cam.aspect=w/h;cam.updateProjectionMatrix();renderer.setSize(w,h);});
-  (function anim(){
-    requestAnimationFrame(anim);if(ar)aa+=.28;
-    const ry=(rY+aa)*Math.PI/180,rx=rX*Math.PI/180;
-    cam.position.set(Math.sin(ry)*Math.cos(rx)*zm+pX,Math.sin(rx)*zm+pY,Math.cos(ry)*Math.cos(rx)*zm);
-    cam.lookAt(pX,pY,0);
-    if(sn){const t=Date.now()*.0018;nm.opacity=.88+Math.sin(t)*.12;hm.opacity=.42+Math.sin(t+1)*.13;bm.opacity=.13+Math.sin(t+2)*.06;}
+
+  (function animate(){
+    requestAnimationFrame(animate);
+    if(autoRot) autoAngle+=0.28;
+    const ry=(rotY+autoAngle)*Math.PI/180,rx=rotX*Math.PI/180;
+    cam.position.set(Math.sin(ry)*Math.cos(rx)*zoom+panX,Math.sin(rx)*zoom+panY,Math.cos(ry)*Math.cos(rx)*zoom);
+    cam.lookAt(panX,panY,0);
+    if(showNeon){const t=Date.now()*0.0018;neonMat.opacity=0.88+Math.sin(t)*0.12;haloMat.opacity=0.42+Math.sin(t+1)*0.13;bloomMat.opacity=0.13+Math.sin(t+2)*0.06;}
     renderer.render(scene,cam);
   })();
 }
 
-function doReset(){
-  cancelCapture();stopOutlineLoop();
-  frames=[];depthMaps=[];meshData=null;atlasCanvas=null;
-  $('frameStrip').innerHTML='';$('captureProgress').classList.remove('show');$('captureBar').style.width='0%';
-  $('panelProcess').style.display='none';$('panelViewer').style.display='none';
-  $('depthSection').classList.remove('show');$('depthStrip').innerHTML='';
-  $('procBar').style.width='0%';$('terminal').innerHTML='<div>$ Initialising AI reconstruction pipeline…</div>';
-  $('btnStartScan').disabled=!stream;$('btnReset').style.display='none';
+/* ─── Reset ───────────────────────────────────── */
+function doReset() {
+  cancelCapture(); stopOutlineLoop();
+  frames=[]; depthMaps=[]; meshData=null; atlasCanvas=null;
+  $('frameStrip').innerHTML='';
+  $('captureProgress').classList.remove('show');
+  $('captureBar').style.width='0%';
+  $('panelProcess').style.display='none';
+  $('panelViewer').style.display='none';
+  $('depthSection').classList.remove('show');
+  $('depthStrip').innerHTML='';
+  $('procBar').style.width='0%';
+  $('terminal').innerHTML='<div>$ Initialising AI reconstruction pipeline…</div>';
+  $('btnStartScan').disabled=!stream;
+  $('btnReset').style.display='none';
   $('slFrames').disabled=$('slInterval').disabled=false;
   $('btnStopCam').style.display=stream?'inline-flex':'none';
-  $('hudInstruction').textContent=stream?'Hold still · AI is re-learning background…':'Enable camera to begin';
+  $('hudInstruction').textContent=stream?'Point at object · green outline will appear':'Enable camera to begin';
   if(stream) startOutlineLoop();
   window.scrollTo({top:0,behavior:'smooth'});
 }
-$('btnStartScan').onclick=startScan;$('btnReset').onclick=doReset;$('btnNewScan').onclick=doReset;
+
+$('btnStartScan').onclick=startScan;
+$('btnReset').onclick=doReset;
+$('btnNewScan').onclick=doReset;
 
 (async()=>{
-  if(navigator.mediaDevices?.getUserMedia){try{await startCamera();}catch(e){}}
+  if(navigator.mediaDevices?.getUserMedia){
+    try{ await startCamera(); }catch(e){}
+  }
 })();
 </script>
 </body>
