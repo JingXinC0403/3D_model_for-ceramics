@@ -42,7 +42,7 @@ main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2rem 1.5r
 .camera-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:1.25rem;}
 #video{width:100%;height:100%;object-fit:cover;display:block;}
 #captureCanvas{display:none;}
-#outlineCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:.97;}
+#outlineCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
 .camera-hud{position:absolute;inset:0;pointer-events:none;}
 .hud-corner{position:absolute;width:20px;height:20px;border-color:var(--acc);border-style:solid;opacity:.6;}
 .hud-corner.tl{top:12px;left:12px;border-width:2px 0 0 2px;}
@@ -151,7 +151,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <div class="panel-label">01 — CAPTURE YOUR OBJECT</div>
     <div class="tip-box">
       <span class="tip-icon">💡</span>
-      <p><strong>Setup:</strong> Point camera at the empty scene for 3 seconds (background learning), then place your object. Walk slowly in a full <strong>360° circle</strong> — 20–30 photos gives the best 3D. Plain, contrasting surface works best. The green line traces the exact object outline.</p>
+      <p><strong>Setup:</strong> Point camera at empty scene for 3s (background learning), then place your object. The <strong>green outline + mesh</strong> shows what is being tracked. Wait for TRACKING ✓, then walk slowly in a full <strong>360° circle</strong> — 20–30 photos gives the best result.</p>
     </div>
     <div class="camera-wrap">
       <video id="video" autoplay playsinline muted></video>
@@ -170,7 +170,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <div class="no-cam" id="noCam">
         <span class="no-cam-icon">⬡</span>
         <h3>Camera not enabled</h3>
-        <p>Photos stay on your device — nothing is ever uploaded. Runs entirely in-browser.</p>
+        <p>Photos stay on your device — nothing is uploaded. Runs entirely in-browser.</p>
         <button class="btn btn-primary" id="btnEnableCam"><span class="btn-icon">◉</span> Enable Camera</button>
       </div>
     </div>
@@ -257,8 +257,21 @@ let sharedFgMask=null,sharedFgW=0,sharedFgH=0;
 let outlineRAF=null;
 
 /* ════════════════════════════════════════════════════════════════
-   OUTLINE ENGINE — tight per-pixel background subtraction
-   with Moore-contour tracing and 3-layer neon stroke rendering
+   OUTLINE ENGINE — detection + filled mask + wireframe mesh overlay
+
+   What's drawn on the canvas:
+   1. Semi-transparent green fill inside the detected silhouette
+      so you can see exactly what the AI is tracking
+   2. A fine scan-grid (horizontal + vertical lines) clipped to the
+      object shape — looks like a 3D mesh being built in real time
+   3. Neon green contour stroke (3 layers: bloom → glow → core)
+
+   Detection improvements over v7:
+   • Sobel edge-magnitude added as a 3rd signal — objects have strong
+     edges even when their colour is close to the background
+   • Tighter spatial prior (top 15% / bottom 12% killed completely)
+   • IIR alpha tuned to 0.60 for faster reaction
+   • Threshold auto-tune every 15 frames (was 18)
 ════════════════════════════════════════════════════════════════ */
 function startOutlineLoop(){
   const video=$('video');
@@ -273,6 +286,7 @@ function startOutlineLoop(){
   let frameCount=0,lastSW=0,lastSH=0;
   let prevGrey=null,fgAccum=null,adaptThresh=0.14;
   let prevBlobPx=0,stableCount=0;
+  let meshPhase=0; // animates the scan-grid
 
   function initBg(d,N,SW,SH){
     bgR=new Float32Array(N);bgG=new Float32Array(N);bgB=new Float32Array(N);
@@ -297,10 +311,10 @@ function startOutlineLoop(){
       if(d2>0){if(mx===r)h=((g-b)/d2+6)%6;else if(mx===g)h=(b-r)/d2+2;else h=(r-g)/d2+4;h/=6;}
       return[h,mx>0?d2/mx:0,mx];
     }
-    const[h1,s1]=toHSV(r,g,b);
-    const[h2,s2]=toHSV(br,bg_,bb);
+    const[h1,s1,v1]=toHSV(r,g,b);
+    const[h2,s2,v2]=toHSV(br,bg_,bb);
     const dh=Math.min(Math.abs(h1-h2),1-Math.abs(h1-h2));
-    return dh*(s1+s2)*1.6+Math.abs(s1-s2)*0.8+Math.abs(toHSV(r,g,b)[2]-toHSV(br,bg_,bb)[2])*0.3;
+    return dh*(s1+s2)*1.6+Math.abs(s1-s2)*0.8+Math.abs(v1-v2)*0.3;
   }
 
   function updateBg(d,N){
@@ -316,15 +330,15 @@ function startOutlineLoop(){
     if(!bgWarm&&frameCount>=70) bgWarm=true;
   }
 
-  // Spatial prior: suppress sky/ceiling at top, floor at bottom
+  // Tighter spatial prior: kills top 15%, bottom 12%, gentle side falloff
   function spatialW(x,y,SW,SH){
     const fy=y/SH;
-    if(fy<0.18) return 0;
-    if(fy>0.88) return 0.03;
+    if(fy<0.15) return 0;
+    if(fy>0.88) return 0.02;
     const nx=Math.abs(x/SW-0.5)*2;
-    const side=Math.max(0.22,1.0-nx*0.55);
-    const vert=fy<0.50?lerp(0.2,1.0,(fy-0.18)/0.32):lerp(1.0,0.2,(fy-0.50)/0.38);
-    return Math.min(1,side*vert*1.25);
+    const side=Math.max(0.18,1.0-nx*0.60);
+    const vert=fy<0.50?lerp(0.15,1.0,(fy-0.15)/0.35):lerp(1.0,0.15,(fy-0.50)/0.38);
+    return Math.min(1,side*vert*1.3);
   }
 
   function tuneThresh(acc,N){
@@ -388,7 +402,7 @@ function startOutlineLoop(){
     return fin;
   }
 
-  // Moore-neighbour contour tracing
+  // Moore contour tracing
   const MX=[1,1,0,-1,-1,-1,0,1],MY=[0,1,1,1,0,-1,-1,-1];
   function traceContour(mask,SW,SH){
     let sx=-1,sy=-1;
@@ -423,31 +437,90 @@ function startOutlineLoop(){
     return p;
   }
 
-  function drawNeon(pts,SW,SH,VW,VH,ctx){
-    if(!pts||pts.length<6){ctx.clearRect(0,0,VW,VH);return;}
-    const n=pts.length>>1,scX=VW/SW,scY=VH/SH;
+  /* ── Main render: fill + mesh grid + neon contour ──────────────
+     We composite 4 layers onto the outline canvas:
+     A. Object fill: semi-transparent green tint inside silhouette
+     B. Scan grid: animated horizontal + vertical lines clipped to shape
+     C. Neon glow contour (outer bloom)
+     D. Neon sharp contour (inner crisp line)
+  ────────────────────────────────────────────────────────────── */
+  function renderOverlay(blob,pts,smooth,SW,SH,VW,VH,ctx,phase){
     ctx.clearRect(0,0,VW,VH);
-    const path=()=>{
-      ctx.beginPath();ctx.moveTo(pts[0]*scX,pts[1]*scY);
-      for(let i=1;i<n;i++) ctx.lineTo(pts[i*2]*scX,pts[i*2+1]*scY);
+    if(!blob||!pts||pts.length<6) return;
+
+    const scX=VW/SW,scY=VH/SH;
+    const n=smooth.length>>1;
+
+    // Build clipping path from contour
+    function buildPath(){
+      ctx.beginPath();
+      ctx.moveTo(smooth[0]*scX,smooth[1]*scY);
+      for(let i=1;i<n;i++) ctx.lineTo(smooth[i*2]*scX,smooth[i*2+1]*scY);
       ctx.closePath();
-    };
-    ctx.save();ctx.shadowBlur=26;ctx.shadowColor='rgba(0,255,130,0.55)';
-    ctx.strokeStyle='rgba(0,255,100,0.10)';ctx.lineWidth=16;ctx.globalCompositeOperation='screen';
-    path();ctx.stroke();ctx.restore();
-    ctx.save();ctx.shadowBlur=11;ctx.shadowColor='rgba(0,255,130,0.9)';
-    ctx.strokeStyle='rgba(0,255,140,0.60)';ctx.lineWidth=3.5;ctx.globalCompositeOperation='screen';
-    path();ctx.stroke();ctx.restore();
-    ctx.save();ctx.strokeStyle='rgba(70,255,120,1.0)';ctx.lineWidth=1.5;ctx.globalCompositeOperation='screen';
-    path();ctx.stroke();ctx.restore();
+    }
+
+    // ── A: Semi-transparent fill ──────────────────────────────
+    ctx.save();
+    buildPath();
+    ctx.clip();
+    ctx.fillStyle='rgba(0,255,100,0.09)';
+    ctx.fillRect(0,0,VW,VH);
+    ctx.restore();
+
+    // ── B: Animated scan-grid clipped to object shape ─────────
+    // Grid spacing: ~40px on screen, animated offset to look live
+    const GRID=40;
+    const offH=(phase%GRID); // horizontal lines scroll downward
+    const offV=((phase*0.7)%GRID); // vertical scroll sideways
+
+    ctx.save();
+    buildPath();
+    ctx.clip();
+    ctx.strokeStyle='rgba(0,255,100,0.18)';
+    ctx.lineWidth=0.8;
+    ctx.setLineDash([4,6]);
+
+    // Horizontal scan lines
+    for(let y=offH;y<VH;y+=GRID){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(VW,y);ctx.stroke();
+    }
+    // Vertical scan lines
+    for(let x=offV;x<VW;x+=GRID){
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,VH);ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // ── C+D: Neon contour strokes ─────────────────────────────
+    // Outer bloom
+    ctx.save();
+    ctx.shadowBlur=28;ctx.shadowColor='rgba(0,255,130,0.55)';
+    ctx.strokeStyle='rgba(0,255,100,0.10)';ctx.lineWidth=18;
+    ctx.globalCompositeOperation='screen';
+    buildPath();ctx.stroke();ctx.restore();
+
+    // Mid glow
+    ctx.save();
+    ctx.shadowBlur=12;ctx.shadowColor='rgba(0,255,130,0.90)';
+    ctx.strokeStyle='rgba(0,255,140,0.62)';ctx.lineWidth=3.5;
+    ctx.globalCompositeOperation='screen';
+    buildPath();ctx.stroke();ctx.restore();
+
+    // Sharp core
+    ctx.save();
+    ctx.strokeStyle='rgba(80,255,130,1.0)';ctx.lineWidth=1.5;
+    ctx.globalCompositeOperation='screen';
+    buildPath();ctx.stroke();ctx.restore();
   }
 
   function frame(){
     outlineRAF=requestAnimationFrame(frame);
     if(!video.videoWidth) return;
+
     const VW=video.videoWidth,VH=video.videoHeight;
     const SW=VW>>2,SH=VH>>2;
     const N=SW*SH;
+
     cvSrc.width=SW;cvSrc.height=SH;
     cvOut.width=VW;cvOut.height=VH;
     ctxSrc.drawImage(video,0,0,SW,SH);
@@ -455,19 +528,32 @@ function startOutlineLoop(){
     const d=src.data;
     if(!bgReady||lastSW!==SW||lastSH!==SH) initBg(d,N,SW,SH);
 
+    // Grey + motion
     const grey=new Float32Array(N);
     for(let i=0;i<N;i++) grey[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
     const mot=new Float32Array(N);
     if(prevGrey&&prevGrey.length===N)
       for(let i=0;i<N;i++) mot[i]=Math.min(Math.abs(grey[i]-prevGrey[i])/45,1);
     prevGrey=grey.slice();
-    updateBg(d,N);
 
+    // Sobel edge magnitude — boosts detection on object boundaries
+    const edge=new Float32Array(N);
+    for(let y=1;y<SH-1;y++) for(let x=1;x<SW-1;x++){
+      const i=y*SW+x;
+      const gx=grey[(y-1)*SW+(x+1)]+2*grey[y*SW+(x+1)]+grey[(y+1)*SW+(x+1)]
+              -grey[(y-1)*SW+(x-1)]-2*grey[y*SW+(x-1)]-grey[(y+1)*SW+(x-1)];
+      const gy=grey[(y+1)*SW+(x-1)]+2*grey[(y+1)*SW+x]+grey[(y+1)*SW+(x+1)]
+              -grey[(y-1)*SW+(x-1)]-2*grey[(y-1)*SW+x]-grey[(y-1)*SW+(x+1)];
+      edge[i]=Math.min(Math.sqrt(gx*gx+gy*gy)/200,1);
+    }
+
+    updateBg(d,N);
     const qEl=$('hudQuality');
+
     if(!bgWarm){
       const pct=Math.round(frameCount/70*100);
       if(qEl){qEl.className='hud-quality none';qEl.textContent=`LEARNING ${pct}%`;}
-      cvOut.getContext('2d').clearRect(0,0,VW,VH);
+      ctxOut.clearRect(0,0,VW,VH);
       frameCount++;return;
     }
 
@@ -477,20 +563,25 @@ function startOutlineLoop(){
       const i=y*SW+x;
       const maha=Math.min(mahaDist(d,i)/10,1);
       const hsv=Math.min(hsvShift(d,i),1);
-      const bgD=maha*gW+hsv*(1-gW)*0.7+maha*(1-gW)*0.3;
+      // Blend Gaussian maha, HSV shift, and Sobel edge
+      const bgD=maha*gW + hsv*(1-gW)*0.6 + maha*(1-gW)*0.3;
       const sp=spatialW(x,y,SW,SH);
-      fgRaw[i]=(bgD*0.78+mot[i]*0.22)*sp;
+      // Edge signal adds to detection but doesn't dominate
+      fgRaw[i]=(bgD*0.72+mot[i]*0.18+edge[i]*0.10)*sp;
     }
+
     if(!fgAccum||fgAccum.length!==N) fgAccum=fgRaw.slice();
-    for(let i=0;i<N;i++) fgAccum[i]=fgAccum[i]*0.45+fgRaw[i]*0.55;
-    if(frameCount%18===0) tuneThresh(fgAccum,N);
+    // Alpha=0.60 — faster reaction than v7's 0.55
+    for(let i=0;i<N;i++) fgAccum[i]=fgAccum[i]*0.40+fgRaw[i]*0.60;
+    if(frameCount%15===0) tuneThresh(fgAccum,N);
 
     const bin=new Uint8Array(N);
-    for(let i=0;i<N;i++) bin[i]=(fgAccum[i]>adaptThresh&&spatialW(i%SW,Math.floor(i/SW),SW,SH)>0.02)?1:0;
+    for(let i=0;i<N;i++) bin[i]=(fgAccum[i]>adaptThresh&&spatialW(i%SW,Math.floor(i/SW),SW,SH)>0.01)?1:0;
 
     const closed=morphClose(bin,SW,SH,3);
     const blob=centralBlob(closed,SW,SH);
 
+    // Stability gate
     let blobPx=0;for(let i=0;i<N;i++) blobPx+=blob[i];
     const delta=Math.abs(blobPx-prevBlobPx)/(N+1);
     prevBlobPx=blobPx;
@@ -498,6 +589,7 @@ function startOutlineLoop(){
     else stableCount=Math.max(0,stableCount-3);
     if(stableCount>=3){sharedFgMask=blob;sharedFgW=SW;sharedFgH=SH;}
 
+    // Quality HUD
     const blobFrac=blobPx/N;
     const qs=blobFrac<0.003?0:blobFrac<0.012?blobFrac/0.012*0.5:blobFrac>0.70?Math.max(0,1-(blobFrac-0.70)/0.2):1.0;
     if(qEl){
@@ -506,9 +598,15 @@ function startOutlineLoop(){
       else{qEl.className='hud-quality none';qEl.textContent='PLACE OBJECT';}
     }
 
+    // Trace + smooth contour
     const contour=traceContour(blob,SW,SH);
     const smooth=smoothPoly(contour,4);
-    drawNeon(smooth,SW,SH,VW,VH,ctxOut);
+
+    // Advance mesh animation phase
+    meshPhase=(meshPhase+1.2)%40;
+
+    // Render fill + grid + neon
+    renderOverlay(blob,contour,smooth,SW,SH,VW,VH,ctxOut,meshPhase);
     frameCount++;
   }
   frame();
@@ -546,7 +644,7 @@ async function startCamera(){
     $('btnStartScan').disabled=false;
     $('btnStopCam').style.display='inline-flex';
     $('scanLine').style.display='block';
-    $('hudInstruction').textContent='Hold still · learning background (3s)…';
+    $('hudInstruction').textContent='Hold still 3s · learning background…';
     toast('Camera ready — hold still while background is learned');
     startOutlineLoop();
   }catch(e){
@@ -631,12 +729,6 @@ function setPipeline(ai,pct,label){
   $('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';if(label)$('procStage').textContent=label;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   PIPELINE — all steps happen in strict sequence so depthMaps
-   is always fully populated before buildMesh() is called.
-   (Previous bug: buildMesh was called at step 2 before step 1
-   finished populating depthMaps, causing empty/wrong meshes.)
-════════════════════════════════════════════════════════════════ */
 async function startProcessing(){
   const panel=$('panelProcess');panel.style.display='block';panel.scrollIntoView({behavior:'smooth'});
   const stEl=$('pipelineStages');stEl.innerHTML='';
@@ -644,45 +736,28 @@ async function startProcessing(){
   $('procFrames').textContent=frames.length+' photos';
   depthMaps=[];meshData=null;
 
-  // STEP 0: Load MiDaS
   setPipeline(0,4,'Loading AI model…');tlog('Loading MiDaS depth model…');
   const t0=Date.now();
-  try{
-    midasModel=await loadMiDaS();
-    tlog(`MiDaS loaded in ${((Date.now()-t0)/1000).toFixed(1)}s`);
-  }catch(e){
-    tlog('MiDaS unavailable — using edge fallback');midasModel=null;
-  }
+  try{midasModel=await loadMiDaS();tlog(`MiDaS loaded in ${((Date.now()-t0)/1000).toFixed(1)}s`);}
+  catch(e){tlog('MiDaS unavailable — using edge fallback');midasModel=null;}
 
-  // STEP 1: Depth maps — MUST complete before buildMesh
-  setPipeline(1,8,'Depth estimation…');
-  tlog(`Estimating depth for ${frames.length} photos…`);
+  setPipeline(1,8,'Depth estimation…');tlog(`Estimating depth for ${frames.length} photos…`);
   for(let i=0;i<frames.length;i++){
     $('procBar').style.width=(8+Math.round(i/frames.length*24))+'%';
     $('procPct').textContent=(8+Math.round(i/frames.length*24))+'%';
     $('procStage').textContent=`Depth map ${i+1}/${frames.length}`;
-    await wait(0); // yield to UI
-    const dm=midasModel?await runMiDaS(frames[i]):fallbackDepth(frames[i]);
-    depthMaps.push(dm);
+    await wait(0);
+    depthMaps.push(midasModel?await runMiDaS(frames[i]):fallbackDepth(frames[i]));
   }
   tlog(`${depthMaps.length} depth maps done`);
-  // Sanity check
-  if(depthMaps.length!==frames.length){
-    tlog(`ERROR: ${depthMaps.length} depth maps for ${frames.length} frames — aborting`);
-    return;
-  }
+  if(depthMaps.length!==frames.length){tlog('ERROR: depth map count mismatch');return;}
   renderDepthPreviews();
 
-  // STEP 2+3: Carve + mesh (now depthMaps is guaranteed complete)
   const mc=frames.filter(f=>f.fgMask).length;
-  setPipeline(2,34,'Visual hull carving…');
-  tlog(`Carving: ${mc}/${frames.length} frames have silhouette masks`);
-  await wait(60); // let UI breathe before heavy computation
+  setPipeline(2,34,'Visual hull carving…');tlog(`Carving: ${mc}/${frames.length} frames have silhouette masks`);
+  await wait(60);
 
-  setPipeline(3,54,'Surface meshing…');
-  tlog('Carving voxels + marching cubes…');
-  await wait(20);
-
+  setPipeline(3,54,'Surface meshing…');tlog('Carving voxels + marching cubes…');await wait(20);
   try{
     meshData=buildMesh();
     tlog(`Mesh: ${meshData.stats.vCount.toLocaleString()} verts, ${meshData.stats.fCount.toLocaleString()} faces`);
@@ -690,28 +765,18 @@ async function startProcessing(){
     tlog('Mesh error: '+err.message+' — using fallback');
     meshData=buildDepthFallback();
   }
+  if(!meshData||meshData.stats.vCount<4){toast('Mesh failed — try again','err');return;}
 
-  if(!meshData||meshData.stats.vCount<4){
-    tlog('ERROR: mesh generation failed entirely');
-    toast('Mesh failed — try scanning again with better lighting','err');
-    return;
-  }
-
-  // STEP 4: Texture atlas
   setPipeline(4,76,'Building texture atlas…');tlog('Packing texture atlas…');await wait(40);
   atlasCanvas=buildTextureAtlas();
-  const AC=Math.ceil(Math.sqrt(frames.length));
-  tlog(`Atlas: ${frames.length} → ${AC}×${Math.ceil(frames.length/AC)}`);
+  tlog(`Atlas: ${frames.length} photos`);
 
-  // STEP 5: Done
   setPipeline(5,93,'Finalising…');await wait(50);
   STAGES.forEach(s=>{const b=$(s.key);if(b)b.className='stage-block done';});
   $('procBar').style.width='100%';$('procPct').textContent='100%';$('procStage').textContent='Done!';
-  tlog('✓ Reconstruction complete!');toast('Your 3D model is ready! 🎉');await wait(500);
-  showViewer();
+  tlog('✓ Reconstruction complete!');toast('Your 3D model is ready! 🎉');await wait(500);showViewer();
 }
 
-/* ─── MiDaS ─── */
 async function loadMiDaS(){
   if(typeof tf==='undefined') throw new Error('TF.js not loaded');
   return await tf.loadGraphModel('https://tfhub.dev/intel/midas/v2_1_small/1/model.json',{fromTFHub:true});
@@ -770,32 +835,22 @@ function renderDepthPreviews(){
 }
 
 /* ════════════════════════════════════════════════════════════════
-   3D RECONSTRUCTION — Visual Hull Space Carving
-
-   Fixed bugs from v6:
-   • depthMaps now guaranteed populated before this runs
-   • guard: if(depthMaps.length !== frames.length) fallback
-   • Depth carve uses per-voxel depth normalised correctly
-   • Added try/catch so a single bad frame can't crash everything
-   • RES=76 (balanced: good detail, fits in browser memory)
-   • Laplacian 5 passes with solid-core preservation
+   3D RECONSTRUCTION — Visual Hull Space Carving (same as v7)
 ════════════════════════════════════════════════════════════════ */
 function buildMesh(){
   const N=frames.length;
-  if(N===0) throw new Error('No frames captured');
-  if(depthMaps.length!==N) throw new Error(`depthMaps.length(${depthMaps.length})!==frames.length(${N})`);
+  if(N===0) throw new Error('No frames');
+  if(depthMaps.length!==N) throw new Error(`depthMaps mismatch`);
 
   const RES=76, HALF=1.15, STEP=(HALF*2)/RES;
   const ORBIT_R=2.6, ELEV=10*Math.PI/180;
   const CAM_Y=Math.sin(ELEV)*ORBIT_R;
   const ORBIT_XZ=Math.cos(ELEV)*ORBIT_R;
   const HFOV=58*Math.PI/180;
-
   const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
   const N3=RES*RES*RES;
   const vox=new Uint8Array(N3).fill(1);
 
-  // Dilate a mask by r px (conservative boundary)
   function dilM(mask,w,h,r){
     if(!mask) return null;
     const out=new Uint8Array(w*h);
@@ -806,10 +861,6 @@ function buildMesh(){
     return out;
   }
 
-  let maskedCount=0;
-  tlog(`Carving ${RES}³ voxels with ${N} silhouettes…`);
-
-  // Camera params for frame fi
   function camParams(fi){
     const az=(fi/N)*Math.PI*2;
     const camX=Math.sin(az)*ORBIT_XZ, camZ=Math.cos(az)*ORBIT_XZ;
@@ -820,15 +871,17 @@ function buildMesh(){
     return{camX,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ};
   }
 
+  let maskedCount=0;
+  tlog(`Carving ${RES}³ voxels…`);
+
   // Pass 1: silhouette carving
   for(let fi=0;fi<N;fi++){
     const{w,h,fgMask}=frames[fi];
     if(!fgMask) continue;
     maskedCount++;
-    const dm=dilM(fgMask,w,h,3); // 3px dilation = safety margin
+    const dm=dilM(fgMask,w,h,3);
     const fl=(w/2)/Math.tan(HFOV/2);
     const{camX,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ}=camParams(fi);
-
     for(let ix=0;ix<RES;ix++){
       const wx=-HALF+(ix+0.5)*STEP;
       for(let iy=0;iy<RES;iy++){
@@ -852,24 +905,16 @@ function buildMesh(){
 
   let s1=0;for(let i=0;i<N3;i++) s1+=vox[i];
   tlog(`After silhouette carving: ${s1.toLocaleString()} solid (${maskedCount}/${N} masks)`);
-  if(s1<50){tlog('Too few voxels from silhouettes — using depth fallback');return buildDepthFallback();}
+  if(s1<50){tlog('Too few voxels — using depth fallback');return buildDepthFallback();}
 
-  // Pass 2: depth refinement — carve voxels in front of measured surface
-  // Only applied where we have a foreground mask AND a depth map
-  let depthCarved=0;
+  // Pass 2: depth refinement
   for(let fi=0;fi<N;fi++){
     const{w,h,fgMask}=frames[fi];
     const depthMap=depthMaps[fi];
-    // Guard: skip if either is missing (shouldn't happen after our pipeline fix)
     if(!fgMask||!depthMap||depthMap.length!==w*h) continue;
-
     const fl=(w/2)/Math.tan(HFOV/2);
     const{camX,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ}=camParams(fi);
-
-    // Depth volume range for normalisation
-    const dNear=ORBIT_R-HALF*1.9;
-    const dSpan=HALF*3.8;
-
+    const dNear=ORBIT_R-HALF*1.9, dSpan=HALF*3.8;
     for(let ix=0;ix<RES;ix++){
       const wx=-HALF+(ix+0.5)*STEP;
       for(let iy=0;iy<RES;iy++){
@@ -884,41 +929,32 @@ function buildMesh(){
           const pyc=(dx*upX+dy*upY+dz*upZ)/depth;
           const pxi=clamp(Math.round(pxc*fl+w/2),0,w-1);
           const pyi=clamp(Math.round(-pyc*fl+h/2),0,h-1);
-          if(!fgMask[pyi*w+pxi]) continue; // don't refine on background
-          // MiDaS: 1=near, 0=far. Invert: measNorm=0 means near camera
+          if(!fgMask[pyi*w+pxi]) continue;
           const measNorm=1.0-depthMap[pyi*w+pxi];
           const voxNorm=(depth-dNear)/dSpan;
-          // Only carve if voxel is clearly IN FRONT of measured surface
-          // Threshold 0.28: conservative, preserves rounded/convex surfaces
-          if(voxNorm<measNorm-0.28){
-            vox[VI(ix,iy,iz)]=0;depthCarved++;
-          }
+          if(voxNorm<measNorm-0.28) vox[VI(ix,iy,iz)]=0;
         }
       }
     }
   }
-  let s2=0;for(let i=0;i<N3;i++) s2+=vox[i];
-  tlog(`After depth refinement: ${s2.toLocaleString()} solid (carved ${depthCarved})`);
 
-  // Smooth with 5 Laplacian passes; preserve solid core
+  let s2=0;for(let i=0;i<N3;i++) s2+=vox[i];
+  tlog(`After depth refinement: ${s2.toLocaleString()} solid voxels`);
+
+  // Laplacian smoothing, 5 passes
   const occ=new Float32Array(N3), tmp=new Float32Array(N3);
   for(let i=0;i<N3;i++) occ[i]=vox[i];
   for(let pass=0;pass<5;pass++){
     for(let ix=1;ix<RES-1;ix++) for(let iy=1;iy<RES-1;iy++) for(let iz=1;iz<RES-1;iz++){
       const c=occ[VI(ix,iy,iz)];
-      const nb=occ[VI(ix-1,iy,iz)]+occ[VI(ix+1,iy,iz)]
-              +occ[VI(ix,iy-1,iz)]+occ[VI(ix,iy+1,iz)]
-              +occ[VI(ix,iy,iz-1)]+occ[VI(ix,iy,iz+1)];
+      const nb=occ[VI(ix-1,iy,iz)]+occ[VI(ix+1,iy,iz)]+occ[VI(ix,iy-1,iz)]+occ[VI(ix,iy+1,iz)]+occ[VI(ix,iy,iz-1)]+occ[VI(ix,iy,iz+1)];
       tmp[VI(ix,iy,iz)]=Math.min(1,Math.max(0,c*0.40+nb*(0.60/6)));
     }
-    // Preserve: don't erode below 45% of original solid
     for(let i=0;i<N3;i++) occ[i]=Math.max(tmp[i],vox[i]*0.45);
   }
-
   return runMarchingCubes(occ,RES,HALF,STEP,VI);
 }
 
-/* Depth-point-cloud fallback (runs if silhouettes are missing or produce no solid voxels) */
 function buildDepthFallback(){
   tlog('Running depth-point-cloud fallback…');
   const N=frames.length, RES=56, HALF=1.15, STEP=(HALF*2)/RES;
@@ -926,8 +962,7 @@ function buildDepthFallback(){
   const VI2=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz, N3=RES*RES*RES;
   const cnt=new Float32Array(N3);
   for(let fi=0;fi<N;fi++){
-    const{w,h}=frames[fi];
-    const dm=depthMaps[fi];
+    const{w,h}=frames[fi];const dm=depthMaps[fi];
     if(!dm||dm.length!==w*h) continue;
     const az=(fi/N)*Math.PI*2;
     const cx=Math.sin(az)*ORBIT_R, cz=Math.cos(az)*ORBIT_R;
@@ -940,33 +975,26 @@ function buildDepthFallback(){
       const ndcX=(px-w/2)/fl, ndcY=-(py-h/2)/fl;
       const rdX=fwX+ndcX*rtX, rdY=ndcY, rdZ=fwZ+ndcX*rtZ;
       const rdL=Math.sqrt(rdX*rdX+rdY*rdY+rdZ*rdZ)||1;
-      const Xw=cx+(rdX/rdL)*dist, Yw=(rdY/rdL)*dist, Zw=cz+(rdZ/rdL)*dist;
-      cnt[VI2(clamp(Math.floor((Xw+HALF)/STEP),0,RES-1),
-              clamp(Math.floor((Yw+HALF)/STEP),0,RES-1),
-              clamp(Math.floor((Zw+HALF)/STEP),0,RES-1))]++;
+      cnt[VI2(clamp(Math.floor((cx+(rdX/rdL)*dist+HALF)/STEP),0,RES-1),
+              clamp(Math.floor(((rdY/rdL)*dist+HALF)/STEP),0,RES-1),
+              clamp(Math.floor((cz+(rdZ/rdL)*dist+HALF)/STEP),0,RES-1))]++;
     }
   }
   let cMax=0;for(let i=0;i<N3;i++) if(cnt[i]>cMax) cMax=cnt[i];
   const occ=new Float32Array(N3);
   if(cMax>0){const thr=Math.max(1,cMax*.04);for(let i=0;i<N3;i++) occ[i]=cnt[i]>=thr?1:0;}
-
-  // Dilate + flood-fill exterior to solidify inside
-  const dil=new Uint8Array(N3), DR=2;
+  const dil=new Uint8Array(N3),DR=2;
   for(let ix=DR;ix<RES-DR;ix++) for(let iy=DR;iy<RES-DR;iy++) for(let iz=DR;iz<RES-DR;iz++){
     if(!occ[VI2(ix,iy,iz)]) continue;
     for(let dy=-DR;dy<=DR;dy++) for(let dx=-DR;dx<=DR;dx++) for(let dz=-DR;dz<=DR;dz++) dil[VI2(ix+dx,iy+dy,iz+dz)]=1;
   }
   const bg=new Uint8Array(N3),q=new Int32Array(N3);let qh=0,qt=0;
   const seed=(a,b,c)=>{const i=VI2(a,b,c);if(!dil[i]&&!bg[i]){bg[i]=1;q[qt++]=i;}};
-  for(let a=0;a<RES;a++) for(let b=0;b<RES;b++){
-    seed(0,a,b);seed(RES-1,a,b);seed(a,0,b);seed(a,RES-1,b);seed(a,b,0);seed(a,b,RES-1);
-  }
+  for(let a=0;a<RES;a++) for(let b=0;b<RES;b++){seed(0,a,b);seed(RES-1,a,b);seed(a,0,b);seed(a,RES-1,b);seed(a,b,0);seed(a,b,RES-1);}
   while(qh<qt){
     const idx=q[qh++];
     const ix=Math.floor(idx/(RES*RES)),iy=Math.floor((idx%(RES*RES))/RES),iz=idx%RES;
-    for(const ni of[ix>0?VI2(ix-1,iy,iz):-1,ix<RES-1?VI2(ix+1,iy,iz):-1,
-                    iy>0?VI2(ix,iy-1,iz):-1,iy<RES-1?VI2(ix,iy+1,iz):-1,
-                    iz>0?VI2(ix,iy,iz-1):-1,iz<RES-1?VI2(ix,iy,iz+1):-1])
+    for(const ni of[ix>0?VI2(ix-1,iy,iz):-1,ix<RES-1?VI2(ix+1,iy,iz):-1,iy>0?VI2(ix,iy-1,iz):-1,iy<RES-1?VI2(ix,iy+1,iz):-1,iz>0?VI2(ix,iy,iz-1):-1,iz<RES-1?VI2(ix,iy,iz+1):-1])
       if(ni>=0&&!dil[ni]&&!bg[ni]){bg[ni]=1;q[qt++]=ni;}
   }
   for(let i=0;i<N3;i++) occ[i]=(dil[i]||!bg[i])?1:0;
@@ -982,7 +1010,6 @@ function buildDepthFallback(){
   return runMarchingCubes(occ,RES,HALF,STEP,VI2);
 }
 
-/* Marching cubes — shared by both paths */
 function runMarchingCubes(occ,RES,HALF,STEP,VI){
   const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
   const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
@@ -990,17 +1017,11 @@ function runMarchingCubes(occ,RES,HALF,STEP,VI){
   const CV=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
   const THRESH=0.40;
   const verts=[],normals=[],uvs=[],indices=[],vmap=new Map();let vIdx=0;
-
-  function interp(p1,p2,v1,v2){
-    const t=(v1===v2)?.5:clamp((THRESH-v1)/(v2-v1),0,1);
-    return[p1[0]+(p2[0]-p1[0])*t,p1[1]+(p2[1]-p1[1])*t,p1[2]+(p2[2]-p1[2])*t];
-  }
+  function interp(p1,p2,v1,v2){const t=(v1===v2)?.5:clamp((THRESH-v1)/(v2-v1),0,1);return[p1[0]+(p2[0]-p1[0])*t,p1[1]+(p2[1]-p1[1])*t,p1[2]+(p2[2]-p1[2])*t];}
   function addV(p,nx,ny,nz){
-    const u=0.5+Math.atan2(p[2],p[0])/(2*Math.PI);
-    const v=clamp(0.5-p[1]/(HALF*2),0,1);
+    const u=0.5+Math.atan2(p[2],p[0])/(2*Math.PI);const v=clamp(0.5-p[1]/(HALF*2),0,1);
     const k=`${Math.round(p[0]/STEP*2)}_${Math.round(p[1]/STEP*2)}_${Math.round(p[2]/STEP*2)}`;
-    if(vmap.has(k))return vmap.get(k);
-    vmap.set(k,vIdx);verts.push(p[0],p[1],p[2]);normals.push(nx,ny,nz);uvs.push(u,v);return vIdx++;
+    if(vmap.has(k))return vmap.get(k);vmap.set(k,vIdx);verts.push(p[0],p[1],p[2]);normals.push(nx,ny,nz);uvs.push(u,v);return vIdx++;
   }
   function gN(ix,iy,iz){
     const gx=occ[VI(Math.min(ix+1,RES-1),iy,iz)]-occ[VI(Math.max(ix-1,0),iy,iz)];
@@ -1008,24 +1029,20 @@ function runMarchingCubes(occ,RES,HALF,STEP,VI){
     const gz=occ[VI(ix,iy,Math.min(iz+1,RES-1))]-occ[VI(ix,iy,Math.max(iz-1,0))];
     const l=Math.sqrt(gx*gx+gy*gy+gz*gz)||1;return[-gx/l,-gy/l,-gz/l];
   }
-
   for(let ix=0;ix<RES-1;ix++) for(let iy=0;iy<RES-1;iy++) for(let iz=0;iz<RES-1;iz++){
-    const vals=[occ[VI(ix,iy,iz)],occ[VI(ix+1,iy,iz)],occ[VI(ix+1,iy+1,iz)],occ[VI(ix,iy+1,iz)],
-                occ[VI(ix,iy,iz+1)],occ[VI(ix+1,iy,iz+1)],occ[VI(ix+1,iy+1,iz+1)],occ[VI(ix,iy+1,iz+1)]];
+    const vals=[occ[VI(ix,iy,iz)],occ[VI(ix+1,iy,iz)],occ[VI(ix+1,iy+1,iz)],occ[VI(ix,iy+1,iz)],occ[VI(ix,iy,iz+1)],occ[VI(ix+1,iy,iz+1)],occ[VI(ix+1,iy+1,iz+1)],occ[VI(ix,iy+1,iz+1)]];
     let ci=0;for(let c=0;c<8;c++) if(vals[c]>THRESH) ci|=(1<<c);
-    if(ci===0||ci===255) continue;
-    const et=ET[ci];if(!et) continue;
+    if(ci===0||ci===255) continue;const et=ET[ci];if(!et) continue;
     const cp=CV.map(([a,b,c2])=>[-HALF+(ix+a)*STEP,-HALF+(iy+b)*STEP,-HALF+(iz+c2)*STEP]);
     const ev=new Array(12);
     for(let e=0;e<12;e++){if(!(et&(1<<e)))continue;ev[e]=interp(cp[EP[e][0]],cp[EP[e][1]],vals[EP[e][0]],vals[EP[e][1]]);}
-    const tris=TT[ci];if(!tris||!tris.length) continue;
-    const nm=gN(ix,iy,iz);
+    const tris=TT[ci];if(!tris||!tris.length) continue;const nm=gN(ix,iy,iz);
     for(let t=0;t<tris.length;t+=3){
       if(ev[tris[t]]===undefined||ev[tris[t+1]]===undefined||ev[tris[t+2]]===undefined) continue;
       indices.push(addV(ev[tris[t]],nm[0],nm[1],nm[2]),addV(ev[tris[t+1]],nm[0],nm[1],nm[2]),addV(ev[tris[t+2]],nm[0],nm[1],nm[2]));
     }
   }
-  tlog(`MC done: ${vIdx.toLocaleString()} verts · ${Math.floor(indices.length/3).toLocaleString()} faces`);
+  tlog(`MC: ${vIdx.toLocaleString()} verts · ${Math.floor(indices.length/3).toLocaleString()} faces`);
   return{verts,normals,uvs,indices,stats:{vCount:vIdx,fCount:Math.floor(indices.length/3)}};
 }
 
@@ -1042,7 +1059,6 @@ function buildTextureAtlas(){
   });
   return cv;
 }
-
 function buildOBJ(){
   if(!meshData) return'';
   const{verts,normals,uvs,indices,stats}=meshData;
@@ -1086,18 +1102,13 @@ function initThree(){
   const size=new THREE.Vector3();geo.boundingBox.getSize(size);
   const scale=2.2/Math.max(size.x,size.y,size.z);
 
-  // Remap UVs to atlas using capture angle
   const N=frames.length,COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
   const posArr=geo.attributes.position.array;
   const uvArr=new Float32Array(geo.attributes.uv.array.length);
   for(let vi=0;vi<posArr.length/3;vi++){
     const x=posArr[vi*3],z=posArr[vi*3+2],az=Math.atan2(x,z);
     let best=0,bestD=Infinity;
-    for(let fi=0;fi<N;fi++){
-      const ca=(fi/N)*Math.PI*2-Math.PI;
-      let d=Math.abs(az-ca);if(d>Math.PI)d=2*Math.PI-d;
-      if(d<bestD){bestD=d;best=fi;}
-    }
+    for(let fi=0;fi<N;fi++){const ca=(fi/N)*Math.PI*2-Math.PI;let d=Math.abs(az-ca);if(d>Math.PI)d=2*Math.PI-d;if(d<bestD){bestD=d;best=fi;}}
     const ov=geo.attributes.uv.array[vi*2+1],col=best%COLS,row=Math.floor(best/COLS);
     uvArr[vi*2]=(col+.1+ov*.8)/COLS;uvArr[vi*2+1]=(row+.1+(1-ov)*.8)/ROWS;
   }
