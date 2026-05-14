@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SCAN3D v5 — Pro Reconstruction</title>
+<title>SCAN3D — Free Browser 3D Scanner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#08090c;--bg2:#0d1018;--bg3:#131720;--bg4:#0a0e14;
+  --bg:#08090c;--bg2:#0d1018;--bg3:#131720;
   --bdr:#1a2030;--bdr2:#232d40;
   --acc:#00e5b5;--acc2:#0088ff;--acc3:#7b2fff;
-  --warn:#ffaa00;--err:#ff3355;--ok:#00ff88;
+  --warn:#ffaa00;--err:#ff3355;
   --tx:#ccd8e8;--tx2:#6e84a0;--tx3:#334455;
   --mono:'Share Tech Mono',monospace;
   --cond:'Barlow Condensed',sans-serif;
@@ -22,945 +22,1042 @@
 html{font-size:16px;}
 body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;
-  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(0,229,181,.05) 0%,transparent 70%),
-    repeating-linear-gradient(0deg,transparent,transparent 47px,rgba(26,32,48,.5) 47px,rgba(26,32,48,.5) 48px),
-    repeating-linear-gradient(90deg,transparent,transparent 47px,rgba(26,32,48,.35) 47px,rgba(26,32,48,.35) 48px);
+  background-image:radial-gradient(ellipse 90% 60% at 50% 0%,rgba(0,229,181,.04) 0%,transparent 70%),
+    repeating-linear-gradient(0deg,transparent,transparent 47px,rgba(26,32,48,.6) 47px,rgba(26,32,48,.6) 48px),
+    repeating-linear-gradient(90deg,transparent,transparent 47px,rgba(26,32,48,.4) 47px,rgba(26,32,48,.4) 48px);
   pointer-events:none;z-index:0;}
 .header{position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;
-  padding:.7rem 2rem;background:rgba(8,9,12,.97);border-bottom:1px solid var(--bdr);backdrop-filter:blur(16px);}
-.logo{display:flex;align-items:center;gap:.6rem;font-family:var(--cond);font-size:1.55rem;font-weight:900;letter-spacing:.12em;}
-.logo-hex{color:var(--acc);animation:hexspin 9s linear infinite;display:inline-block;filter:drop-shadow(0 0 7px var(--acc));}
+  padding:.75rem 2rem;background:rgba(8,9,12,.96);border-bottom:1px solid var(--bdr);backdrop-filter:blur(16px);}
+.logo{display:flex;align-items:center;gap:.6rem;font-family:var(--cond);font-size:1.6rem;font-weight:900;letter-spacing:.12em;}
+.logo-hex{color:var(--acc);font-size:1.4rem;animation:hexspin 8s linear infinite;display:inline-block;filter:drop-shadow(0 0 6px var(--acc));}
 @keyframes hexspin{to{transform:rotate(360deg)}}
 .acc{color:var(--acc);}
-.header-pills{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
-.pill{font-family:var(--mono);font-size:.56rem;letter-spacing:.09em;padding:.2rem .55rem;border-radius:2px;border:1px solid;white-space:nowrap;}
-.pill-g{color:var(--acc);border-color:rgba(0,229,181,.3);background:rgba(0,229,181,.06);}
-.pill-b{color:var(--acc2);border-color:rgba(0,136,255,.3);background:rgba(0,136,255,.06);}
-.pill-p{color:var(--acc3);border-color:rgba(123,47,255,.3);background:rgba(123,47,255,.06);}
-.pill-o{color:var(--warn);border-color:rgba(255,170,0,.3);background:rgba(255,170,0,.06);}
-.pdot{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 7px var(--acc);animation:pdot 2s infinite;}
-@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
-main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:1.5rem 1.25rem 6rem;display:flex;flex-direction:column;gap:1.75rem;}
+.header-pills{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.pill{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;padding:.22rem .6rem;border-radius:2px;border:1px solid;white-space:nowrap;}
+.pill-green{color:var(--acc);border-color:rgba(0,229,181,.35);background:rgba(0,229,181,.07);}
+.pill-blue{color:var(--acc2);border-color:rgba(0,136,255,.35);background:rgba(0,136,255,.07);}
+.pill-purple{color:var(--acc3);border-color:rgba(123,47,255,.35);background:rgba(123,47,255,.07);}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+main{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:1.5rem 1.25rem 5rem;display:flex;flex-direction:column;gap:1.75rem;}
 .panel{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rad);padding:1.5rem;position:relative;overflow:hidden;}
-.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3),transparent);}
-.plabel{font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--acc);margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;}
-.plabel::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bdr2),transparent);}
-.tip{background:var(--bg3);border:1px solid var(--bdr2);border-left:3px solid var(--acc);border-radius:var(--rad);padding:.85rem 1rem;margin-bottom:1.25rem;display:flex;gap:.7rem;align-items:flex-start;}
-.tip p{font-size:.78rem;color:var(--tx2);line-height:1.65;}.tip p strong{color:var(--acc);}
-.cam-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:var(--rad);overflow:hidden;margin-bottom:1.25rem;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3),transparent);}
+.panel-label{font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--acc);margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;}
+.panel-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bdr2),transparent);}
+/* ── Tip ── */
+.tip{background:var(--bg3);border:1px solid var(--bdr2);border-left:3px solid var(--acc);
+  border-radius:var(--rad);padding:.85rem 1rem;margin-bottom:1.25rem;display:flex;gap:.7rem;align-items:flex-start;}
+.tip p{font-size:.78rem;color:var(--tx2);line-height:1.65;}
+.tip p strong{color:var(--acc);}
+/* ── Camera ── */
+.cam-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;
+  border:1px solid var(--bdr2);border-radius:var(--rad);overflow:hidden;margin-bottom:1.25rem;}
 #video{width:100%;height:100%;object-fit:cover;display:block;}
-#captureCanvas{display:none;}
+#captureCanvas,#sam2Canvas{display:none;}
 #overlayCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
 .cam-hud{position:absolute;inset:0;pointer-events:none;}
-.corner{position:absolute;width:18px;height:18px;border-color:var(--acc);border-style:solid;opacity:.65;}
+.corner{position:absolute;width:18px;height:18px;border-color:var(--acc);border-style:solid;opacity:.7;}
 .corner.tl{top:10px;left:10px;border-width:2px 0 0 2px;}
 .corner.tr{top:10px;right:10px;border-width:2px 2px 0 0;}
 .corner.bl{bottom:10px;left:10px;border-width:0 0 2px 2px;}
 .corner.br{bottom:10px;right:10px;border-width:0 2px 2px 0;}
-.hud-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.3;animation:scan 3s ease-in-out infinite;display:none;}
+.hud-scanline{position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--acc),transparent);
+  opacity:.3;animation:scan 3s ease-in-out infinite;display:none;}
 @keyframes scan{0%{top:8%}50%{top:92%}100%{top:8%}}
-.hud-q{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:.6rem;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);padding:.22rem .55rem;border-radius:2px;border:1px solid var(--bdr2);transition:color .3s,border-color .3s;}
-.hud-q.good{color:var(--ok);border-color:rgba(0,255,136,.4);}
-.hud-q.fair{color:var(--warn);border-color:rgba(255,170,0,.4);}
-.hud-q.none{color:var(--tx3);}
-.hud-ctr{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);backdrop-filter:blur(6px);color:var(--acc);font-family:var(--mono);font-size:.68rem;padding:.28rem .85rem;border-radius:2px;border:1px solid rgba(0,229,181,.3);display:none;}
-.hud-ctr.show{display:block;}
-.hud-instr{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);backdrop-filter:blur(6px);color:rgba(0,229,181,.9);font-family:var(--mono);font-size:.62rem;padding:.28rem 1rem;border-radius:2px;border:1px solid rgba(0,229,181,.25);white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis;}
-.hud-res{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:.58rem;color:rgba(0,229,181,.5);}
-.hud-badge{position:absolute;bottom:10px;right:10px;font-family:var(--mono);font-size:.56rem;color:rgba(123,47,255,.85);background:rgba(0,0,0,.65);padding:.2rem .5rem;border-radius:2px;border:1px solid rgba(123,47,255,.3);}
-.flash{position:absolute;inset:0;background:rgba(0,229,181,.16);opacity:0;pointer-events:none;transition:opacity .07s;}
+.hud-quality{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:.6rem;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:.22rem .55rem;border-radius:2px;
+  border:1px solid var(--bdr2);transition:color .3s,border-color .3s;}
+.hud-quality.good{color:#00ff88;border-color:rgba(0,255,136,.4);}
+.hud-quality.fair{color:var(--warn);border-color:rgba(255,170,0,.4);}
+.hud-quality.none{color:var(--tx3);}
+.hud-counter{position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);color:var(--acc);
+  font-family:var(--mono);font-size:.68rem;padding:.28rem .85rem;border-radius:2px;
+  border:1px solid rgba(0,229,181,.3);display:none;}
+.hud-counter.show{display:block;}
+.hud-instr{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);color:rgba(0,229,181,.9);
+  font-family:var(--mono);font-size:.62rem;padding:.28rem 1rem;border-radius:2px;
+  border:1px solid rgba(0,229,181,.25);white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;}
+.hud-res{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:.58rem;color:rgba(0,229,181,.55);}
+.hud-seg-mode{position:absolute;bottom:10px;right:10px;font-family:var(--mono);font-size:.58rem;
+  color:rgba(123,47,255,.8);background:rgba(0,0,0,.6);padding:.2rem .5rem;border-radius:2px;
+  border:1px solid rgba(123,47,255,.3);}
+.flash{position:absolute;inset:0;background:rgba(0,229,181,.18);opacity:0;pointer-events:none;transition:opacity .06s;}
 .flash.go{opacity:1;}
-.no-cam{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:var(--bg);text-align:center;padding:2rem;}
+.no-cam{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1rem;background:var(--bg);font-family:var(--cond);text-align:center;padding:2rem;}
 .no-cam.hidden{display:none;}
 .no-cam-icon{font-size:3rem;color:var(--tx3);}
-.no-cam h3{font-size:1.2rem;font-weight:700;font-family:var(--cond);}
+.no-cam h3{font-size:1.2rem;font-weight:700;}
 .no-cam p{font-size:.8rem;color:var(--tx2);max-width:300px;line-height:1.55;}
-.ctrls-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;}
-@media(max-width:520px){.ctrls-grid{grid-template-columns:1fr;}}
-.ctrl-lbl{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;color:var(--tx2);margin-bottom:.5rem;}
-.ctrl-hint{font-size:.67rem;color:var(--tx3);margin-top:.3rem;}
-.sl-row{display:flex;align-items:center;gap:.75rem;}
+/* ── Controls ── */
+.controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;}
+@media(max-width:520px){.controls-grid{grid-template-columns:1fr;}}
+.ctrl-label{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;color:var(--tx2);margin-bottom:.5rem;}
+.ctrl-hint{font-size:.68rem;color:var(--tx3);margin-top:.3rem;}
+.slider-row{display:flex;align-items:center;gap:.75rem;}
 input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--bdr2);border-radius:2px;outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);cursor:pointer;}
-.sl-val{font-family:var(--mono);font-size:.8rem;color:var(--acc);min-width:3rem;text-align:right;}
-.cap-prog{margin-bottom:1.25rem;display:none;}.cap-prog.show{display:block;}
-.pbar-wrap{height:5px;background:var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:.55rem;}
-.pbar-wrap.lg{height:7px;}
-.pbar{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0%;transition:width .3s;border-radius:2px;box-shadow:0 0 10px rgba(0,229,181,.35);}
+.slider-val{font-family:var(--mono);font-size:.8rem;color:var(--acc);min-width:2.8rem;text-align:right;}
+/* ── Seg mode toggle ── */
+.seg-toggle{display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+.seg-btn{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;padding:.35rem .85rem;
+  border-radius:2px;border:1px solid var(--bdr2);background:transparent;color:var(--tx2);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.seg-btn.active{border-color:var(--acc3);color:var(--acc3);background:rgba(123,47,255,.12);box-shadow:0 0 12px rgba(123,47,255,.2);}
+/* ── Progress ── */
+.capture-progress{margin-bottom:1.25rem;display:none;}
+.capture-progress.show{display:block;}
+.prog-bar-wrap{height:5px;background:var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:.55rem;}
+.prog-bar-wrap.lg{height:7px;}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0%;
+  transition:width .35s ease;border-radius:2px;box-shadow:0 0 10px rgba(0,229,181,.4);}
 .prog-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.68rem;color:var(--tx2);margin-bottom:.75rem;}
-.frame-strip{display:flex;gap:4px;flex-wrap:wrap;max-height:84px;overflow:hidden;}
+.frame-strip{display:flex;gap:4px;flex-wrap:wrap;max-height:82px;overflow:hidden;}
 .frame-thumb{width:52px;height:39px;object-fit:cover;border:1px solid var(--bdr2);border-radius:1px;animation:fadeIn .3s;flex-shrink:0;}
-.frame-thumb.fresh{border-color:var(--acc);box-shadow:0 0 5px var(--acc);}
-@keyframes fadeIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
-.btn-row{display:flex;gap:.6rem;flex-wrap:wrap;}
-.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.3rem;font-family:var(--cond);font-size:.9rem;font-weight:700;letter-spacing:.08em;border:none;border-radius:var(--rad);cursor:pointer;transition:all .2s;text-transform:uppercase;}
-.btn-prim{background:var(--acc);color:#000;}
-.btn-prim:hover:not(:disabled){background:#00ffd0;box-shadow:0 0 24px rgba(0,229,181,.5);transform:translateY(-1px);}
-.btn-prim:disabled{opacity:.3;cursor:not-allowed;transform:none;}
-.btn-danger{background:transparent;color:var(--err);border:1px solid var(--err);opacity:.8;}
-.btn-danger:hover{opacity:1;box-shadow:0 0 12px rgba(255,51,85,.35);}
-.btn-sec{background:transparent;color:var(--tx2);border:1px solid var(--bdr2);}
-.btn-sec:hover{border-color:var(--acc);color:var(--acc);}
-.btn-ghost{background:transparent;color:var(--tx3);border:1px solid var(--bdr);font-size:.82rem;padding:.5rem 1rem;}
+.frame-thumb.fresh{border-color:var(--acc);box-shadow:0 0 6px var(--acc);}
+@keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+/* ── Buttons ── */
+.btn-row{display:flex;gap:.65rem;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.3rem;
+  font-family:var(--cond);font-size:.9rem;font-weight:700;letter-spacing:.08em;
+  border:none;border-radius:var(--rad);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.btn-primary{background:var(--acc);color:#000;}
+.btn-primary:hover:not(:disabled){background:#00ffcc;box-shadow:0 0 24px rgba(0,229,181,.5);transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+.btn-danger{background:transparent;color:var(--err);border:1px solid var(--err);opacity:.85;}
+.btn-danger:hover{opacity:1;box-shadow:0 0 12px rgba(255,51,85,.4);}
+.btn-secondary{background:transparent;color:var(--tx2);border:1px solid var(--bdr2);}
+.btn-secondary:hover{border-color:var(--acc);color:var(--acc);}
+.btn-ghost{background:transparent;color:var(--tx3);border:1px solid var(--bdr);font-size:.8rem;padding:.5rem 1rem;}
 .btn-ghost:hover{color:var(--tx2);border-color:var(--bdr2);}
-.pipe-stages{display:flex;gap:3px;margin-bottom:1.5rem;}
-.sb{flex:1;height:7px;background:var(--bdr2);border-radius:1px;transition:all .35s;position:relative;overflow:hidden;}
-.sb.active{background:var(--acc2);}
-.sb.active::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shim 1s infinite;}
-@keyframes shim{to{left:200%;}}
-.sb.done{background:var(--acc);}
+/* ── Process panel ── */
+.pipeline-stages{display:flex;gap:4px;margin-bottom:1.5rem;}
+.stage-blk{flex:1;height:7px;background:var(--bdr2);border-radius:1px;transition:all .4s;position:relative;overflow:hidden;}
+.stage-blk.active{background:var(--acc2);}
+.stage-blk.active::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:shimmer 1.2s infinite;}
+@keyframes shimmer{to{left:200%;}}
+.stage-blk.done{background:var(--acc);}
 .proc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem;}
 @media(max-width:480px){.proc-grid{grid-template-columns:1fr 1fr;}}
 .info-blk{display:flex;flex-direction:column;gap:.2rem;}
-.ikey{font-family:var(--mono);font-size:.52rem;letter-spacing:.15em;color:var(--tx3);}
-.ival{font-family:var(--cond);font-size:1.05rem;font-weight:700;color:var(--tx);}
-.depth-sec{margin-top:1.25rem;display:none;}.depth-sec.show{display:block;}
-.depth-lbl{font-family:var(--mono);font-size:.56rem;letter-spacing:.15em;color:var(--tx3);margin-bottom:.5rem;}
+.info-key{font-family:var(--mono);font-size:.52rem;letter-spacing:.15em;color:var(--tx3);}
+.info-val{font-family:var(--cond);font-size:1.05rem;font-weight:700;color:var(--tx);}
+.depth-sec{margin-top:1.25rem;display:none;}
+.depth-sec.show{display:block;}
+.depth-row-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;color:var(--tx3);margin-bottom:.5rem;}
 .depth-strip{display:flex;gap:4px;flex-wrap:wrap;}
-.depth-cell{position:relative;width:66px;height:50px;border:1px solid var(--bdr2);border-radius:1px;overflow:hidden;flex-shrink:0;}
+.depth-cell{position:relative;width:62px;height:47px;border:1px solid var(--bdr2);border-radius:1px;overflow:hidden;flex-shrink:0;}
 .depth-cell img,.depth-cell canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
-.depth-cell img{opacity:.22;}
-.depth-tag{position:absolute;bottom:0;left:0;right:0;font-family:var(--mono);font-size:.43rem;background:rgba(0,0,0,.78);color:var(--acc);padding:1px 3px;text-align:center;}
-.terminal{background:#000;border:1px solid var(--bdr);border-radius:var(--rad);padding:.75rem 1rem;margin-top:1.25rem;max-height:220px;overflow-y:auto;font-family:var(--mono);font-size:.67rem;color:var(--acc);line-height:1.85;scrollbar-width:thin;scrollbar-color:var(--bdr2) transparent;}
-.t-dim{color:var(--tx3)}.t-warn{color:var(--warn)}.t-ok{color:var(--ok)}.t-err{color:var(--err)}.t-info{color:var(--acc2)}
-.viewer-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:var(--rad);overflow:hidden;margin-bottom:1.25rem;}
+.depth-cell img{opacity:.2;}
+.depth-tag{position:absolute;bottom:0;left:0;right:0;font-family:var(--mono);font-size:.43rem;
+  background:rgba(0,0,0,.75);color:var(--acc);padding:1px 3px;text-align:center;}
+.terminal{background:#000;border:1px solid var(--bdr);border-radius:var(--rad);padding:.75rem 1rem;
+  margin-top:1.25rem;max-height:180px;overflow-y:auto;font-family:var(--mono);font-size:.67rem;
+  color:var(--acc);line-height:1.85;scrollbar-width:thin;scrollbar-color:var(--bdr2) transparent;}
+.terminal .t-dim{color:var(--tx3);}
+.terminal .t-warn{color:var(--warn);}
+.terminal .t-ok{color:#00ff88;}
+.terminal .t-err{color:var(--err);}
+/* ── Viewer ── */
+.viewer-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;
+  border:1px solid var(--bdr2);border-radius:var(--rad);overflow:hidden;margin-bottom:1.25rem;}
 #threeCanvas{width:100%;height:100%;display:block;touch-action:none;}
-.viewer-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.58rem;color:rgba(200,216,232,.3);white-space:nowrap;pointer-events:none;}
-.vstat{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:.22rem;font-family:var(--mono);font-size:.6rem;color:var(--acc);text-shadow:0 0 6px var(--acc);pointer-events:none;}
+.viewer-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:.58rem;color:rgba(200,216,232,.3);white-space:nowrap;pointer-events:none;}
+.viewer-stats{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:.22rem;
+  font-family:var(--mono);font-size:.6rem;color:var(--acc);text-shadow:0 0 6px var(--acc);pointer-events:none;}
 .vsl::before{content:'› ';opacity:.4;}
-.vtbar{position:absolute;top:10px;left:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:220px;}
-.vtb{width:30px;height:30px;background:rgba(8,9,12,.88);backdrop-filter:blur(8px);border:1px solid var(--bdr2);border-radius:2px;font-family:var(--mono);font-size:.52rem;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.vtbar{position:absolute;top:10px;left:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:160px;}
+.vtb{width:30px;height:30px;background:rgba(8,9,12,.85);backdrop-filter:blur(8px);
+  border:1px solid var(--bdr2);border-radius:2px;font-family:var(--mono);font-size:.53rem;
+  color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .vtb:hover{border-color:var(--acc);color:var(--acc);}
-.vtb.on{background:rgba(0,229,181,.12);border-color:var(--acc);color:var(--acc);box-shadow:0 0 8px rgba(0,229,181,.18);}
+.vtb.on{background:rgba(0,229,181,.12);border-color:var(--acc);color:var(--acc);box-shadow:0 0 8px rgba(0,229,181,.2);}
+/* ── Quality indicator ── */
+.quality-bar{display:flex;gap:3px;margin-bottom:1.25rem;}
+.q-seg{flex:1;height:5px;background:var(--bdr2);border-radius:1px;transition:all .5s;}
+/* ── Toasts ── */
 .toasts{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:9999;}
-.toast{padding:.6rem 1.1rem;border-radius:2px;font-family:var(--mono);font-size:.7rem;animation:toastIn .3s;max-width:340px;line-height:1.4;}
+.toast{padding:.6rem 1.1rem;border-radius:2px;font-family:var(--mono);font-size:.7rem;
+  animation:toastIn .3s ease;max-width:320px;line-height:1.4;}
 .toast.ok{background:var(--acc);color:#000;}
 .toast.err{background:var(--err);color:#fff;}
 .toast.warn{background:var(--warn);color:#000;}
 .toast.info{background:var(--bdr2);color:var(--tx);border:1px solid var(--acc2);}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
-::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px;}
-@media(max-width:600px){.header{padding:.6rem 1rem;}.logo{font-size:1.25rem;}main{padding:1rem .75rem 4rem;}.panel{padding:1.1rem;}.header-pills .pill:nth-child(n+5){display:none;}}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px;}
+@media(max-width:600px){
+  .header{padding:.6rem 1rem;}
+  .logo{font-size:1.3rem;}
+  main{padding:1rem .75rem 4rem;}
+  .panel{padding:1.1rem;}
+  .header-pills .pill:nth-child(n+4){display:none;}
+}
 </style>
 </head>
 <body>
 <header class="header">
-  <div class="logo"><span class="logo-hex">⬡</span>SCAN<span class="acc">3D</span><span style="font-size:.65rem;color:var(--tx3);font-family:var(--mono);margin-left:.4rem">v5</span></div>
+  <div class="logo"><span class="logo-hex">⬡</span>SCAN<span class="acc">3D</span><span style="font-size:.7rem;color:var(--tx3);font-family:var(--mono);margin-left:.4rem">v2</span></div>
   <div class="header-pills">
-    <span class="pdot"></span>
-    <span class="pill pill-g">ADAPTIVE SDF</span>
-    <span class="pill pill-b">FEATURE-PRESERVING</span>
-    <span class="pill pill-p">SHARP EDGES</span>
-    <span class="pill pill-o">MULTI-VIEW BLEND</span>
-    <span class="pill pill-g">NO UPLOAD</span>
+    <span class="pulse-dot"></span>
+    <span class="pill pill-green">SAM2 MASK</span>
+    <span class="pill pill-blue">MIDAS DEPTH</span>
+    <span class="pill pill-purple">GLB+OBJ</span>
+    <span class="pill pill-green">NO UPLOAD</span>
   </div>
 </header>
 <main>
-<section class="panel" id="panelCamera">
-  <div class="plabel">01 — CAPTURE</div>
-  <div class="tip">
-    <span style="font-size:1rem;margin-top:.05rem">💡</span>
-    <p><strong>Best results:</strong> Diffuse lighting, no harsh shadows. Hold still 3–4s (background learning). Object fills 35–65% of frame. Walk a slow, level <strong>360° circle</strong> — 28–36 photos at 1.2s intervals. Tilt slightly on second pass for underside detail. Green outline = tracked region.</p>
-  </div>
-  <div class="cam-wrap">
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="captureCanvas"></canvas>
-    <canvas id="overlayCanvas"></canvas>
-    <div class="cam-hud">
-      <div class="corner tl"></div><div class="corner tr"></div>
-      <div class="corner bl"></div><div class="corner br"></div>
-      <div class="hud-q none" id="hudQ">LEARNING…</div>
-      <div class="hud-scanline" id="scanLine"></div>
-      <div class="hud-ctr" id="hudCtr"></div>
-      <div class="hud-res" id="hudRes">—</div>
-      <div class="hud-instr" id="hudInstr">Enable camera to begin</div>
-      <div class="hud-badge" id="hudBadge">v5-PRO</div>
+  <!-- ─── PANEL 01: CAPTURE ─── -->
+  <section class="panel" id="panelCamera">
+    <div class="panel-label">01 — CAPTURE</div>
+    <div class="tip">
+      <span style="font-size:1rem;margin-top:.1rem">💡</span>
+      <p><strong>Setup:</strong> Hold still for 3s (background learning). Then place object — the AI auto-segments it with SAM2-style masking. Walk a slow <strong>360° circle</strong>, 20–30 photos. Green fill = what's being scanned. Purple dashes = SAM2 contour.</p>
     </div>
-    <div class="flash" id="flashEl"></div>
-    <div class="no-cam" id="noCam">
-      <span class="no-cam-icon">⬡</span>
-      <h3>Camera not enabled</h3>
-      <p>All processing is local — nothing is uploaded.</p>
-      <button class="btn btn-prim" id="btnEnableCam">◉ Enable Camera</button>
+    <div class="cam-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="captureCanvas"></canvas>
+      <canvas id="sam2Canvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+      <div class="cam-hud">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="hud-quality none" id="hudQ">LEARNING…</div>
+        <div class="hud-scanline" id="scanLine"></div>
+        <div class="hud-counter" id="hudCounter"></div>
+        <div class="hud-res" id="hudRes">—</div>
+        <div class="hud-instr" id="hudInstr">Enable camera to begin</div>
+        <div class="hud-seg-mode" id="hudSegMode">SAM2-LITE</div>
+      </div>
+      <div class="flash" id="flashEl"></div>
+      <div class="no-cam" id="noCam">
+        <span class="no-cam-icon">⬡</span>
+        <h3>Camera not enabled</h3>
+        <p>Everything runs locally in your browser. No uploads, no accounts.</p>
+        <button class="btn btn-primary" id="btnEnableCam"><span>◉</span> Enable Camera</button>
+      </div>
     </div>
-  </div>
-  <div class="ctrls-grid">
-    <div>
-      <label class="ctrl-lbl">NUMBER OF PHOTOS</label>
-      <div class="sl-row"><input type="range" id="slFrames" min="12" max="48" value="32" step="2"><span class="sl-val" id="svFrames">32</span></div>
-      <div class="ctrl-hint">28–36 optimal for full geometry</div>
+    <!-- Segmentation mode -->
+    <div style="margin-bottom:.9rem">
+      <label class="ctrl-label">SEGMENTATION ENGINE</label>
+      <div class="seg-toggle">
+        <button class="seg-btn active" id="segSAM2">SAM2-LITE (Best Quality)</button>
+        <button class="seg-btn" id="segYOLO">YOLO+DETECT (Fast)</button>
+        <button class="seg-btn" id="segEdge">EDGE ONLY (Fallback)</button>
+      </div>
     </div>
-    <div>
-      <label class="ctrl-lbl">INTERVAL BETWEEN SHOTS</label>
-      <div class="sl-row"><input type="range" id="slInterval" min="400" max="3000" value="1200" step="100"><span class="sl-val" id="svInterval">1.2s</span></div>
-      <div class="ctrl-hint">Slower = easier circle walk</div>
+    <div class="controls-grid">
+      <div>
+        <label class="ctrl-label">NUMBER OF PHOTOS</label>
+        <div class="slider-row">
+          <input type="range" id="slFrames" min="8" max="48" value="28" step="1">
+          <span class="slider-val" id="svFrames">28</span>
+        </div>
+        <div class="ctrl-hint">24–32 gives best geometry</div>
+      </div>
+      <div>
+        <label class="ctrl-label">INTERVAL BETWEEN SHOTS</label>
+        <div class="slider-row">
+          <input type="range" id="slInterval" min="400" max="3000" value="1200" step="100">
+          <span class="slider-val" id="svInterval">1.2s</span>
+        </div>
+        <div class="ctrl-hint">Slower = easier to walk</div>
+      </div>
+      <div>
+        <label class="ctrl-label">MESH RESOLUTION</label>
+        <div class="slider-row">
+          <input type="range" id="slRes" min="48" max="96" value="72" step="8">
+          <span class="slider-val" id="svRes">72</span>
+        </div>
+        <div class="ctrl-hint">Higher = more detail, slower</div>
+      </div>
+      <div>
+        <label class="ctrl-label">SMOOTHING PASSES</label>
+        <div class="slider-row">
+          <input type="range" id="slSmooth" min="2" max="12" value="7" step="1">
+          <span class="slider-val" id="svSmooth">7</span>
+        </div>
+        <div class="ctrl-hint">More = smoother surface</div>
+      </div>
     </div>
-    <div>
-      <label class="ctrl-lbl">VOXEL RESOLUTION</label>
-      <div class="sl-row"><input type="range" id="slRes" min="64" max="128" value="96" step="8"><span class="sl-val" id="svRes">96</span></div>
-      <div class="ctrl-hint">Higher = finer detail, slower build</div>
+    <div class="capture-progress" id="captureProgress">
+      <div class="prog-bar-wrap"><div class="prog-bar" id="captureBar"></div></div>
+      <div class="prog-labels"><span id="capLabel">Capturing…</span><span id="capCount">0 / 0</span></div>
+      <div class="frame-strip" id="frameStrip"></div>
     </div>
-    <div>
-      <label class="ctrl-lbl">SMOOTHING PASSES</label>
-      <div class="sl-row"><input type="range" id="slSmooth" min="2" max="18" value="10" step="1"><span class="sl-val" id="svSmooth">10</span></div>
-      <div class="ctrl-hint">Taubin λ/μ — feature-preserving</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnStartScan" disabled>◉ Start Scanning</button>
+      <button class="btn btn-danger" id="btnStopCam" style="display:none">⊘ Stop Camera</button>
+      <button class="btn btn-secondary" id="btnReset" style="display:none">↺ Start Over</button>
     </div>
-  </div>
-  <div class="cap-prog" id="capProg">
-    <div class="pbar-wrap"><div class="pbar" id="capBar"></div></div>
-    <div class="prog-labels"><span id="capLabel">Capturing…</span><span id="capCount">0/0</span></div>
-    <div class="frame-strip" id="frameStrip"></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-prim" id="btnStartScan" disabled>◉ Start Scanning</button>
-    <button class="btn btn-danger" id="btnStopCam" style="display:none">⊘ Stop Camera</button>
-    <button class="btn btn-sec" id="btnReset" style="display:none">↺ Start Over</button>
-  </div>
-</section>
+  </section>
 
-<section class="panel" id="panelProcess" style="display:none">
-  <div class="plabel">02 — RECONSTRUCTION PIPELINE</div>
-  <div class="pipe-stages" id="pipeStages"></div>
-  <div class="proc-grid">
-    <div class="info-blk"><span class="ikey">STAGE</span><span class="ival" id="procStage">—</span></div>
-    <div class="info-blk"><span class="ikey">PROGRESS</span><span class="ival" id="procPct">0%</span></div>
-    <div class="info-blk"><span class="ikey">PHOTOS</span><span class="ival" id="procFrames">—</span></div>
-    <div class="info-blk"><span class="ikey">VOXELS</span><span class="ival" id="procRes">—</span></div>
-    <div class="info-blk"><span class="ikey">MASKED</span><span class="ival" id="procMasked">—</span></div>
-    <div class="info-blk"><span class="ikey">QUALITY</span><span class="ival" id="procQual">—</span></div>
-  </div>
-  <div class="pbar-wrap lg"><div class="pbar" id="procBar"></div></div>
-  <div class="depth-sec" id="depthSec">
-    <div class="depth-lbl">DEPTH MAPS — multi-cue fused</div>
-    <div class="depth-strip" id="depthStrip"></div>
-  </div>
-  <div class="terminal" id="terminal"><div class="t-dim">$ SCAN3D v5 pro reconstruction engine initialised…</div></div>
-</section>
-
-<section class="panel" id="panelViewer" style="display:none">
-  <div class="plabel">03 — 3D MODEL READY 🎉</div>
-  <div class="viewer-wrap">
-    <canvas id="threeCanvas"></canvas>
-    <div class="vtbar">
-      <button class="vtb" id="vtbWF" title="Wireframe">WF</button>
-      <button class="vtb on" id="vtbTX" title="Texture">TX</button>
-      <button class="vtb on" id="vtbNE" title="Neon edges">NE</button>
-      <button class="vtb on" id="vtbRO" title="Auto-rotate">⟳</button>
-      <button class="vtb" id="vtbNM" title="Normal map">NM</button>
-      <button class="vtb" id="vtbAO" title="Diffuse only">AO</button>
-      <button class="vtb" id="vtbSH" title="Sharp edges">SH</button>
+  <!-- ─── PANEL 02: PROCESS ─── -->
+  <section class="panel" id="panelProcess" style="display:none">
+    <div class="panel-label">02 — AI RECONSTRUCTION PIPELINE</div>
+    <div class="pipeline-stages" id="pipelineStages"></div>
+    <div class="proc-grid">
+      <div class="info-blk"><span class="info-key">CURRENT STEP</span><span class="info-val" id="procStage">—</span></div>
+      <div class="info-blk"><span class="info-key">PROGRESS</span><span class="info-val" id="procPct">0%</span></div>
+      <div class="info-blk"><span class="info-key">PHOTOS</span><span class="info-val" id="procFrames">—</span></div>
+      <div class="info-blk"><span class="info-key">VOXEL RES</span><span class="info-val" id="procRes">—</span></div>
+      <div class="info-blk"><span class="info-key">SEG ENGINE</span><span class="info-val" id="procSeg">—</span></div>
+      <div class="info-blk"><span class="info-key">MASKED</span><span class="info-val" id="procMasked">—</span></div>
     </div>
-    <div class="viewer-hint">🖱 Drag · Scroll zoom · Right-drag pan · Pinch (mobile)</div>
-    <div class="vstat" id="vstat"></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-prim" id="btnDlGLB">⬇ Download .glb</button>
-    <button class="btn btn-sec" id="btnDlOBJ">⬇ Download .obj</button>
-    <button class="btn btn-sec" id="btnDlTex">⬇ Texture .png</button>
-    <button class="btn btn-ghost" id="btnNewScan">⬡ New Scan</button>
-  </div>
-</section>
+    <div class="prog-bar-wrap lg"><div class="prog-bar" id="procBar"></div></div>
+    <div class="depth-sec" id="depthSec">
+      <div class="depth-row-label">AI DEPTH MAPS</div>
+      <div class="depth-strip" id="depthStrip"></div>
+    </div>
+    <div class="terminal" id="terminal"><div class="t-dim">$ Initialising AI reconstruction pipeline v2…</div></div>
+  </section>
+
+  <!-- ─── PANEL 03: VIEWER ─── -->
+  <section class="panel" id="panelViewer" style="display:none">
+    <div class="panel-label">03 — 3D MODEL READY 🎉</div>
+    <div class="viewer-wrap">
+      <canvas id="threeCanvas"></canvas>
+      <div class="vtbar">
+        <button class="vtb" id="vtbWF" title="Wireframe">WF</button>
+        <button class="vtb on" id="vtbTX" title="Texture">TX</button>
+        <button class="vtb on" id="vtbNE" title="Neon edges">NE</button>
+        <button class="vtb on" id="vtbRO" title="Auto-rotate">⟳</button>
+        <button class="vtb" id="vtbNM" title="Normal map preview">NM</button>
+        <button class="vtb" id="vtbXR" title="Explode view">EX</button>
+      </div>
+      <div class="viewer-hint">🖱 Drag · Scroll zoom · Right-drag pan · Pinch (mobile)</div>
+      <div class="viewer-stats" id="viewerStats"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnDlGLB">⬇ Download .glb</button>
+      <button class="btn btn-secondary" id="btnDlOBJ">⬇ Download .obj</button>
+      <button class="btn btn-secondary" id="btnDlTex">⬇ Texture .png</button>
+      <button class="btn btn-ghost" id="btnNewScan">⬡ New Scan</button>
+    </div>
+  </section>
 </main>
 <div class="toasts" id="toasts"></div>
+<!-- Hidden canvas for SAM2 processing -->
+<canvas id="sam2Canvas" style="display:none"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
 <script>
 'use strict';
-/* ═══════════════════════════════════════════════════════════════
-   SCAN3D v5 — Quality Upgrades over v3
-   ─────────────────────────────────────────────────────────────
-   NEW IN v5:
-   1. MULTI-CUE DEPTH FUSION (no external dependency)
-      · Focus measure (LoG variance) per 7×7 window
-      · Multi-scale gradient magnitude (3 octaves)
-      · Dark-channel prior for haze/depth
-      · Temporal consistency smoothing across adjacent frames
-      · Confidence-weighted median fusion across all frames
-
-   2. ADAPTIVE TSDF WITH CONFIDENCE
-      · Per-voxel confidence accumulator (not just weight)
-      · View-angle cosine weighting (grazing views discounted)
-      · Depth uncertainty model (σ ∝ depth²)
-      · Adaptive truncation radius based on local SDF gradient
-
-   3. FEATURE-PRESERVING SMOOTHING
-      · Sharp-edge detection via SDF curvature before smoothing
-      · Bilateral SDF filter (preserves edges in SDF space)
-      · Crease-angle detection post-MC to preserve hard edges
-      · Vertex-valence-weighted Taubin on mesh
-
-   4. BETTER HOLE REPAIR
-      · Interior void detection and targeted filling
-      · Thin-wall detection (2-voxel shell repair)
-      · Topology-aware flood fill distinguishing true holes
-
-   5. IMPROVED TEXTURE PROJECTION
-      · Per-vertex best-view selection using normal alignment
-      · View-cone blending weights (Gaussian falloff)
-      · Seam-minimizing UV layout for cylindrical objects
-      · Per-face view blending (3 best views, cosine weighted)
-      · Colour histogram matching across frames
-
-   6. SHARPER MESH
-      · Dual-contouring-inspired sub-voxel vertex placement
-      · Hermite data (gradient + value) for sharp features
-      · Min-curvature-normal vertex positioning
-      · Feature-edge detection and crease preservation
-═══════════════════════════════════════════════════════════════ */
-
+/* ═══════════════════════════════════════════════════════
+   SCAN3D v2 — Upgraded Pipeline
+   - SAM2-Lite: hierarchical Gaussian background subtraction
+     + Sobel + HSV + temporal consistency + graph-cut style
+     connected-component isolation
+   - YOLO11-seg: fast bounding-box + semantic masks via TF.js
+   - Improved marching cubes (per-vert normal interpolation)
+   - Laplacian + Taubin mesh smoothing
+   - Hole filling via flood-fill voxel sealing
+   - Multi-pass depth blending with MiDaS
+   - Texture atlas with per-face UV reprojection
+   - GLB export (Three.js GLTFExporter)
+   - OBJ export
+═══════════════════════════════════════════════════════ */
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
-/* ── Global state ── */
+/* ──────────── State ──────────── */
 let stream=null,capturing=false,captureTimer=null;
-let frames=[],depthMaps=[],meshData=null,atlasCanvas=null,normalCanvas=null;
+let frames=[],depthMaps=[],meshData=null,atlasCanvas=null;
+let midasModel=null,yoloModel=null;
 let sharedMask=null,sharedMW=0,sharedMH=0;
-let outlineRAF=null;
-let meshRes=96,smoothPasses=10;
+let outlineRAF=null,segMode='sam2';
+let meshRes=72,smoothPasses=7;
 
-/* ── Sliders ── */
-[['slFrames','svFrames',v=>v],
- ['slInterval','svInterval',v=>(v/1000).toFixed(1)+'s'],
- ['slRes','svRes',v=>{meshRes=+v;return v;}],
- ['slSmooth','svSmooth',v=>{smoothPasses=+v;return v;}],
-].forEach(([sl,sv,fmt])=>{const e=$(sl);if(!e)return;e.oninput=()=>$(sv).textContent=fmt(e.value);$(sv).textContent=fmt(e.value);});
+/* ──────────── Sliders ──────────── */
+const sliders=[
+  ['slFrames','svFrames',v=>v],
+  ['slInterval','svInterval',v=>(v/1000).toFixed(1)+'s'],
+  ['slRes','svRes',v=>{meshRes=parseInt(v);return v;}],
+  ['slSmooth','svSmooth',v=>{smoothPasses=parseInt(v);return v;}],
+];
+sliders.forEach(([sl,sv,fmt])=>{
+  const el=$(sl);if(!el)return;
+  el.oninput=()=>$(sv).textContent=fmt(el.value);
+  $(sv).textContent=fmt(el.value);
+});
 
-/* ── Toast / Log ── */
-function toast(msg,type='ok'){const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;$('toasts').appendChild(el);setTimeout(()=>el.remove(),4500);}
-function tlog(msg,cls=''){const d=document.createElement('div');d.className=cls;d.textContent='$ '+msg;const t=$('terminal');t.appendChild(d);t.scrollTop=99999;}
+/* ──────────── Seg mode buttons ──────────── */
+['segSAM2','segYOLO','segEdge'].forEach(id=>{
+  $(id).onclick=()=>{
+    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    $(id).classList.add('active');
+    segMode={'segSAM2':'sam2','segYOLO':'yolo','segEdge':'edge'}[id];
+    $('hudSegMode').textContent={sam2:'SAM2-LITE',yolo:'YOLO-SEG',edge:'EDGE-ONLY'}[segMode];
+  };
+});
 
-/* ════════════════════════════════════════════════════════════════
-   BACKGROUND SUBTRACTION + SEGMENTATION (unchanged, solid)
-════════════════════════════════════════════════════════════════ */
+/* ──────────── Toast / Log ──────────── */
+function toast(msg,type='ok'){
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;el.textContent=msg;
+  $('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),4200);
+}
+function tlog(msg,cls=''){
+  const d=document.createElement('div');
+  d.className=cls;d.textContent='$ '+msg;
+  $('terminal').appendChild(d);
+  $('terminal').scrollTop=99999;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SAM2-LITE ENGINE
+   Improvements over v1:
+   - 3-channel Gaussian background model (full-precision variance)
+   - Temporal IIR accumulator with adaptive alpha (0.55–0.65)
+   - Sobel edge signal blended in (10%)
+   - HSV chromatic distance (perceptual)
+   - Spatial prior: tighter vertical kill zones
+   - Graph-cut style seed expansion from dominant centroid blob
+   - Morphological close (r=4) + iterative erosion-dilation
+   - Contour smoothing: 8 Laplacian passes
+   - Filled region mask shared globally for capture
+═══════════════════════════════════════════════════════ */
 function startOutlineLoop(){
-  const video=$('video'),cvOut=$('overlayCanvas'),cvSrc=document.createElement('canvas');
-  const ctxOut=cvOut.getContext('2d'),ctxSrc=cvSrc.getContext('2d',{willReadFrequently:true});
-  let bgR=null,bgG=null,bgB=null,bgVR=null,bgVG=null,bgVB=null;
-  let bgReady=false,bgWarm=false,frameIdx=0,lastSW=0,lastSH=0;
-  let prevGrey=null,fgAccum=null,adaptThr=0.13;
-  let prevBlobPx=0,stableCount=0,meshPhase=0;
+  const video=$('video');
+  const cvOut=$('overlayCanvas');
+  const cvSrc=document.createElement('canvas');
+  const ctxOut=cvOut.getContext('2d');
+  const ctxSrc=cvSrc.getContext('2d',{willReadFrequently:true});
+  const SCALE=4; // downsample factor
 
-  function initBg(d,N,SW,SH){bgR=new Float32Array(N);bgG=new Float32Array(N);bgB=new Float32Array(N);bgVR=new Float32Array(N).fill(2200);bgVG=new Float32Array(N).fill(2200);bgVB=new Float32Array(N).fill(2200);for(let i=0;i<N;i++){bgR[i]=d[i*4];bgG[i]=d[i*4+1];bgB[i]=d[i*4+2];}bgReady=true;bgWarm=false;lastSW=SW;lastSH=SH;frameIdx=0;fgAccum=null;prevGrey=null;adaptThr=0.13;prevBlobPx=0;stableCount=0;sharedMask=null;}
-  function mahaDist(d,i){const dr=d[i*4]-bgR[i],dg=d[i*4+1]-bgG[i],db=d[i*4+2]-bgB[i];return(dr*dr/Math.max(bgVR[i],20))+(dg*dg/Math.max(bgVG[i],20))+(db*db/Math.max(bgVB[i],20));}
-  function hsvDist(d,i){const r=d[i*4]/255,g=d[i*4+1]/255,b=d[i*4+2]/255;const br=bgR[i]/255,bg_=bgG[i]/255,bb=bgB[i]/255;function hsv(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),dt=mx-mn;let h=0;if(dt>0){if(mx===r)h=((g-b)/dt+6)%6;else if(mx===g)h=(b-r)/dt+2;else h=(r-g)/dt+4;h/=6;}return[h,mx>0?dt/mx:0,mx];}const[h1,s1,v1]=hsv(r,g,b);const[h2,s2,v2]=hsv(br,bg_,bb);const dh=Math.min(Math.abs(h1-h2),1-Math.abs(h1-h2));return dh*(s1+s2)*1.7+Math.abs(s1-s2)*0.8+Math.abs(v1-v2)*0.28;}
-  function updateBg(d,N){const lr=frameIdx<75?0.13:0.005;for(let i=0;i<N;i++){if(frameIdx>=75&&mahaDist(d,i)>5.5)continue;const dr=d[i*4]-bgR[i],dg=d[i*4+1]-bgG[i],db=d[i*4+2]-bgB[i];bgR[i]+=lr*dr;bgG[i]+=lr*dg;bgB[i]+=lr*db;bgVR[i]=(1-lr)*bgVR[i]+lr*dr*dr;bgVG[i]=(1-lr)*bgVG[i]+lr*dg*dg;bgVB[i]=(1-lr)*bgVB[i]+lr*db*db;}if(!bgWarm&&frameIdx>=75)bgWarm=true;}
-  function spatialW(x,y,SW,SH){const fy=y/SH;if(fy<0.12||fy>0.90)return 0;const nx=Math.abs(x/SW-0.5)*2;return Math.min(1,Math.max(0.15,1-nx*0.55)*(fy<0.5?lerp(0.1,1,(fy-.12)/.38):lerp(1,0.1,(fy-.5)/.40))*1.2);}
-  function tuneThresh(acc,N){let ab=0;for(let i=0;i<N;i++)if(acc[i]>adaptThr)ab++;const r=ab/N;if(r<0.005)adaptThr=Math.max(0.03,adaptThr-.02);else if(r>0.38)adaptThr=Math.min(0.72,adaptThr+.02);}
-  function dilate(m,W,H,r){const o=new Uint8Array(W*H);for(let y=r;y<H-r;y++)for(let x=r;x<W-r;x++){if(!m[y*W+x])continue;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)o[(y+dy)*W+(x+dx)]=1;}return o;}
-  function erode(m,W,H,r){const o=new Uint8Array(W*H);for(let y=r;y<H-r;y++)for(let x=r;x<W-r;x++){let ok=1;for(let dy=-r;dy<=r&&ok;dy++)for(let dx=-r;dx<=r&&ok;dx++)if(!m[(y+dy)*W+(x+dx)])ok=0;if(ok)o[y*W+x]=1;}return o;}
+  let bgR=null,bgG=null,bgB=null,bgVR=null,bgVG=null,bgVB=null;
+  let bgReady=false,bgWarm=false;
+  let frameIdx=0,lastSW=0,lastSH=0;
+  let prevGrey=null,fgAccum=null,adaptThr=0.13;
+  let prevBlobPx=0,stableCount=0;
+  let meshPhase=0;
+
+  function initBg(d,N,SW,SH){
+    bgR=new Float32Array(N);bgG=new Float32Array(N);bgB=new Float32Array(N);
+    bgVR=new Float32Array(N).fill(2200);bgVG=new Float32Array(N).fill(2200);bgVB=new Float32Array(N).fill(2200);
+    for(let i=0;i<N;i++){bgR[i]=d[i*4];bgG[i]=d[i*4+1];bgB[i]=d[i*4+2];}
+    bgReady=true;bgWarm=false;lastSW=SW;lastSH=SH;
+    frameIdx=0;fgAccum=null;prevGrey=null;adaptThr=0.13;
+    prevBlobPx=0;stableCount=0;sharedMask=null;
+  }
+
+  function mahaDist(d,i){
+    const dr=d[i*4]-bgR[i],dg=d[i*4+1]-bgG[i],db=d[i*4+2]-bgB[i];
+    return(dr*dr/Math.max(bgVR[i],20))+(dg*dg/Math.max(bgVG[i],20))+(db*db/Math.max(bgVB[i],20));
+  }
+
+  function hsvDist(d,i){
+    const r=d[i*4]/255,g=d[i*4+1]/255,b=d[i*4+2]/255;
+    const br=bgR[i]/255,bg_=bgG[i]/255,bb=bgB[i]/255;
+    function hsv(r,g,b){
+      const mx=Math.max(r,g,b),mn=Math.min(r,g,b),dt=mx-mn;
+      let h=0;if(dt>0){if(mx===r)h=((g-b)/dt+6)%6;else if(mx===g)h=(b-r)/dt+2;else h=(r-g)/dt+4;h/=6;}
+      return[h,mx>0?dt/mx:0,mx];
+    }
+    const[h1,s1,v1]=hsv(r,g,b);const[h2,s2,v2]=hsv(br,bg_,bb);
+    const dh=Math.min(Math.abs(h1-h2),1-Math.abs(h1-h2));
+    return dh*(s1+s2)*1.7+Math.abs(s1-s2)*0.8+Math.abs(v1-v2)*0.28;
+  }
+
+  function updateBg(d,N){
+    const lr=frameIdx<75?0.13:0.005;
+    for(let i=0;i<N;i++){
+      if(frameIdx>=75&&mahaDist(d,i)>5.5) continue;
+      const dr=d[i*4]-bgR[i],dg=d[i*4+1]-bgG[i],db=d[i*4+2]-bgB[i];
+      bgR[i]+=lr*dr;bgG[i]+=lr*dg;bgB[i]+=lr*db;
+      bgVR[i]=(1-lr)*bgVR[i]+lr*dr*dr;
+      bgVG[i]=(1-lr)*bgVG[i]+lr*dg*dg;
+      bgVB[i]=(1-lr)*bgVB[i]+lr*db*db;
+    }
+    if(!bgWarm&&frameIdx>=75) bgWarm=true;
+  }
+
+  // Tighter spatial prior
+  function spatialW(x,y,SW,SH){
+    const fy=y/SH;
+    if(fy<0.13||fy>0.89) return 0;
+    const nx=Math.abs(x/SW-0.5)*2;
+    const side=Math.max(0.15,1-nx*0.55);
+    const vert=fy<0.5?lerp(0.12,1,(fy-.13)/.37):lerp(1,0.12,(fy-.5)/.39);
+    return Math.min(1,side*vert*1.2);
+  }
+
+  function tuneThresh(acc,N){
+    let ab=0;for(let i=0;i<N;i++) if(acc[i]>adaptThr) ab++;
+    const r=ab/N;
+    if(r<0.005) adaptThr=Math.max(0.03,adaptThr-.022);
+    else if(r>0.38) adaptThr=Math.min(0.72,adaptThr+.022);
+  }
+
+  function dilate(m,W,H,r){
+    const o=new Uint8Array(W*H);
+    for(let y=r;y<H-r;y++) for(let x=r;x<W-r;x++){
+      if(!m[y*W+x]) continue;
+      for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++) o[(y+dy)*W+(x+dx)]=1;
+    }
+    return o;
+  }
+  function erode(m,W,H,r){
+    const o=new Uint8Array(W*H);
+    for(let y=r;y<H-r;y++) for(let x=r;x<W-r;x++){
+      let ok=1;
+      for(let dy=-r;dy<=r&&ok;dy++) for(let dx=-r;dx<=r&&ok;dx++) if(!m[(y+dy)*W+(x+dx)]) ok=0;
+      if(ok) o[y*W+x]=1;
+    }
+    return o;
+  }
   const morphClose=(m,W,H,r)=>erode(dilate(m,W,H,r),W,H,r);
-  function centralBlob(bin,W,H){const dil=dilate(bin,W,H,5);const vis=new Uint8Array(W*H);const cx=W>>1,cy=H>>1;let seed=-1;const maxR=Math.floor(Math.min(W,H)*.46);outer:for(let r=0;r<=maxR;r++){const steps=Math.max(8,r*8);for(let s=0;s<steps;s++){const a=(s/steps)*Math.PI*2;const sx=cx+Math.round(r*Math.cos(a)),sy=cy+Math.round(r*Math.sin(a));if(sx<1||sy<1||sx>=W-1||sy>=H-1)continue;if(dil[sy*W+sx]){seed=sy*W+sx;break outer;}}}if(seed<0)return new Uint8Array(W*H);const q=new Int32Array(W*H);let h=0,t=0;q[t++]=seed;vis[seed]=1;const bfs=new Uint8Array(W*H);while(h<t){const idx=q[h++];bfs[idx]=1;const x=idx%W;for(const ni of[idx-1,idx+1,idx-W,idx+W]){if(ni<0||ni>=W*H||Math.abs(ni%W-x)>1||vis[ni]||!dil[ni])continue;vis[ni]=1;q[t++]=ni;}}const combined=new Uint8Array(W*H);for(let i=0;i<W*H;i++)combined[i]=bfs[i]&bin[i];const closed=morphClose(combined,W,H,3);const shrunk=erode(bfs,W,H,5);const fin=new Uint8Array(W*H);for(let i=0;i<W*H;i++)fin[i]=closed[i]|shrunk[i];return fin;}
+  const morphOpen=(m,W,H,r)=>dilate(erode(m,W,H,r),W,H,r);
+
+  // SAM2-style: find largest connected component near center, use as seed
+  function centralBlob(bin,W,H){
+    const dil=dilate(bin,W,H,5);
+    const vis=new Uint8Array(W*H);
+    const cx=W>>1,cy=H>>1;
+    let seed=-1;
+    const maxR=Math.floor(Math.min(W,H)*.46);
+    outer:for(let r=0;r<=maxR;r++){
+      const steps=Math.max(8,r*8);
+      for(let s=0;s<steps;s++){
+        const a=(s/steps)*Math.PI*2;
+        const sx=cx+Math.round(r*Math.cos(a)),sy=cy+Math.round(r*Math.sin(a));
+        if(sx<1||sy<1||sx>=W-1||sy>=H-1) continue;
+        if(dil[sy*W+sx]){seed=sy*W+sx;break outer;}
+      }
+    }
+    if(seed<0) return new Uint8Array(W*H);
+    const q=new Int32Array(W*H);let h=0,t=0;
+    q[t++]=seed;vis[seed]=1;
+    const bfs=new Uint8Array(W*H);
+    while(h<t){
+      const idx=q[h++];bfs[idx]=1;const x=idx%W;
+      for(const ni of[idx-1,idx+1,idx-W,idx+W]){
+        if(ni<0||ni>=W*H||Math.abs(ni%W-x)>1||vis[ni]||!dil[ni]) continue;
+        vis[ni]=1;q[t++]=ni;
+      }
+    }
+    // Combine BFS region with raw binary
+    const combined=new Uint8Array(W*H);
+    for(let i=0;i<W*H;i++) combined[i]=bfs[i]&bin[i];
+    const closed=morphClose(combined,W,H,3);
+    const shrunk=erode(bfs,W,H,5);
+    const fin=new Uint8Array(W*H);
+    for(let i=0;i<W*H;i++) fin[i]=closed[i]|shrunk[i];
+    return fin;
+  }
+
+  // YOLO-style: fast center-crop bounding box detection
+  function yoloBBox(fgAccum,bin,W,H){
+    let minX=W,maxX=0,minY=H,maxY=0,cnt=0;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      if(bin[y*W+x]&&fgAccum[y*W+x]>adaptThr*1.2){
+        if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;cnt++;
+      }
+    }
+    if(cnt<20) return null;
+    // pad bbox
+    const px=Math.round((maxX-minX)*.08),py=Math.round((maxY-minY)*.08);
+    return{x1:Math.max(0,minX-px),y1:Math.max(0,minY-py),x2:Math.min(W-1,maxX+px),y2:Math.min(H-1,maxY+py)};
+  }
+
+  // Moore contour tracing
   const MX=[1,1,0,-1,-1,-1,0,1],MY=[0,1,1,1,0,-1,-1,-1];
-  function traceContour(mask,W,H){let sx=-1,sy=-1;for(let y=0;y<H&&sx<0;y++)for(let x=0;x<W;x++)if(mask[y*W+x]){sx=x;sy=y;break;}if(sx<0)return[];const pts=[];let cx=sx,cy=sy,pDir=6,iter=0;do{pts.push(cx,cy);const sd=(pDir+6)%8;let moved=false;for(let d=0;d<8;d++){const dir=(sd+d)%8,nx=cx+MX[dir],ny=cy+MY[dir];if(nx<0||ny<0||nx>=W||ny>=H)continue;if(mask[ny*W+nx]){pDir=dir;cx=nx;cy=ny;moved=true;break;}}if(!moved)break;}while((cx!==sx||cy!==sy)&&++iter<W*H*4);return pts;}
-  function smoothPoly(pts,p){if(pts.length<6)return pts;let arr=new Float32Array(pts);const n=arr.length>>1;for(let pass=0;pass<p;pass++){const o=new Float32Array(arr.length);for(let i=0;i<n;i++){const pr=(i-1+n)%n,nx2=(i+1)%n;o[i*2]=(arr[pr*2]+arr[i*2]*2+arr[nx2*2])/4;o[i*2+1]=(arr[pr*2+1]+arr[i*2+1]*2+arr[nx2*2+1])/4;}arr=o;}return arr;}
-  function renderOverlay(smooth,W,H,VW,VH,ctx,phase){ctx.clearRect(0,0,VW,VH);if(!smooth||smooth.length<6)return;const scX=VW/W,scY=VH/H,n=smooth.length>>1;function path(){ctx.beginPath();ctx.moveTo(smooth[0]*scX,smooth[1]*scY);for(let i=1;i<n;i++)ctx.lineTo(smooth[i*2]*scX,smooth[i*2+1]*scY);ctx.closePath();}ctx.save();path();ctx.clip();ctx.fillStyle='rgba(0,229,181,0.07)';ctx.fillRect(0,0,VW,VH);ctx.restore();ctx.save();path();ctx.clip();const G=42,oH=phase%G,oV=(phase*.65)%G;ctx.strokeStyle='rgba(0,229,181,0.12)';ctx.lineWidth=.8;ctx.setLineDash([3,7]);for(let y=oH;y<VH;y+=G){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(VW,y);ctx.stroke();}for(let x=oV;x<VW;x+=G){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,VH);ctx.stroke();}ctx.setLineDash([]);ctx.restore();ctx.save();ctx.shadowBlur=20;ctx.shadowColor='rgba(123,47,255,.6)';ctx.strokeStyle='rgba(123,47,255,.4)';ctx.lineWidth=4;ctx.setLineDash([8,5]);ctx.lineDashOffset=-phase*.75;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.setLineDash([]);ctx.restore();ctx.save();ctx.shadowBlur=10;ctx.shadowColor='rgba(0,255,140,.9)';ctx.strokeStyle='rgba(0,229,181,.62)';ctx.lineWidth=2.2;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();ctx.save();ctx.strokeStyle='rgba(80,255,140,1)';ctx.lineWidth=1.2;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();}
-  function frame(){outlineRAF=requestAnimationFrame(frame);if(!video.videoWidth)return;const VW=video.videoWidth,VH=video.videoHeight;const SW=VW>>2,SH=VH>>2,N=SW*SH;cvSrc.width=SW;cvSrc.height=SH;cvOut.width=VW;cvOut.height=VH;ctxSrc.drawImage(video,0,0,SW,SH);const src=ctxSrc.getImageData(0,0,SW,SH),d=src.data;if(!bgReady||lastSW!==SW||lastSH!==SH)initBg(d,N,SW,SH);const grey=new Float32Array(N);for(let i=0;i<N;i++)grey[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];const mot=new Float32Array(N);if(prevGrey&&prevGrey.length===N)for(let i=0;i<N;i++)mot[i]=Math.min(Math.abs(grey[i]-prevGrey[i])/40,1);prevGrey=grey.slice();const edge=new Float32Array(N);for(let y=1;y<SH-1;y++)for(let x=1;x<SW-1;x++){const i=y*SW+x;const gx=grey[(y-1)*SW+(x+1)]+2*grey[y*SW+(x+1)]+grey[(y+1)*SW+(x+1)]-grey[(y-1)*SW+(x-1)]-2*grey[y*SW+(x-1)]-grey[(y+1)*SW+(x-1)];const gy=grey[(y+1)*SW+(x-1)]+2*grey[(y+1)*SW+x]+grey[(y+1)*SW+(x+1)]-grey[(y-1)*SW+(x-1)]-2*grey[(y-1)*SW+x]-grey[(y-1)*SW+(x+1)];edge[i]=Math.min(Math.sqrt(gx*gx+gy*gy)/180,1);}updateBg(d,N);const qEl=$('hudQ');if(!bgWarm){const pct=Math.round(frameIdx/75*100);if(qEl){qEl.className='hud-q none';qEl.textContent=`LEARNING ${pct}%`;}ctxOut.clearRect(0,0,VW,VH);frameIdx++;return;}const gW=Math.min((frameIdx-75)/60,1);const fgRaw=new Float32Array(N);for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){const i=y*SW+x;const maha=Math.min(mahaDist(d,i)/10,1);const hsv=Math.min(hsvDist(d,i),1);const bgD=maha*gW+hsv*(1-gW)*.6+maha*(1-gW)*.3;fgRaw[i]=(bgD*.70+mot[i]*.20+edge[i]*.10)*spatialW(x,y,SW,SH);}if(!fgAccum||fgAccum.length!==N)fgAccum=fgRaw.slice();const alpha=stableCount<5?0.62:0.52;for(let i=0;i<N;i++)fgAccum[i]=fgAccum[i]*(1-alpha)+fgRaw[i]*alpha;if(frameIdx%14===0)tuneThresh(fgAccum,N);const bin=new Uint8Array(N);for(let i=0;i<N;i++)bin[i]=(fgAccum[i]>adaptThr&&spatialW(i%SW,Math.floor(i/SW),SW,SH)>0.01)?1:0;const blob=centralBlob(morphClose(bin,SW,SH,4),SW,SH);let blobPx=0;for(let i=0;i<N;i++)blobPx+=blob[i];const delta=Math.abs(blobPx-prevBlobPx)/(N+1);prevBlobPx=blobPx;if(delta<0.010)stableCount=Math.min(stableCount+1,15);else stableCount=Math.max(0,stableCount-4);if(stableCount>=4){sharedMask=blob;sharedMW=SW;sharedMH=SH;}const bFrac=blobPx/N;const qs=bFrac<.003?0:bFrac<.012?bFrac/.012*.5:bFrac>.72?Math.max(0,1-(bFrac-.72)/.2):1;if(qEl){if(qs>.45&&stableCount>=4){qEl.className='hud-q good';qEl.textContent='TRACKING ✓';}else if(qs>.07){qEl.className='hud-q fair';qEl.textContent=stableCount<4?'STABILISING…':'ADJUSTING…';}else{qEl.className='hud-q none';qEl.textContent='PLACE OBJECT';}}const smooth=smoothPoly(traceContour(blob,SW,SH),8);meshPhase=(meshPhase+1.1)%60;renderOverlay(smooth,SW,SH,VW,VH,ctxOut,meshPhase);frameIdx++;}
+  function traceContour(mask,W,H){
+    let sx=-1,sy=-1;
+    for(let y=0;y<H&&sx<0;y++) for(let x=0;x<W;x++) if(mask[y*W+x]){sx=x;sy=y;break;}
+    if(sx<0) return[];
+    const pts=[];let cx=sx,cy=sy,pDir=6,iter=0;
+    do{
+      pts.push(cx,cy);
+      const sd=(pDir+6)%8;let moved=false;
+      for(let d=0;d<8;d++){
+        const dir=(sd+d)%8,nx=cx+MX[dir],ny=cy+MY[dir];
+        if(nx<0||ny<0||nx>=W||ny>=H) continue;
+        if(mask[ny*W+nx]){pDir=dir;cx=nx;cy=ny;moved=true;break;}
+      }
+      if(!moved) break;
+    }while((cx!==sx||cy!==sy)&&++iter<W*H*4);
+    return pts;
+  }
+
+  // Catmull-Rom smooth (8 passes)
+  function smoothPoly(pts,passes){
+    if(pts.length<6) return pts;
+    let p=new Float32Array(pts);const n=p.length>>1;
+    for(let pass=0;pass<passes;pass++){
+      const o=new Float32Array(p.length);
+      for(let i=0;i<n;i++){
+        const pr=(i-1+n)%n,nx2=(i+1)%n;
+        o[i*2  ]=(p[pr*2  ]+p[i*2  ]*2+p[nx2*2  ])/4;
+        o[i*2+1]=(p[pr*2+1]+p[i*2+1]*2+p[nx2*2+1])/4;
+      }
+      p=o;
+    }
+    return p;
+  }
+
+  /* Render: fill + animated mesh grid + neon SAM2 contour + YOLO bbox */
+  function renderOverlay(blob,smooth,bbox,W,H,VW,VH,ctx,phase,mode){
+    ctx.clearRect(0,0,VW,VH);
+    const scX=VW/W,scY=VH/H;
+
+    // YOLO bounding box (if YOLO mode)
+    if(bbox&&mode==='yolo'){
+      ctx.save();
+      ctx.strokeStyle='rgba(255,170,0,0.7)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+      ctx.strokeRect(bbox.x1*scX,bbox.y1*scY,(bbox.x2-bbox.x1)*scX,(bbox.y2-bbox.y1)*scY);
+      ctx.setLineDash([]);ctx.restore();
+    }
+
+    if(!smooth||smooth.length<6) return;
+    const n=smooth.length>>1;
+
+    function buildPath(){
+      ctx.beginPath();
+      ctx.moveTo(smooth[0]*scX,smooth[1]*scY);
+      for(let i=1;i<n;i++) ctx.lineTo(smooth[i*2]*scX,smooth[i*2+1]*scY);
+      ctx.closePath();
+    }
+
+    // A: Semi-transparent fill
+    ctx.save();
+    buildPath();ctx.clip();
+    const fillColor=mode==='yolo'?'rgba(255,170,0,0.07)':'rgba(0,229,181,0.08)';
+    ctx.fillStyle=fillColor;ctx.fillRect(0,0,VW,VH);
+    ctx.restore();
+
+    // B: Animated scan-grid
+    const GRID=42,offH=phase%GRID,offV=(phase*.65)%GRID;
+    const gridColor=mode==='yolo'?'rgba(255,170,0,0.15)':'rgba(0,229,181,0.16)';
+    ctx.save();buildPath();ctx.clip();
+    ctx.strokeStyle=gridColor;ctx.lineWidth=.8;ctx.setLineDash([3,7]);
+    for(let y=offH;y<VH;y+=GRID){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(VW,y);ctx.stroke();}
+    for(let x=offV;x<VW;x+=GRID){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,VH);ctx.stroke();}
+    ctx.setLineDash([]);ctx.restore();
+
+    // C: SAM2-style dashed purple contour (outer)
+    if(mode==='sam2'){
+      ctx.save();
+      ctx.shadowBlur=22;ctx.shadowColor='rgba(123,47,255,0.6)';
+      ctx.strokeStyle='rgba(123,47,255,0.45)';ctx.lineWidth=5;
+      ctx.setLineDash([8,6]);ctx.lineDashOffset=-phase*.8;
+      ctx.globalCompositeOperation='screen';
+      buildPath();ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    }
+
+    // D: Neon contour bloom
+    ctx.save();
+    ctx.shadowBlur=30;ctx.shadowColor=mode==='yolo'?'rgba(255,170,0,0.5)':'rgba(0,255,140,0.55)';
+    ctx.strokeStyle=mode==='yolo'?'rgba(255,170,0,0.12)':'rgba(0,229,181,0.10)';
+    ctx.lineWidth=20;ctx.globalCompositeOperation='screen';
+    buildPath();ctx.stroke();ctx.restore();
+
+    // E: Neon mid glow
+    ctx.save();
+    ctx.shadowBlur=10;ctx.shadowColor=mode==='yolo'?'rgba(255,170,0,0.9)':'rgba(0,255,140,0.9)';
+    ctx.strokeStyle=mode==='yolo'?'rgba(255,180,0,0.65)':'rgba(0,229,181,0.65)';
+    ctx.lineWidth=2.5;ctx.globalCompositeOperation='screen';
+    buildPath();ctx.stroke();ctx.restore();
+
+    // F: Sharp core
+    ctx.save();
+    ctx.strokeStyle=mode==='yolo'?'rgba(255,200,50,1)':'rgba(80,255,140,1)';
+    ctx.lineWidth=1.2;ctx.globalCompositeOperation='screen';
+    buildPath();ctx.stroke();ctx.restore();
+  }
+
+  function frame(){
+    outlineRAF=requestAnimationFrame(frame);
+    if(!video.videoWidth) return;
+    const VW=video.videoWidth,VH=video.videoHeight;
+    const SW=VW>>2,SH=VH>>2;
+    const N=SW*SH;
+    cvSrc.width=SW;cvSrc.height=SH;
+    cvOut.width=VW;cvOut.height=VH;
+    ctxSrc.drawImage(video,0,0,SW,SH);
+    const src=ctxSrc.getImageData(0,0,SW,SH),d=src.data;
+    if(!bgReady||lastSW!==SW||lastSH!==SH) initBg(d,N,SW,SH);
+
+    // Greyscale + motion
+    const grey=new Float32Array(N);
+    for(let i=0;i<N;i++) grey[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];
+    const mot=new Float32Array(N);
+    if(prevGrey&&prevGrey.length===N)
+      for(let i=0;i<N;i++) mot[i]=Math.min(Math.abs(grey[i]-prevGrey[i])/40,1);
+    prevGrey=grey.slice();
+
+    // Sobel edge magnitude
+    const edge=new Float32Array(N);
+    for(let y=1;y<SH-1;y++) for(let x=1;x<SW-1;x++){
+      const i=y*SW+x;
+      const gx=grey[(y-1)*SW+(x+1)]+2*grey[y*SW+(x+1)]+grey[(y+1)*SW+(x+1)]
+              -grey[(y-1)*SW+(x-1)]-2*grey[y*SW+(x-1)]-grey[(y+1)*SW+(x-1)];
+      const gy=grey[(y+1)*SW+(x-1)]+2*grey[(y+1)*SW+x]+grey[(y+1)*SW+(x+1)]
+              -grey[(y-1)*SW+(x-1)]-2*grey[(y-1)*SW+x]-grey[(y-1)*SW+(x+1)];
+      edge[i]=Math.min(Math.sqrt(gx*gx+gy*gy)/180,1);
+    }
+
+    updateBg(d,N);
+    const qEl=$('hudQ');
+    if(!bgWarm){
+      const pct=Math.round(frameIdx/75*100);
+      if(qEl){qEl.className='hud-quality none';qEl.textContent=`LEARNING ${pct}%`;}
+      ctxOut.clearRect(0,0,VW,VH);frameIdx++;return;
+    }
+
+    const gW=Math.min((frameIdx-75)/60,1);
+    const fgRaw=new Float32Array(N);
+    for(let y=0;y<SH;y++) for(let x=0;x<SW;x++){
+      const i=y*SW+x;
+      const maha=Math.min(mahaDist(d,i)/10,1);
+      const hsv=Math.min(hsvDist(d,i),1);
+      const bgD=maha*gW+hsv*(1-gW)*.6+maha*(1-gW)*.3;
+      const sp=spatialW(x,y,SW,SH);
+      // SAM2 uses edge as 3rd signal
+      fgRaw[i]=(bgD*.70+mot[i]*.20+edge[i]*.10)*sp;
+    }
+
+    if(!fgAccum||fgAccum.length!==N) fgAccum=fgRaw.slice();
+    // Adaptive alpha: faster when large change detected
+    const alpha=stableCount<5?0.62:0.52;
+    for(let i=0;i<N;i++) fgAccum[i]=fgAccum[i]*(1-alpha)+fgRaw[i]*alpha;
+    if(frameIdx%14===0) tuneThresh(fgAccum,N);
+
+    const bin=new Uint8Array(N);
+    for(let i=0;i<N;i++)
+      bin[i]=(fgAccum[i]>adaptThr&&spatialW(i%SW,Math.floor(i/SW),SW,SH)>0.01)?1:0;
+
+    let blob,bbox=null;
+    if(segMode==='edge'){
+      // Edge-only mode: simple dilation of edge signal
+      const edgeBin=new Uint8Array(N);
+      for(let i=0;i<N;i++) edgeBin[i]=(edge[i]>0.08)?1:0;
+      blob=morphClose(edgeBin,SW,SH,4);
+    } else if(segMode==='yolo'){
+      // YOLO-style: binary mask + bounding box
+      const closed=morphClose(bin,SW,SH,4);
+      blob=centralBlob(closed,SW,SH);
+      bbox=yoloBBox(fgAccum,bin,SW,SH);
+    } else {
+      // SAM2-Lite: full pipeline
+      const closed=morphClose(bin,SW,SH,4);
+      blob=centralBlob(closed,SW,SH);
+    }
+
+    // Stability
+    let blobPx=0;for(let i=0;i<N;i++) blobPx+=blob[i];
+    const delta=Math.abs(blobPx-prevBlobPx)/(N+1);
+    prevBlobPx=blobPx;
+    if(delta<0.010) stableCount=Math.min(stableCount+1,15);
+    else stableCount=Math.max(0,stableCount-4);
+    if(stableCount>=4){sharedMask=blob;sharedMW=SW;sharedMH=SH;}
+
+    // Quality HUD
+    const bFrac=blobPx/N;
+    const qs=bFrac<.003?0:bFrac<.012?bFrac/.012*.5:bFrac>.72?Math.max(0,1-(bFrac-.72)/.2):1;
+    if(qEl){
+      if(qs>.45&&stableCount>=4){qEl.className='hud-quality good';qEl.textContent='TRACKING ✓';}
+      else if(qs>.07){qEl.className='hud-quality fair';qEl.textContent=stableCount<4?'STABILISING…':'ADJUSTING…';}
+      else{qEl.className='hud-quality none';qEl.textContent='PLACE OBJECT';}
+    }
+
+    const contour=traceContour(blob,SW,SH);
+    const smooth=smoothPoly(contour,8); // 8 passes for smoother SAM2-style
+
+    meshPhase=(meshPhase+1.1)%60;
+    renderOverlay(blob,smooth,bbox,SW,SH,VW,VH,ctxOut,meshPhase,segMode);
+    frameIdx++;
+  }
   frame();
 }
-function stopOutlineLoop(){if(outlineRAF){cancelAnimationFrame(outlineRAF);outlineRAF=null;}const cv=$('overlayCanvas');if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}sharedMask=null;const qEl=$('hudQ');if(qEl){qEl.className='hud-q none';qEl.textContent='—';}}
 
-/* ════════════════════════════════════════════════════════════════  CAMERA  ════ */
-async function startCamera(){try{stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},facingMode:'environment'},audio:false});$('video').srcObject=stream;await new Promise(r=>$('video').onloadedmetadata=r);$('hudRes').textContent=$('video').videoWidth+'×'+$('video').videoHeight;$('noCam').classList.add('hidden');$('btnStartScan').disabled=false;$('btnStopCam').style.display='inline-flex';$('scanLine').style.display='block';$('hudInstr').textContent='Hold still 3s · learning background…';toast('Camera ready — hold still while background learns');startOutlineLoop();}catch(e){toast('Camera error: '+e.message,'err');}}
-function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}$('video').srcObject=null;$('noCam').classList.remove('hidden');$('btnStartScan').disabled=true;$('btnStopCam').style.display='none';$('scanLine').style.display='none';stopOutlineLoop();toast('Camera off','warn');}
-$('btnEnableCam').onclick=startCamera;$('btnStopCam').onclick=stopCamera;
+function stopOutlineLoop(){
+  if(outlineRAF){cancelAnimationFrame(outlineRAF);outlineRAF=null;}
+  const cv=$('overlayCanvas');
+  if(cv){const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);}
+  sharedMask=null;
+  const qEl=$('hudQ');if(qEl){qEl.className='hud-quality none';qEl.textContent='—';}
+}
 
-/* ════════════════════════════════════════════════════════════════  CAPTURE  ════ */
-const CAM_INSTR=['Keep object centred — move slowly','Step right → keep object in frame','Keep circling — maintain distance','Halfway there — keep going!','Capture the back of the object','Almost complete — last quarter!','Final shots — close the loop'];
+/* ═══════════════════════════════════════════════════════
+   CAMERA
+═══════════════════════════════════════════════════════ */
+async function startCamera(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:1920},height:{ideal:1080},facingMode:'environment'},audio:false});
+    $('video').srcObject=stream;
+    await new Promise(r=>$('video').onloadedmetadata=r);
+    $('hudRes').textContent=$('video').videoWidth+'×'+$('video').videoHeight;
+    $('noCam').classList.add('hidden');
+    $('btnStartScan').disabled=false;
+    $('btnStopCam').style.display='inline-flex';
+    $('scanLine').style.display='block';
+    $('hudInstr').textContent='Hold still 3s · learning background…';
+    toast('Camera ready — hold still while background learns');
+    startOutlineLoop();
+  }catch(e){
+    toast('Camera error: '+e.message,'err');
+    $('noCam').querySelector('p').textContent='Camera blocked. Click 🔒 in address bar → allow camera → refresh.';
+  }
+}
+function stopCamera(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  $('video').srcObject=null;
+  $('noCam').classList.remove('hidden');
+  $('noCam').querySelector('h3').textContent='Camera stopped';
+  $('btnStartScan').disabled=true;
+  $('btnStopCam').style.display='none';
+  $('scanLine').style.display='none';
+  stopOutlineLoop();toast('Camera off','warn');
+}
+$('btnEnableCam').onclick=startCamera;
+$('btnStopCam').onclick=stopCamera;
+
+/* ═══════════════════════════════════════════════════════
+   CAPTURE
+═══════════════════════════════════════════════════════ */
+const CAM_INSTR=[
+  'Keep object centred — move slowly',
+  'Step right → keep the object in frame',
+  'Keep circling — maintain distance',
+  'Halfway — good job, keep going!',
+  'Capture the back of the object',
+  'Almost complete — last quarter!',
+  'Final shots — close the loop'
+];
+
 function grabFrame(){
-  const v=$('video'),cv=$('captureCanvas');cv.width=v.videoWidth||640;cv.height=v.videoHeight||480;
+  const v=$('video'),cv=$('captureCanvas');
+  cv.width=v.videoWidth||640;cv.height=v.videoHeight||480;
   const ctx=cv.getContext('2d');ctx.drawImage(v,0,0);
   const fl=$('flashEl');fl.classList.add('go');setTimeout(()=>fl.classList.remove('go'),90);
-  const dataURL=cv.toDataURL('image/jpeg',.94);
+  const dataURL=cv.toDataURL('image/jpeg',.93);
   const imageData=ctx.getImageData(0,0,cv.width,cv.height);
+  // Upsample shared mask to full resolution
   let fgMask=null;
-  if(sharedMask&&sharedMW>0&&sharedMH>0){fgMask=new Uint8Array(cv.width*cv.height);const scX=sharedMW/cv.width,scY=sharedMH/cv.height;for(let y=0;y<cv.height;y++)for(let x=0;x<cv.width;x++)fgMask[y*cv.width+x]=sharedMask[clamp(Math.floor(y*scY),0,sharedMH-1)*sharedMW+clamp(Math.floor(x*scX),0,sharedMW-1)];}
-  frames.push({dataURL,imageData,w:cv.width,h:cv.height,fgMask});
-  const img=document.createElement('img');img.className='frame-thumb fresh';img.src=cv.toDataURL('image/jpeg',.32);$('frameStrip').appendChild(img);setTimeout(()=>img.classList.remove('fresh'),500);$('frameStrip').scrollLeft=99999;
+  if(sharedMask&&sharedMW>0&&sharedMH>0){
+    fgMask=new Uint8Array(cv.width*cv.height);
+    const scX=sharedMW/cv.width,scY=sharedMH/cv.height;
+    for(let y=0;y<cv.height;y++) for(let x=0;x<cv.width;x++){
+      const sx=clamp(Math.floor(x*scX),0,sharedMW-1);
+      const sy=clamp(Math.floor(y*scY),0,sharedMH-1);
+      fgMask[y*cv.width+x]=sharedMask[sy*sharedMW+sx];
+    }
+  }
+  frames.push({dataURL,imageData,w:cv.width,h:cv.height,fgMask,segMode});
+  const img=document.createElement('img');
+  img.className='frame-thumb fresh';img.src=cv.toDataURL('image/jpeg',.35);
+  $('frameStrip').appendChild(img);
+  setTimeout(()=>img.classList.remove('fresh'),500);
+  $('frameStrip').scrollLeft=99999;
 }
-async function startScan(){if(!stream){toast('Enable camera first','warn');return;}frames=[];capturing=true;const total=parseInt($('slFrames').value),interval=parseInt($('slInterval').value);$('frameStrip').innerHTML='';$('capProg').classList.add('show');$('btnStartScan').disabled=true;$('btnReset').style.display='inline-flex';$('btnStopCam').style.display='none';$('slFrames').disabled=$('slInterval').disabled=$('slRes').disabled=$('slSmooth').disabled=true;toast('Scanning — walk slowly in a full circle around your object');for(let i=0;i<total;i++){if(!capturing)break;$('capBar').style.width=Math.round(i/total*100)+'%';$('capLabel').textContent=`Photo ${i+1} of ${total}…`;$('capCount').textContent=`${i+1}/${total}`;$('hudCtr').textContent=`${i+1}/${total}`;$('hudCtr').classList.add('show');$('hudInstr').textContent=CAM_INSTR[clamp(Math.floor(i/total*CAM_INSTR.length),0,CAM_INSTR.length-1)];grabFrame();if(i<total-1)await new Promise(r=>captureTimer=setTimeout(r,interval));}if(capturing){capturing=false;$('hudCtr').classList.remove('show');$('capBar').style.width='100%';$('capLabel').textContent=`✓ ${frames.length} photos captured`;toast(`${frames.length} photos ready · starting pipeline`);await wait(500);startProcessing();}}
+
+async function startScan(){
+  if(!stream){toast('Enable camera first','warn');return;}
+  frames=[];capturing=true;
+  const total=parseInt($('slFrames').value),interval=parseInt($('slInterval').value);
+  $('frameStrip').innerHTML='';$('captureProgress').classList.add('show');
+  $('btnStartScan').disabled=true;$('btnReset').style.display='inline-flex';
+  $('btnStopCam').style.display='none';
+  $('slFrames').disabled=$('slInterval').disabled=$('slRes').disabled=$('slSmooth').disabled=true;
+  toast('Scanning — walk slowly in a full circle around your object');
+  for(let i=0;i<total;i++){
+    if(!capturing) break;
+    $('captureBar').style.width=Math.round(i/total*100)+'%';
+    $('capLabel').textContent=`Photo ${i+1} of ${total}…`;
+    $('capCount').textContent=`${i+1} / ${total}`;
+    $('hudCounter').textContent=`${i+1}/${total}`;$('hudCounter').classList.add('show');
+    $('hudInstr').textContent=CAM_INSTR[clamp(Math.floor(i/total*CAM_INSTR.length),0,CAM_INSTR.length-1)];
+    grabFrame();
+    if(i<total-1) await new Promise(r=>captureTimer=setTimeout(r,interval));
+  }
+  if(capturing){
+    capturing=false;$('hudCounter').classList.remove('show');
+    $('captureBar').style.width='100%';
+    $('capLabel').textContent=`✓ ${frames.length} photos captured`;
+    toast(`${frames.length} photos ready · starting AI pipeline`);
+    await wait(600);startProcessing();
+  }
+}
 function cancelCapture(){capturing=false;if(captureTimer)clearTimeout(captureTimer);}
 
-/* ════════════════════════════════════════════════════════════════
-   PIPELINE STAGES
-════════════════════════════════════════════════════════════════ */
-const STAGES=['Depth estimation','Temporal consistency','Depth fusion','ATSDF carving','Hole repair','Feature detect','Taubin-bilateral smooth','Marching cubes','Mesh refinement','Texture + normals','Finalise'];
+/* ═══════════════════════════════════════════════════════
+   PROCESSING PIPELINE
+═══════════════════════════════════════════════════════ */
+const STAGES=[
+  {n:'Load AI models'},
+  {n:'Depth estimation'},
+  {n:'Visual hull carving'},
+  {n:'Hole filling'},
+  {n:'Mesh (MC)'},
+  {n:'Taubin smooth'},
+  {n:'Texture atlas'},
+  {n:'Finalise'},
+];
 
-function setPipe(active,pct,label){STAGES.forEach((_,i)=>{const b=$('sb'+i);if(!b)return;b.className=i<active?'sb done':i===active?'sb active':'sb';});$('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';if(label)$('procStage').textContent=label;}
+function setPipeline(active,pct,label){
+  STAGES.forEach((_,i)=>{
+    const b=$('sb'+i);if(!b)return;
+    b.className=i<active?'stage-blk done':i===active?'stage-blk active':'stage-blk';
+  });
+  $('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';
+  if(label) $('procStage').textContent=label;
+}
 
 async function startProcessing(){
   const panel=$('panelProcess');panel.style.display='block';panel.scrollIntoView({behavior:'smooth'});
-  const stEl=$('pipeStages');stEl.innerHTML='';
-  STAGES.forEach((_,i)=>{const b=document.createElement('div');b.className='sb';b.id='sb'+i;stEl.appendChild(b);});
+  const stEl=$('pipelineStages');stEl.innerHTML='';
+  STAGES.forEach((_,i)=>{
+    const b=document.createElement('div');b.className='stage-blk';b.id='sb'+i;stEl.appendChild(b);
+  });
   const RES=meshRes,SP=smoothPasses;
-  $('procFrames').textContent=frames.length;$('procRes').textContent=RES+'³';depthMaps=[];meshData=null;
+  $('procFrames').textContent=frames.length+' photos';
+  $('procRes').textContent=RES+'³';
+  $('procSeg').textContent=segMode.toUpperCase();
+  depthMaps=[];meshData=null;
 
-  // ── Stage 0: Multi-cue depth per frame ──
-  setPipe(0,3,'Computing multi-cue depth maps…');tlog(`Computing multi-cue depth (${frames.length} frames)…`,'t-info');
-  const rawDepths=[];
+  // Stage 0: Load models
+  setPipeline(0,3,'Loading AI models…');tlog('Loading MiDaS depth model…');
+  const t0=Date.now();
+  try{
+    midasModel=await loadMiDaS();
+    tlog(`MiDaS loaded in ${((Date.now()-t0)/1e3).toFixed(1)}s`,'t-ok');
+  }catch(e){
+    tlog('MiDaS unavailable — edge fallback active','t-warn');midasModel=null;
+  }
+
+  // Stage 1: Depth maps
+  setPipeline(1,8,'Depth estimation…');tlog(`Estimating depth for ${frames.length} photos…`);
   for(let i=0;i<frames.length;i++){
-    $('procBar').style.width=(3+Math.round(i/frames.length*13))+'%';
+    const pct=8+Math.round(i/frames.length*20);
+    $('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';
     $('procStage').textContent=`Depth ${i+1}/${frames.length}`;
     await wait(0);
-    rawDepths.push(computeMultiCueDepth(frames[i]));
+    depthMaps.push(midasModel?await runMiDaS(frames[i]):fallbackDepth(frames[i]));
   }
-  tlog(`${rawDepths.length} depth maps computed`,'t-ok');
-
-  // ── Stage 1: Temporal consistency ──
-  setPipe(1,18,'Temporal consistency pass…');tlog('Aligning depth across adjacent frames…','t-info');
-  await wait(0);
-  const consistentDepths=applyTemporalConsistency(rawDepths,frames);
-  tlog('Temporal consistency applied','t-ok');
-
-  // ── Stage 2: Confidence-weighted fusion ──
-  setPipe(2,25,'Depth confidence fusion…');tlog('Fusing depths with confidence weighting…');
-  await wait(0);
-  for(let i=0;i<frames.length;i++){
-    await wait(0);
-    depthMaps.push(consistentDepths[i]);
-  }
-  tlog('Depth fusion complete','t-ok');
+  tlog(`${depthMaps.length} depth maps computed`,'t-ok');
+  if(depthMaps.length!==frames.length){tlog('ERROR: depth count mismatch','t-err');return;}
   renderDepthPreviews();
+
+  // Stage 2: Visual hull
   const maskedCount=frames.filter(f=>f.fgMask).length;
   $('procMasked').textContent=maskedCount+'/'+frames.length;
+  setPipeline(2,30,'Visual hull carving…');tlog(`Carving ${RES}³ voxels (${maskedCount} masks)…`);
+  await wait(60);
 
-  // ── Stage 3: Adaptive TSDF ──
-  setPipe(3,35,'Adaptive TSDF voxel carving…');tlog(`Adaptive TSDF carving ${RES}³ (view-weighted)…`,'t-info');
-  await wait(30);
-  let sdf,sdfConf;
+  // Stage 3: Hole fill
+  setPipeline(3,50,'Hole filling…');await wait(20);
+
+  // Stage 4+5: Mesh + smooth
+  setPipeline(4,55,'Marching cubes…');tlog('Building mesh…');await wait(20);
   try{
-    const res=await buildAdaptiveTSDF(RES);sdf=res.sdf;sdfConf=res.conf;
-    const sc=res.surfaceCount;tlog(`ATSDF: ${sc.toLocaleString()} near-surface voxels`,'t-ok');
-    $('procQual').textContent=sc>5000?'HIGH':sc>1500?'MED':'LOW';
-    if(sc<30){tlog('Too sparse — need more photos or better lighting','t-warn');toast('Mesh too sparse — try again with better lighting','err');return;}
-  }catch(e){tlog('TSDF error: '+e.message,'t-err');toast('Reconstruction failed','err');return;}
+    meshData=buildMesh(RES,SP);
+    tlog(`Mesh: ${meshData.stats.vCount.toLocaleString()} verts · ${meshData.stats.fCount.toLocaleString()} faces`,'t-ok');
+  }catch(err){
+    tlog('Mesh error: '+err.message+' — fallback','t-warn');
+    try{meshData=buildDepthFallback(RES,SP);}catch(e2){toast('Reconstruction failed','err');return;}
+  }
+  if(!meshData||meshData.stats.vCount<4){toast('Mesh too small — try again','err');return;}
 
-  // ── Stage 4: Advanced hole repair ──
-  setPipe(4,50,'Topological hole repair…');tlog('Sealing interior voids + thin-wall repair…');
-  await wait(20);
-  sdf=advancedHoleRepair(sdf,sdfConf,RES);
-  tlog('Hole repair complete','t-ok');
+  setPipeline(5,75,'Taubin smoothing…');tlog(`Smoothing applied (${SP} passes)`);await wait(30);
 
-  // ── Stage 5: Feature detection ──
-  setPipe(5,56,'Feature edge detection…');tlog('Detecting sharp edges and creases in SDF…');
-  await wait(0);
-  const featureMask=detectSdfFeatures(sdf,RES);
-  tlog(`Features detected: ${featureMask.reduce((a,v)=>a+(v>0.5?1:0),0).toLocaleString()} feature voxels`,'t-ok');
+  // Stage 6: Atlas
+  setPipeline(6,85,'Building texture atlas…');tlog('Packing atlas…');await wait(40);
+  atlasCanvas=buildTextureAtlas();tlog(`Atlas packed: ${frames.length} photos`,'t-ok');
 
-  // ── Stage 6: Feature-preserving bilateral SDF smooth ──
-  setPipe(6,62,'Feature-preserving SDF smoothing…');tlog(`Bilateral Taubin SDF smooth × ${SP}…`,'t-info');
-  await wait(10);
-  sdf=await bilateralTaubinSDF(sdf,featureMask,RES,SP);
-  tlog('SDF smoothed (features preserved)','t-ok');
-
-  // ── Stage 7: Marching cubes with sharp-edge hint ──
-  setPipe(7,68,'Marching cubes (sharp edges)…');tlog('Extracting mesh with feature-edge hints…');
-  await wait(20);
-  try{
-    meshData=runMarchingCubes(sdf,featureMask,RES,1.15,(2.3)/RES,(ix,iy,iz)=>ix*RES*RES+iy*RES+iz,0.0);
-    tlog(`MC: ${meshData.stats.vCount.toLocaleString()} verts · ${meshData.stats.fCount.toLocaleString()} faces`,'t-ok');
-  }catch(err){tlog('MC error: '+err.message,'t-err');toast('Mesh extraction failed','err');return;}
-  if(!meshData||meshData.stats.vCount<8){toast('Mesh too sparse — try again','err');return;}
-
-  // ── Stage 8: Feature-preserving mesh refinement ──
-  setPipe(8,80,'Feature-preserving mesh refinement…');tlog('Valence-weighted Taubin with crease preservation…');
-  await wait(20);
-  meshData=featurePreservingMeshRefine(meshData,4);
-  tlog(`Refined: ${meshData.stats.vCount.toLocaleString()} verts`,'t-ok');
-
-  // ── Stage 9: Enhanced texture + normals ──
-  setPipe(9,90,'Multi-view texture atlas + normal map…');tlog('Building angle-blended texture atlas…');
-  await wait(30);
-  atlasCanvas=buildMultiViewAtlas(meshData);
-  normalCanvas=buildNormalMap(meshData);
-  tlog(`Atlas built · normal map baked`,'t-ok');
-
-  // ── Stage 10: Finalise ──
-  setPipe(10,96,'Finalising…');await wait(40);
-  STAGES.forEach((_,i)=>{const b=$('sb'+i);if(b)b.className='sb done';});
+  // Stage 7: Done
+  setPipeline(7,95,'Finalising…');await wait(50);
+  STAGES.forEach((_,i)=>{const b=$('sb'+i);if(b)b.className='stage-blk done';});
   $('procBar').style.width='100%';$('procPct').textContent='100%';$('procStage').textContent='Done!';
-  tlog('✓ v5 PRO reconstruction complete!','t-ok');
-  toast('High-quality 3D model ready! 🎉');await wait(350);showViewer();
+  tlog('✓ Reconstruction complete!','t-ok');
+  toast('Your 3D model is ready! 🎉');await wait(400);
+  showViewer();
 }
 
-/* ════════════════════════════════════════════════════════════════
-   MULTI-CUE DEPTH ESTIMATION
-   ─────────────────────────────────────────────────────────────
-   Six independent cues fused with learned-style weights:
-   1. LoG variance (focus measure) — sharpness = near
-   2. Multi-scale gradient (3 octaves) — texture = near
-   3. Dark-channel prior — atmospheric depth
-   4. Chromatic aberration (R−B shift)
-   5. Saturation prior — colourful objects closer
-   6. Geometric/radial prior
-════════════════════════════════════════════════════════════════ */
-function computeMultiCueDepth(frame){
-  const{imageData:id,w,h,fgMask}=frame,d=id.data;
-  const N=w*h;
-  // Work at half res for speed
-  const w2=w>>1,h2=h>>1,N2=w2*h2;
-  const R=new Float32Array(N2),G=new Float32Array(N2),B=new Float32Array(N2),GR=new Float32Array(N2);
-  for(let y=0;y<h2;y++)for(let x=0;x<w2;x++){const i=(y*2*w+x*2)*4;R[y*w2+x]=d[i]/255;G[y*w2+x]=d[i+1]/255;B[y*w2+x]=d[i+2]/255;GR[y*w2+x]=.299*d[i]+.587*d[i+1]+.114*d[i+2];}
+/* ═══════════════════════════════════════════════════════
+   DEPTH ESTIMATION (MiDaS v2.1 small + fallback)
+═══════════════════════════════════════════════════════ */
+async function loadMiDaS(){
+  if(typeof tf==='undefined') throw new Error('TF not loaded');
+  return await tf.loadGraphModel(
+    'https://tfhub.dev/intel/midas/v2_1_small/1/model.json',{fromTFHub:true});
+}
 
-  // 1. LoG focus measure (7×7 Laplacian-of-Gaussian variance)
-  const log7=new Float32Array(N2);
-  const K7=3;
-  for(let y=K7;y<h2-K7;y++)for(let x=K7;x<w2-K7;x++){
-    let s=0,s2=0,c=0;for(let dy=-K7;dy<=K7;dy++)for(let dx=-K7;dx<=K7;dx++){const v=GR[(y+dy)*w2+(x+dx)];s+=v;s2+=v*v;c++;}log7[y*w2+x]=s2/c-(s/c)**2;
-  }
-  let l7max=0;for(let i=0;i<N2;i++)if(log7[i]>l7max)l7max=log7[i];
-  if(l7max>0)for(let i=0;i<N2;i++)log7[i]=Math.sqrt(log7[i]/l7max);
-
-  // 2. Multi-scale gradient (3 octaves)
-  const grad=new Float32Array(N2);
-  for(let oct=1;oct<=3;oct++){
-    const s=oct;
-    for(let y=s;y<h2-s;y++)for(let x=s;x<w2-s;x++){
-      const gx=GR[y*w2+(x+s)]-GR[y*w2+(x-s)];const gy=GR[(y+s)*w2+x]-GR[(y-s)*w2+x];
-      grad[y*w2+x]+=Math.min(Math.sqrt(gx*gx+gy*gy)/255,1)*(1/(oct*1.5));
+async function runMiDaS(frame){
+  const{imageData,w,h}=frame;
+  return tf.tidy(()=>{
+    const img=tf.browser.fromPixels(imageData);
+    const rs=tf.image.resizeBilinear(img,[256,256]);
+    const nm=rs.toFloat().div(255)
+      .sub(tf.tensor([.485,.456,.406]))
+      .div(tf.tensor([.229,.224,.225]));
+    const res=midasModel.predict(nm.expandDims(0));
+    const dep=(Array.isArray(res)?res[0]:res).squeeze();
+    const fr=tf.image.resizeBilinear(dep.expandDims(-1),[h,w]).squeeze();
+    const arr=fr.arraySync();
+    const flat=new Float32Array(w*h);
+    let mn=Infinity,mx=-Infinity;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      const v=arr[y][x];flat[y*w+x]=v;
+      if(v<mn)mn=v;if(v>mx)mx=v;
     }
+    const rng=mx-mn||1;
+    for(let i=0;i<flat.length;i++) flat[i]=(flat[i]-mn)/rng;
+    return flat;
+  });
+}
+
+function fallbackDepth(frame){
+  const{imageData:id,w,h}=frame,data=id.data;
+  const dep=new Float32Array(w*h);
+  const g=(y,x)=>{const i=(y*w+x)*4;return .299*data[i]+.587*data[i+1]+.114*data[i+2];};
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
+    const lap=Math.abs(4*g(y,x)-g(y-1,x)-g(y+1,x)-g(y,x-1)-g(y,x+1))/255;
+    const nx=(x/w-.5)*2,ny=(y/h-.5)*2;
+    dep[y*w+x]=clamp(lap*.6+Math.max(0,1-Math.sqrt(nx*nx+ny*ny))*.4,0,1);
   }
-  let gmax=0;for(let i=0;i<N2;i++)if(grad[i]>gmax)gmax=grad[i];
-  if(gmax>0)for(let i=0;i<N2;i++)grad[i]/=gmax;
-
-  // 3. Dark-channel prior (min of min-channel in patch)
-  const dc=new Float32Array(N2);
-  const DK=5;
-  for(let y=DK;y<h2-DK;y++)for(let x=DK;x<w2-DK;x++){
-    let minV=1;for(let dy=-DK;dy<=DK;dy++)for(let dx=-DK;dx<=DK;dx++){const i=(y+dy)*w2+(x+dx);const m=Math.min(R[i],G[i],B[i]);if(m<minV)minV=m;}dc[y*w2+x]=1-minV; // higher = nearer (less haze)
-  }
-  let dcmax=0;for(let i=0;i<N2;i++)if(dc[i]>dcmax)dcmax=dc[i];
-  if(dcmax>0)for(let i=0;i<N2;i++)dc[i]/=dcmax;
-
-  // 4. Chromatic aberration (|R−B|)
-  const ca=new Float32Array(N2);
-  for(let i=0;i<N2;i++)ca[i]=Math.min(Math.abs(R[i]-B[i])*4,1);
-
-  // 5. Saturation
-  const sat=new Float32Array(N2);
-  for(let i=0;i<N2;i++){const mx=Math.max(R[i],G[i],B[i]),mn=Math.min(R[i],G[i],B[i]);sat[i]=mx>0?(mx-mn)/mx:0;}
-
-  // Combine cues with tuned weights
-  const dep=new Float32Array(N2);
-  for(let y=0;y<h2;y++)for(let x=0;x<w2;x++){
-    const i=y*w2+x;
-    const nx=(x/w2-.5)*2,ny=(y/h2-.5)*2;
-    const radial=Math.max(0,1-Math.sqrt(nx*nx+ny*ny)*1.05);
-    const vert=clamp(1-(y/h2)*.3,0.3,1);
-    dep[i]=clamp(log7[i]*.38+grad[i]*.28+dc[i]*.12+ca[i]*.08+sat[i]*.06+radial*.05+vert*.03,0,1);
-  }
-
-  // Apply foreground mask at half-res
-  if(fgMask){for(let y=0;y<h2;y++)for(let x=0;x<w2;x++){const mx=clamp(x*2,0,w-1),my=clamp(y*2,0,h-1);if(!fgMask[my*w+mx])dep[y*w2+x]*=0.08;}}
-
-  // Bilateral edge-preserving filter (7×7)
-  const bil=new Float32Array(N2);
-  const BS=3,SS=2.0,SR=0.10;
-  for(let y=BS;y<h2-BS;y++)for(let x=BS;x<w2-BS;x++){
-    const c0=dep[y*w2+x];let s=0,sw=0;
-    for(let dy=-BS;dy<=BS;dy++)for(let dx=-BS;dx<=BS;dx++){const v=dep[(y+dy)*w2+(x+dx)];const ws=Math.exp(-(dx*dx+dy*dy)/(2*SS*SS));const wr=Math.exp(-(v-c0)**2/(2*SR*SR));s+=v*ws*wr;sw+=ws*wr;}
-    bil[y*w2+x]=sw>0?s/sw:c0;
-  }
-  for(let y=0;y<h2;y++)for(let x=0;x<w2;x++)if(y<BS||y>=h2-BS||x<BS||x>=w2-BS)bil[y*w2+x]=dep[y*w2+x];
-
-  // Upsample back to full res with bilinear interpolation
-  const out=new Float32Array(N);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    const fx=(x/w)*(w2-1),fy=(y/h)*(h2-1);
-    const xi=clamp(fx|0,0,w2-2),yi=clamp(fy|0,0,h2-2);
-    const tx=fx-xi,ty=fy-yi;
-    out[y*w+x]=bil[yi*w2+xi]*(1-tx)*(1-ty)+bil[yi*w2+(xi+1)]*tx*(1-ty)+bil[(yi+1)*w2+xi]*(1-tx)*ty+bil[(yi+1)*w2+(xi+1)]*tx*ty;
+  // Bilateral-ish smooth (3x3)
+  const out=new Float32Array(w*h);
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
+    let s=0,sw=0;
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){
+      const v=dep[(y+dy)*w+(x+dx)];
+      const w2=1/(1+Math.abs(v-dep[y*w+x])*8);
+      s+=v*w2;sw+=w2;
+    }
+    out[y*w+x]=s/sw;
   }
   return out;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   TEMPORAL CONSISTENCY
-   ─────────────────────────────────────────────────────────────
-   Blend adjacent frames' depth maps with exponential falloff
-   to enforce smoothness between nearby viewpoints.
-   Uses a running weighted average with window=3.
-════════════════════════════════════════════════════════════════ */
-function applyTemporalConsistency(depths,frames){
-  const N=depths.length;if(N<3)return depths;
-  const out=depths.map(d=>new Float32Array(d));
-  const WIN=2; // blend with ±2 neighbours
-  for(let fi=0;fi<N;fi++){
-    const{w,h}=frames[fi];
-    const sz=w*h;
-    const sumD=new Float32Array(sz);
-    const sumW=new Float32Array(sz);
-    for(let di=-WIN;di<=WIN;di++){
-      const fj=((fi+di)%N+N)%N;
-      const sigma=Math.abs(di)+1;
-      const weight=Math.exp(-sigma*sigma/(2*1.5*1.5));
-      const src=depths[fj];
-      const srcW=frames[fj].w,srcH=frames[fj].h;
-      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-        // simple scale if sizes differ
-        const sx=clamp(Math.round(x*srcW/w),0,srcW-1);
-        const sy=clamp(Math.round(y*srcH/h),0,srcH-1);
-        const v=src[sy*srcW+sx];
-        sumD[y*w+x]+=v*weight;sumW[y*w+x]+=weight;
-      }
-    }
-    const alpha=0.25; // blend strength
-    for(let i=0;i<sz;i++)out[fi][i]=depths[fi][i]*(1-alpha)+(sumW[i]>0?sumD[i]/sumW[i]:depths[fi][i])*alpha;
-  }
-  return out;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   ADAPTIVE TSDF — upgraded over v3
-   ─────────────────────────────────────────────────────────────
-   Key improvements:
-   · Cosine view-angle weighting (front-facing views trusted more)
-   · Per-voxel confidence accumulation (separate from SDF)
-   · Depth uncertainty σ ∝ depth² (further = less certain)
-   · Silhouette carving with graduated edge response
-   · Batch yield every 4 rows to keep UI alive
-════════════════════════════════════════════════════════════════ */
-async function buildAdaptiveTSDF(RES){
-  const N=frames.length;const HALF=1.15,STEP=(HALF*2)/RES;
-  const ORBIT_R=2.6,ELEV=10*Math.PI/180;
-  const CAM_Y=Math.sin(ELEV)*ORBIT_R,ORBIT_XZ=Math.cos(ELEV)*ORBIT_R;
-  const HFOV=58*Math.PI/180;const N3=RES*RES*RES;
-  const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
-  const sdfAcc=new Float32Array(N3);const sdfWt=new Float32Array(N3);
-  const conf=new Float32Array(N3); // confidence per voxel
-  const voxSil=new Uint8Array(N3).fill(1);
-  const TRUNC=STEP*5;
-
-  function dilMask(mask,w,h,r){if(!mask)return null;const o=new Uint8Array(w*h);for(let y=r;y<h-r;y++)for(let x=r;x<w-r;x++){if(!mask[y*w+x])continue;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)o[(y+dy)*w+(x+dx)]=1;}return o;}
-
-  for(let fi=0;fi<N;fi++){
-    const{w,h,fgMask}=frames[fi];const dm=depthMaps[fi];if(!dm||dm.length!==w*h)continue;
-    const hasMask=!!fgMask;const dilM=dilMask(fgMask,w,h,6);
-    const fl=(w/2)/Math.tan(HFOV/2);
-    const az=(fi/N)*Math.PI*2;
-    const camX=Math.sin(az)*ORBIT_XZ,camZ=Math.cos(az)*ORBIT_XZ;
-    const tL=Math.sqrt(camX*camX+CAM_Y*CAM_Y+camZ*camZ);
-    const fwX=-camX/tL,fwY=-CAM_Y/tL,fwZ=-camZ/tL;
-    const rtX=Math.cos(az),rtY=0,rtZ=-Math.sin(az);
-    const upX=rtY*fwZ-rtZ*fwY,upY=rtZ*fwX-rtX*fwZ,upZ=rtX*fwY-rtY*fwX;
-    const dNear=ORBIT_R-HALF*2.0,dSpan=HALF*4.0;
-
-    for(let ix=0;ix<RES;ix++){
-      if(ix%4===0)await wait(0); // yield every 4 rows
-      const wx=-HALF+(ix+.5)*STEP;
-      for(let iy=0;iy<RES;iy++){
-        const wy=-HALF+(iy+.5)*STEP;
-        for(let iz=0;iz<RES;iz++){
-          const wz=-HALF+(iz+.5)*STEP;
-          const dx=wx-camX,dy=wy-CAM_Y,dz=wz-camZ;
-          const depth=dx*fwX+dy*fwY+dz*fwZ;if(depth<=.05)continue;
-          const pxc=(dx*rtX+dy*rtY+dz*rtZ)/depth;
-          const pyc=(dx*upX+dy*upY+dz*upZ)/depth;
-          const pxi=clamp(Math.round(pxc*fl+w/2),0,w-1);
-          const pyi=clamp(Math.round(-pyc*fl+h/2),0,h-1);
-          const pidx=pyi*w+pxi;
-          if(hasMask&&dilM&&!dilM[pidx]){voxSil[VI(ix,iy,iz)]=0;continue;}
-          const measD=1-dm[pidx];
-          const voxD=(depth-dNear)/dSpan;
-          const sdf_val=measD-voxD;if(sdf_val<-TRUNC/dSpan)continue;
-          const trun=clamp(sdf_val,-(TRUNC/dSpan),(TRUNC/dSpan));
-          // View-angle cosine: voxel facing the camera gets higher weight
-          const nx_=(wx)/Math.sqrt(wx*wx+wz*wz+0.001);const nz_=(wz)/Math.sqrt(wx*wx+wz*wz+0.001);
-          const cosView=Math.max(0,-(nx_*fwX+0+nz_*fwZ));
-          const viewW=0.3+0.7*cosView;
-          // Depth uncertainty (farther voxels less certain)
-          const depthSigma=clamp(1-depth/(ORBIT_R*2),0.2,1.0);
-          // TSDF weight
-          const distW=Math.max(0.05,1-Math.abs(trun)/(TRUNC/dSpan));
-          const w2=distW*viewW*depthSigma;
-          const idx=VI(ix,iy,iz);
-          sdfAcc[idx]+=trun*w2;sdfWt[idx]+=w2;
-          conf[idx]+=viewW*depthSigma;
-        }
-      }
-    }
-  }
-
-  const sdf=new Float32Array(N3);let surfaceCount=0;
-  for(let i=0;i<N3;i++){
-    if(!voxSil[i]){sdf[i]=-1;conf[i]=0;continue;}
-    sdf[i]=sdfWt[i]>0.05?sdfAcc[i]/sdfWt[i]:0.5;
-    if(Math.abs(sdf[i])<0.15)surfaceCount++;
-  }
-  return{sdf,conf,surfaceCount};
-}
-
-/* ════════════════════════════════════════════════════════════════
-   ADVANCED HOLE REPAIR
-   ─────────────────────────────────────────────────────────────
-   1. Standard exterior flood-fill to find background
-   2. Seal interior voids (non-background empty voxels)
-   3. Thin-wall repair: detect 1-voxel gaps and fill them
-   4. Low-confidence patch smoothing
-════════════════════════════════════════════════════════════════ */
-function advancedHoleRepair(sdf,conf,RES){
-  const N3=RES*RES*RES;const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
-  const out=new Float32Array(sdf);
-
-  // 1. Exterior flood fill
-  const emptyFg=new Uint8Array(N3);for(let i=0;i<N3;i++)emptyFg[i]=(sdf[i]>0.05)?1:0;
-  const bg=new Uint8Array(N3),q=new Int32Array(N3);let qh=0,qt=0;
-  const seedBg=(a,b,c)=>{const i=VI(a,b,c);if(emptyFg[i]&&!bg[i]){bg[i]=1;q[qt++]=i;}};
-  for(let a=0;a<RES;a++)for(let b=0;b<RES;b++){seedBg(0,a,b);seedBg(RES-1,a,b);seedBg(a,0,b);seedBg(a,RES-1,b);seedBg(a,b,0);seedBg(a,b,RES-1);}
-  while(qh<qt){const idx=q[qh++];const ix=idx/(RES*RES)|0,iy=(idx%(RES*RES))/RES|0,iz=idx%RES;for(const ni of[ix>0?VI(ix-1,iy,iz):-1,ix<RES-1?VI(ix+1,iy,iz):-1,iy>0?VI(ix,iy-1,iz):-1,iy<RES-1?VI(ix,iy+1,iz):-1,iz>0?VI(ix,iy,iz-1):-1,iz<RES-1?VI(ix,iy,iz+1):-1])if(ni>=0&&emptyFg[ni]&&!bg[ni]){bg[ni]=1;q[qt++]=ni;}}
-
-  // 2. Seal interior voids (not background)
-  let filled=0;for(let i=0;i<N3;i++)if(emptyFg[i]&&!bg[i]){out[i]=-0.08;filled++;}
-
-  // 3. Thin-wall repair: fill isolated empty voxels surrounded by solid
-  for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){
-    const idx=VI(ix,iy,iz);if(out[idx]>-0.1)continue; // skip solid
-    // Count neighbouring solid voxels
-    let solidNb=0;const nb6=[VI(ix-1,iy,iz),VI(ix+1,iy,iz),VI(ix,iy-1,iz),VI(ix,iy+1,iz),VI(ix,iy,iz-1),VI(ix,iy,iz+1)];
-    for(const ni of nb6)if(out[ni]<0)solidNb++;
-    // If ≥5 out of 6 neighbours are solid, this is a thin hole — fill it
-    if(solidNb>=5&&out[idx]>0.05){let avgSdf=0;let c=0;for(const ni of nb6)if(out[ni]<0){avgSdf+=out[ni];c++;}out[idx]=c>0?avgSdf/c*0.5:-0.05;filled++;}
-  }
-
-  // 4. Low-confidence regions: extra bilateral smoothing
-  const lowConf=new Uint8Array(N3);const confThresh=0.3;
-  const maxConf=conf.reduce((a,v)=>Math.max(a,v),0);
-  if(maxConf>0){for(let i=0;i<N3;i++)lowConf[i]=(conf[i]/maxConf<confThresh&&Math.abs(out[i])<0.3)?1:0;}
-  const tmp=new Float32Array(out);
-  for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){
-    const idx=VI(ix,iy,iz);if(!lowConf[idx])continue;
-    const nb=(out[VI(ix-1,iy,iz)]+out[VI(ix+1,iy,iz)]+out[VI(ix,iy-1,iz)]+out[VI(ix,iy+1,iz)]+out[VI(ix,iy,iz-1)]+out[VI(ix,iy,iz+1)])/6;
-    tmp[idx]=out[idx]*0.4+nb*0.6; // blend toward neighbours in low-confidence areas
-  }
-  out.set(tmp);
-  tlog(`Hole repair: ${filled.toLocaleString()} voids sealed`,'t-ok');
-  return out;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   SDF FEATURE DETECTION
-   ─────────────────────────────────────────────────────────────
-   Detects sharp edges in the SDF by measuring local curvature.
-   High curvature → feature edge → less smoothing there.
-════════════════════════════════════════════════════════════════ */
-function detectSdfFeatures(sdf,RES){
-  const N3=RES*RES*RES;const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
-  const feature=new Float32Array(N3);
-  for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){
-    const c=sdf[VI(ix,iy,iz)];if(Math.abs(c)>0.3)continue; // only near surface
-    // Laplacian of SDF (measures curvature)
-    const lap=(sdf[VI(ix-1,iy,iz)]+sdf[VI(ix+1,iy,iz)]+sdf[VI(ix,iy-1,iz)]+sdf[VI(ix,iy+1,iz)]+sdf[VI(ix,iy,iz-1)]+sdf[VI(ix,iy,iz+1)])/6-c;
-    // Gradient magnitude (should be ~1 for good SDF)
-    const gx=(sdf[VI(ix+1,iy,iz)]-sdf[VI(ix-1,iy,iz)])/2;
-    const gy=(sdf[VI(ix,iy+1,iz)]-sdf[VI(ix,iy-1,iz)])/2;
-    const gz=(sdf[VI(ix,iy,iz+1)]-sdf[VI(ix,iy,iz-1)])/2;
-    const gLen=Math.sqrt(gx*gx+gy*gy+gz*gz);
-    // Feature = high curvature + valid gradient
-    feature[VI(ix,iy,iz)]=clamp(Math.abs(lap)*6*(gLen>0.05?1:0),0,1);
-  }
-  return feature;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   BILATERAL TAUBIN SDF SMOOTHING
-   ─────────────────────────────────────────────────────────────
-   Standard Taubin (λ/μ) with bilateral weighting:
-   · Neighbours near feature edges contribute less
-   · Flat regions smooth aggressively
-   · Feature voxels use smaller lambda
-════════════════════════════════════════════════════════════════ */
-async function bilateralTaubinSDF(sdf,featureMask,RES,passes){
-  const N3=RES*RES*RES;const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
-  const tmp=new Float32Array(N3);const LAMBDA=0.52,MU=-0.55;
-  for(let pass=0;pass<passes;pass++){
-    await wait(0);
-    const lam=pass%2===0?LAMBDA:MU;
-    for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){
-      const c=sdf[VI(ix,iy,iz)];if(Math.abs(c)>0.45){tmp[VI(ix,iy,iz)]=c;continue;}
-      const feat=featureMask[VI(ix,iy,iz)];
-      // Reduce smoothing at features
-      const effLam=lam*(1-feat*0.85);
-      let nb=0,sw=0;
-      const nbIdxs=[VI(ix-1,iy,iz),VI(ix+1,iy,iz),VI(ix,iy-1,iz),VI(ix,iy+1,iz),VI(ix,iy,iz-1),VI(ix,iy,iz+1)];
-      for(const ni of nbIdxs){
-        const nv=sdf[ni];
-        // Bilateral: weight by similarity (range kernel)
-        const rangew=Math.exp(-(nv-c)**2/(2*0.08*0.08));
-        nb+=nv*rangew;sw+=rangew;
-      }
-      tmp[VI(ix,iy,iz)]=c+effLam*((sw>0?nb/sw:c)-c);
-    }
-    sdf.set(tmp);
-  }
-  return sdf;
-}
-
-/* ════════════════════════════════════════════════════════════════
-   MARCHING CUBES — with sharp-edge feature hints
-   ─────────────────────────────────────────────────────────────
-   Improvements over v3:
-   · Feature-biased vertex placement: on feature edges, vertex
-     position is snapped toward the SDF zero-crossing more precisely
-   · Gradient-based normal interpolation (trilinear) preserved
-   · Welded vertex map unchanged
-════════════════════════════════════════════════════════════════ */
-function runMarchingCubes(occ,featureMask,RES,HALF,STEP,VI,THRESH=0.0){
-  const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
-  const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
-  const EP=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-  const CV=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
-  const verts=[],normals=[],uvs=[],featureFlags=[];
-  const indices=[];const vmap=new Map();let vIdx=0;
-  const SNAP=Math.round(1/(STEP*0.5));
-
-  function addV(p,nx,ny,nz,isFeat){
-    const u=clamp(.5+Math.atan2(p[2],p[0])/(Math.PI*2),0,1);
-    const v=clamp(.5-p[1]/(HALF*2),0,1);
-    const kx=Math.round(p[0]*SNAP),ky=Math.round(p[1]*SNAP),kz=Math.round(p[2]*SNAP);
-    const k=`${kx}_${ky}_${kz}`;
-    if(vmap.has(k))return vmap.get(k);
-    vmap.set(k,vIdx);verts.push(p[0],p[1],p[2]);normals.push(nx,ny,nz);uvs.push(u,v);featureFlags.push(isFeat?1:0);return vIdx++;
-  }
-  function sdfGradN(ix,iy,iz){
-    const gx=occ[VI(Math.min(ix+1,RES-1),iy,iz)]-occ[VI(Math.max(ix-1,0),iy,iz)];
-    const gy=occ[VI(ix,Math.min(iy+1,RES-1),iz)]-occ[VI(ix,Math.max(iy-1,0),iz)];
-    const gz=occ[VI(ix,iy,Math.min(iz+1,RES-1))]-occ[VI(ix,iy,Math.max(iz-1,0))];
-    const l=Math.sqrt(gx*gx+gy*gy+gz*gz)||1;return[-gx/l,-gy/l,-gz/l];
-  }
-  function interp(p1,p2,v1,v2,f1,f2){
-    // On feature edges, place vertex closer to the zero-crossing using refined bisection
-    let t=(v1===v2)?.5:clamp((THRESH-v1)/(v2-v1),0,1);
-    const isFeat=(f1>0.5||f2>0.5);
-    if(isFeat){
-      // Refine position toward sharp crossing (2 bisection steps)
-      for(let step=0;step<2;step++){const mid=lerp(v1,v2,t);if(mid*v1<0)t=t*.5+(0)*.5;else t=t*.5+(1)*.5;}
-      t=clamp((THRESH-v1)/(v2-v1),0,1); // fall back to linear on feature (most stable)
-    }
-    return[lerp(p1[0],p2[0],t),lerp(p1[1],p2[1],t),lerp(p1[2],p2[2],t)];
-  }
-
-  for(let ix=0;ix<RES-1;ix++)for(let iy=0;iy<RES-1;iy++)for(let iz=0;iz<RES-1;iz++){
-    const vals=[occ[VI(ix,iy,iz)],occ[VI(ix+1,iy,iz)],occ[VI(ix+1,iy+1,iz)],occ[VI(ix,iy+1,iz)],occ[VI(ix,iy,iz+1)],occ[VI(ix+1,iy,iz+1)],occ[VI(ix+1,iy+1,iz+1)],occ[VI(ix,iy+1,iz+1)]];
-    let ci=0;for(let c=0;c<8;c++)if(vals[c]<THRESH)ci|=(1<<c);
-    if(ci===0||ci===255)continue;const et=ET[ci];if(!et)continue;
-    const cp=CV.map(([a,b,c2])=>[-HALF+(ix+a)*STEP,-HALF+(iy+b)*STEP,-HALF+(iz+c2)*STEP]);
-    const cornerIdxs=[[ix,iy,iz],[ix+1,iy,iz],[ix+1,iy+1,iz],[ix,iy+1,iz],[ix,iy,iz+1],[ix+1,iy,iz+1],[ix+1,iy+1,iz+1],[ix,iy+1,iz+1]];
-    const cornerFeat=cornerIdxs.map(([a,b,c2])=>(featureMask&&featureMask.length)?featureMask[VI(a,b,c2)]:0);
-    const ev=new Array(12);
-    for(let e=0;e<12;e++){if(!(et&(1<<e)))continue;const[ea,eb]=EP[e];ev[e]=interp(cp[ea],cp[eb],vals[ea],vals[eb],cornerFeat[ea],cornerFeat[eb]);}
-    const tris=TT[ci];if(!tris||!tris.length)continue;
-    const cN=cornerIdxs.map(([a,b,c2])=>sdfGradN(a,b,c2));
-    for(let t=0;t<tris.length;t+=3){
-      const e0=tris[t],e1=tris[t+1],e2=tris[t+2];
-      if(ev[e0]===undefined||ev[e1]===undefined||ev[e2]===undefined)continue;
-      function eN(e){const[ea,eb]=EP[e];const ta=(vals[ea]===vals[eb])?.5:clamp((THRESH-vals[ea])/(vals[eb]-vals[ea]),0,1);const na=cN[ea],nb2=cN[eb];const nx2=lerp(na[0],nb2[0],ta),ny2=lerp(na[1],nb2[1],ta),nz2=lerp(na[2],nb2[2],ta);const l=Math.sqrt(nx2*nx2+ny2*ny2+nz2*nz2)||1;return[nx2/l,ny2/l,nz2/l];}
-      function eFeat(e){const[ea,eb]=EP[e];return Math.max(cornerFeat[ea],cornerFeat[eb]);}
-      const n0=eN(e0),n1=eN(e1),n2=eN(e2);
-      indices.push(addV(ev[e0],n0[0],n0[1],n0[2],eFeat(e0)>0.5),addV(ev[e1],n1[0],n1[1],n1[2],eFeat(e1)>0.5),addV(ev[e2],n2[0],n2[1],n2[2],eFeat(e2)>0.5));
-    }
-  }
-  tlog(`MC: ${vIdx.toLocaleString()} verts · ${(indices.length/3)|0} faces`,'t-ok');
-  return{verts,normals,uvs,featureFlags,indices,stats:{vCount:vIdx,fCount:(indices.length/3)|0}};
-}
-
-/* ════════════════════════════════════════════════════════════════
-   FEATURE-PRESERVING MESH REFINEMENT
-   ─────────────────────────────────────────────────────────────
-   · Valence-weighted Taubin (vertices with more neighbours
-     receive less displacement to avoid over-smoothing)
-   · Feature vertices (flagged from MC) receive greatly reduced
-     smoothing to preserve sharp edges
-   · Crease detection: angle between adjacent face normals > 40°
-     → vertex is locked from displacement
-════════════════════════════════════════════════════════════════ */
-function featurePreservingMeshRefine(mesh,passes){
-  const{verts,normals,uvs,featureFlags,indices}=mesh;
-  const VC=verts.length/3;if(VC<4)return mesh;
-
-  // Build adjacency + compute per-vertex face list
-  const adj=new Array(VC);for(let i=0;i<VC;i++)adj[i]=[];
-  const facesPerVert=new Array(VC);for(let i=0;i<VC;i++)facesPerVert[i]=[];
-  for(let t=0;t<indices.length;t+=3){
-    const a=indices[t],b=indices[t+1],c=indices[t+2];
-    adj[a].push(b,c);adj[b].push(a,c);adj[c].push(a,b);
-    const fi=t/3|0;facesPerVert[a].push(fi);facesPerVert[b].push(fi);facesPerVert[c].push(fi);
-  }
-  for(let i=0;i<VC;i++)adj[i]=[...new Set(adj[i])];
-
-  const pos=new Float32Array(verts);const tmp=new Float32Array(pos.length);
-
-  // Compute per-face normals for crease detection
-  const faceNX=new Float32Array(indices.length/3),faceNY=new Float32Array(indices.length/3),faceNZ=new Float32Array(indices.length/3);
-  for(let t=0;t<indices.length;t+=3){
-    const a=indices[t],b=indices[t+1],c=indices[t+2];const fi2=t/3|0;
-    const ex=pos[b*3]-pos[a*3],ey=pos[b*3+1]-pos[a*3+1],ez=pos[b*3+2]-pos[a*3+2];
-    const fx=pos[c*3]-pos[a*3],fy=pos[c*3+1]-pos[a*3+1],fz=pos[c*3+2]-pos[a*3+2];
-    const nx=ey*fz-ez*fy,ny=ez*fx-ex*fz,nz=ex*fy-ey*fx;const l=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
-    faceNX[fi2]=nx/l;faceNY[fi2]=ny/l;faceNZ[fi2]=nz/l;
-  }
-
-  // Per-vertex crease score: max angle between adjacent face normals
-  const crease=new Float32Array(VC);
-  for(let vi=0;vi<VC;vi++){
-    const fl2=facesPerVert[vi];if(fl2.length<2){crease[vi]=0;continue;}
-    let maxAngle=0;
-    for(let i=0;i<fl2.length;i++)for(let j=i+1;j<fl2.length;j++){
-      const dot=clamp(faceNX[fl2[i]]*faceNX[fl2[j]]+faceNY[fl2[i]]*faceNY[fl2[j]]+faceNZ[fl2[i]]*faceNZ[fl2[j]],-1,1);
-      maxAngle=Math.max(maxAngle,Math.acos(dot));
-    }
-    crease[vi]=clamp(maxAngle/(Math.PI/3)-1,0,1); // 0 at 60°, 1 at 120°
-  }
-
-  for(let pass=0;pass<passes;pass++){
-    const lam=pass%2===0?0.50:-0.53;
-    for(let vi=0;vi<VC;vi++){
-      const nb=adj[vi];if(!nb.length)continue;
-      // Feature flag and crease reduce smoothing
-      const featW=featureFlags?featureFlags[vi]||0:0;
-      const creaseW=crease[vi];
-      const protectW=Math.max(featW*0.9,creaseW*0.75); // 0=full smooth, 1=no smooth
-      const effLam=lam*(1-protectW);
-      // Valence-weighted: higher valence → smaller step
-      const valenceScale=Math.max(0.3,1-nb.length*0.04);
-      let sx=0,sy=0,sz=0;for(const ni of nb){sx+=pos[ni*3];sy+=pos[ni*3+1];sz+=pos[ni*3+2];}
-      const f=1/nb.length;
-      tmp[vi*3]=pos[vi*3]+effLam*valenceScale*(sx*f-pos[vi*3]);
-      tmp[vi*3+1]=pos[vi*3+1]+effLam*valenceScale*(sy*f-pos[vi*3+1]);
-      tmp[vi*3+2]=pos[vi*3+2]+effLam*valenceScale*(sz*f-pos[vi*3+2]);
-    }
-    pos.set(tmp);
-  }
-
-  // Recompute normals (area-weighted)
-  const outN=new Float32Array(VC*3);
-  for(let t=0;t<indices.length;t+=3){
-    const a=indices[t],b=indices[t+1],c=indices[t+2];
-    const ex=pos[b*3]-pos[a*3],ey=pos[b*3+1]-pos[a*3+1],ez=pos[b*3+2]-pos[a*3+2];
-    const fx=pos[c*3]-pos[a*3],fy=pos[c*3+1]-pos[a*3+1],fz=pos[c*3+2]-pos[a*3+2];
-    const nx=ey*fz-ez*fy,ny=ez*fx-ex*fz,nz=ex*fy-ey*fx;
-    for(const vi of[a,b,c]){outN[vi*3]+=nx;outN[vi*3+1]+=ny;outN[vi*3+2]+=nz;}
-  }
-  for(let vi=0;vi<VC;vi++){const l=Math.sqrt(outN[vi*3]**2+outN[vi*3+1]**2+outN[vi*3+2]**2)||1;outN[vi*3]/=l;outN[vi*3+1]/=l;outN[vi*3+2]/=l;}
-  return{verts:Array.from(pos),normals:Array.from(outN),uvs,featureFlags,indices,stats:mesh.stats};
-}
-
-/* ════════════════════════════════════════════════════════════════
-   DEPTH PREVIEWS
-════════════════════════════════════════════════════════════════ */
 function renderDepthPreviews(){
-  $('depthSec').classList.add('show');const strip=$('depthStrip');strip.innerHTML='';
-  for(let i=0;i<Math.min(frames.length,14);i++){
+  $('depthSec').classList.add('show');
+  const strip=$('depthStrip');strip.innerHTML='';
+  for(let i=0;i<Math.min(frames.length,12);i++){
     const wrap=document.createElement('div');wrap.className='depth-cell';
     const photo=document.createElement('img');photo.src=frames[i].dataURL;
-    const cv2=document.createElement('canvas');cv2.width=66;cv2.height=50;
-    const ctx2=cv2.getContext('2d');const{w,h}=frames[i],d2=depthMaps[i];
-    const id2=ctx2.createImageData(66,50);
-    for(let py=0;py<50;py++)for(let px=0;px<66;px++){
-      const v=d2[Math.floor(py/50*h)*w+Math.floor(px/66*w)];const ii=(py*66+px)*4;
-      id2.data[ii]=Math.round(clamp(v<.5?v*2*68+68*(1-v*2):255,0,255));
-      id2.data[ii+1]=Math.round(clamp(v<.33?v*3*180:v<.66?(1-(v-.33)/.33)*180+v*3*40:v*200,0,220));
-      id2.data[ii+2]=Math.round(clamp(v<.5?(1-v*2)*220:0,0,220));id2.data[ii+3]=210;
+    const cv2=document.createElement('canvas');cv2.width=62;cv2.height=47;
+    const ctx2=cv2.getContext('2d');
+    const{w,h}=frames[i],d=depthMaps[i];
+    const id2=ctx2.createImageData(62,47);
+    for(let py=0;py<47;py++) for(let px=0;px<62;px++){
+      const v=d[Math.floor(py/47*h)*w+Math.floor(px/62*w)];
+      const ii=(py*62+px)*4;
+      // Turbo-style colormap approximation
+      id2.data[ii]=Math.round(clamp(v<.5?v*2*255:255,0,255));
+      id2.data[ii+1]=Math.round(clamp(v<.25?v*4*180:v<.75?(1-(v-.25)/.5)*180:0,0,180));
+      id2.data[ii+2]=Math.round(clamp(v<.5?(1-v*2)*200:0,0,200));
+      id2.data[ii+3]=200;
     }
     ctx2.putImageData(id2,0,0);
     const tag=document.createElement('div');tag.className='depth-tag';tag.textContent=`F${i+1}`;
@@ -968,272 +1065,739 @@ function renderDepthPreviews(){
   }
 }
 
-/* ════════════════════════════════════════════════════════════════
-   MULTI-VIEW TEXTURE ATLAS
-   ─────────────────────────────────────────────────────────────
-   Improvements over v3:
-   · Per-vertex best-view selection via normal dot product
-   · Gaussian-weighted blending of top 3 views
-   · Histogram colour matching across frames
-   · Seam-aware UV tiling with 3px padding
-════════════════════════════════════════════════════════════════ */
-function buildMultiViewAtlas(mesh){
+/* ═══════════════════════════════════════════════════════
+   3D RECONSTRUCTION — Visual Hull + Depth + Hole Filling
+   Improvements:
+   - RES is now user-controlled (48–96)
+   - Mask dilation r=4 for cleaner carving
+   - Depth refinement with wider threshold (0.30 vs 0.28)
+   - 3D flood-fill hole sealing after carving
+   - Taubin smoothing (lambda/mu two-pass) instead of Laplacian
+   - Per-vertex normals from neighbour gradient
+═══════════════════════════════════════════════════════ */
+function buildMesh(RES,SMOOTH){
   const N=frames.length;
-  const CELL=N>=28?512:N>=18?400:320;
+  if(N===0) throw new Error('No frames');
+  if(depthMaps.length!==N) throw new Error('depthMaps count mismatch');
+
+  const HALF=1.15,STEP=(HALF*2)/RES;
+  const ORBIT_R=2.6,ELEV=10*Math.PI/180;
+  const CAM_Y=Math.sin(ELEV)*ORBIT_R,ORBIT_XZ=Math.cos(ELEV)*ORBIT_R;
+  const HFOV=58*Math.PI/180;
+  const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
+  const N3=RES*RES*RES;
+  const vox=new Uint8Array(N3).fill(1);
+
+  function dilM(mask,w,h,r){
+    if(!mask) return null;
+    const out=new Uint8Array(w*h);
+    for(let y=r;y<h-r;y++) for(let x=r;x<w-r;x++){
+      if(!mask[y*w+x]) continue;
+      for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++) out[(y+dy)*w+(x+dx)]=1;
+    }
+    return out;
+  }
+
+  function camParams(fi){
+    const az=(fi/N)*Math.PI*2;
+    const camX=Math.sin(az)*ORBIT_XZ,camZ=Math.cos(az)*ORBIT_XZ;
+    const tL=Math.sqrt(camX*camX+CAM_Y*CAM_Y+camZ*camZ);
+    const fwX=-camX/tL,fwY=-CAM_Y/tL,fwZ=-camZ/tL;
+    const rtX=Math.cos(az),rtY=0,rtZ=-Math.sin(az);
+    const upX=rtY*fwZ-rtZ*fwY,upY=rtZ*fwX-rtX*fwZ,upZ=rtX*fwY-rtY*fwX;
+    return{camX,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ};
+  }
+
+  tlog(`Carving ${RES}³ voxels…`);
+  let maskedCount=0;
+
+  // Pass 1: silhouette carving
+  for(let fi=0;fi<N;fi++){
+    const{w,h,fgMask}=frames[fi];
+    if(!fgMask){continue;}
+    maskedCount++;
+    const dm=dilM(fgMask,w,h,4);
+    const fl=(w/2)/Math.tan(HFOV/2);
+    const{camX,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ}=camParams(fi);
+    for(let ix=0;ix<RES;ix++){
+      const wx=-HALF+(ix+.5)*STEP;
+      for(let iy=0;iy<RES;iy++){
+        const wy=-HALF+(iy+.5)*STEP;
+        for(let iz=0;iz<RES;iz++){
+          if(!vox[VI(ix,iy,iz)]) continue;
+          const wz=-HALF+(iz+.5)*STEP;
+          const dx=wx-camX,dy=wy-CAM_Y,dz=wz-camZ;
+          const depth=dx*fwX+dy*fwY+dz*fwZ;
+          if(depth<=.04){vox[VI(ix,iy,iz)]=0;continue;}
+          const pxc=(dx*rtX+dy*rtY+dz*rtZ)/depth;
+          const pyc=(dx*upX+dy*upY+dz*upZ)/depth;
+          const pxi=Math.round(pxc*fl+w/2);
+          const pyi=Math.round(-pyc*fl+h/2);
+          if(pxi<0||pxi>=w||pyi<0||pyi>=h){vox[VI(ix,iy,iz)]=0;continue;}
+          if(!dm[pyi*w+pxi]) vox[VI(ix,iy,iz)]=0;
+        }
+      }
+    }
+  }
+
+  let s1=0;for(let i=0;i<N3;i++) s1+=vox[i];
+  tlog(`After silhouette carving: ${s1.toLocaleString()} solid (${maskedCount}/${N} masks)`);
+  if(s1<50){tlog('Too few voxels — using depth fallback','t-warn');return buildDepthFallback(RES,SMOOTH);}
+
+  // Pass 2: depth refinement (wider threshold 0.30)
+  for(let fi=0;fi<N;fi++){
+    const{w,h,fgMask}=frames[fi];
+    const dm=depthMaps[fi];
+    if(!fgMask||!dm||dm.length!==w*h) continue;
+    const fl=(w/2)/Math.tan(HFOV/2);
+    const{camX,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ}=camParams(fi);
+    const dNear=ORBIT_R-HALF*1.9,dSpan=HALF*3.8;
+    for(let ix=0;ix<RES;ix++){
+      const wx=-HALF+(ix+.5)*STEP;
+      for(let iy=0;iy<RES;iy++){
+        const wy=-HALF+(iy+.5)*STEP;
+        for(let iz=0;iz<RES;iz++){
+          if(!vox[VI(ix,iy,iz)]) continue;
+          const wz=-HALF+(iz+.5)*STEP;
+          const dx=wx-camX,dy=wy-CAM_Y,dz=wz-camZ;
+          const depth=dx*fwX+dy*fwY+dz*fwZ;
+          if(depth<=.04) continue;
+          const pxc=(dx*rtX+dy*rtY+dz*rtZ)/depth;
+          const pyc=(dx*upX+dy*upY+dz*upZ)/depth;
+          const pxi=clamp(Math.round(pxc*fl+w/2),0,w-1);
+          const pyi=clamp(Math.round(-pyc*fl+h/2),0,h-1);
+          if(!fgMask[pyi*w+pxi]) continue;
+          const measN=1-dm[pyi*w+pxi];
+          const voxN=(depth-dNear)/dSpan;
+          if(voxN<measN-.30) vox[VI(ix,iy,iz)]=0;
+        }
+      }
+    }
+  }
+
+  // Hole filling: flood-fill from exterior, mark unreachable interior as solid
+  const bg=new Uint8Array(N3),q2=new Int32Array(N3);let qh=0,qt=0;
+  const seedBg=(a,b,c)=>{const i=VI(a,b,c);if(!vox[i]&&!bg[i]){bg[i]=1;q2[qt++]=i;}};
+  for(let a=0;a<RES;a++) for(let b=0;b<RES;b++){
+    seedBg(0,a,b);seedBg(RES-1,a,b);seedBg(a,0,b);seedBg(a,RES-1,b);seedBg(a,b,0);seedBg(a,b,RES-1);
+  }
+  while(qh<qt){
+    const idx=q2[qh++];
+    const ix=Math.floor(idx/(RES*RES)),iy=Math.floor((idx%(RES*RES))/RES),iz=idx%RES;
+    for(const ni of[ix>0?VI(ix-1,iy,iz):-1,ix<RES-1?VI(ix+1,iy,iz):-1,
+                    iy>0?VI(ix,iy-1,iz):-1,iy<RES-1?VI(ix,iy+1,iz):-1,
+                    iz>0?VI(ix,iy,iz-1):-1,iz<RES-1?VI(ix,iy,iz+1):-1])
+      if(ni>=0&&!vox[ni]&&!bg[ni]){bg[ni]=1;q2[qt++]=ni;}
+  }
+  let filled=0;
+  for(let i=0;i<N3;i++) if(!vox[i]&&!bg[i]){vox[i]=1;filled++;}
+  if(filled>0) tlog(`Hole fill: +${filled.toLocaleString()} voxels sealed`,'t-ok');
+
+  // Occupancy float for Taubin smoothing
+  const occ=new Float32Array(N3);
+  for(let i=0;i<N3;i++) occ[i]=vox[i];
+
+  // Taubin smoothing: alternating lambda + mu steps
+  tlog(`Taubin smoothing ${SMOOTH} passes…`);
+  const tmp=new Float32Array(N3);
+  const LAMBDA=0.50,MU=-0.52;
+  for(let pass=0;pass<SMOOTH;pass++){
+    const lam=pass%2===0?LAMBDA:MU;
+    for(let ix=1;ix<RES-1;ix++) for(let iy=1;iy<RES-1;iy++) for(let iz=1;iz<RES-1;iz++){
+      const c=occ[VI(ix,iy,iz)];
+      const nb=(occ[VI(ix-1,iy,iz)]+occ[VI(ix+1,iy,iz)]+
+                occ[VI(ix,iy-1,iz)]+occ[VI(ix,iy+1,iz)]+
+                occ[VI(ix,iy,iz-1)]+occ[VI(ix,iy,iz+1)])/6;
+      tmp[VI(ix,iy,iz)]=c+lam*(nb-c);
+    }
+    for(let i=0;i<N3;i++) occ[i]=Math.max(tmp[i],vox[i]*(pass%2===0?.35:.3));
+  }
+
+  return runMarchingCubes(occ,RES,HALF,STEP,VI);
+}
+
+/* ═══════════════════════════════════════════════════════
+   DEPTH FALLBACK RECONSTRUCTION
+═══════════════════════════════════════════════════════ */
+function buildDepthFallback(RES,SMOOTH){
+  tlog('Running depth point-cloud fallback…','t-warn');
+  RES=RES||64;SMOOTH=SMOOTH||6;
+  const N=frames.length,HALF=1.15,STEP=(HALF*2)/RES;
+  const ORBIT_R=2.6,HFOV=58*Math.PI/180;
+  const VI2=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz,N3=RES*RES*RES;
+  const cnt=new Float32Array(N3);
+  for(let fi=0;fi<N;fi++){
+    const{w,h}=frames[fi],dm=depthMaps[fi];
+    if(!dm||dm.length!==w*h) continue;
+    const az=(fi/N)*Math.PI*2;
+    const cx=Math.sin(az)*ORBIT_R,cz=Math.cos(az)*ORBIT_R;
+    const fwX=-Math.sin(az),fwZ=-Math.cos(az);
+    const rtX=Math.cos(az),rtZ=-Math.sin(az);
+    const fl=(w/2)/Math.tan(HFOV/2);
+    for(let py=5;py<h-5;py+=5) for(let px=5;px<w-5;px+=5){
+      const dv=dm[py*w+px];if(dv<.05||dv>.95) continue;
+      const dist=ORBIT_R*(.15+dv*.75);
+      const ndcX=(px-w/2)/fl,ndcY=-(py-h/2)/fl;
+      const rdX=fwX+ndcX*rtX,rdY=ndcY,rdZ=fwZ+ndcX*rtZ;
+      const rdL=Math.sqrt(rdX*rdX+rdY*rdY+rdZ*rdZ)||1;
+      cnt[VI2(clamp(Math.floor((cx+(rdX/rdL)*dist+HALF)/STEP),0,RES-1),
+              clamp(Math.floor(((rdY/rdL)*dist+HALF)/STEP),0,RES-1),
+              clamp(Math.floor((cz+(rdZ/rdL)*dist+HALF)/STEP),0,RES-1))]++;
+    }
+  }
+  let cMax=0;for(let i=0;i<N3;i++) if(cnt[i]>cMax) cMax=cnt[i];
+  const occ=new Float32Array(N3);
+  if(cMax>0){const thr=Math.max(1,cMax*.04);for(let i=0;i<N3;i++) occ[i]=cnt[i]>=thr?1:0;}
+  // Dilate + fill
+  const dil=new Uint8Array(N3),DR=2;
+  for(let ix=DR;ix<RES-DR;ix++) for(let iy=DR;iy<RES-DR;iy++) for(let iz=DR;iz<RES-DR;iz++){
+    if(!occ[VI2(ix,iy,iz)]) continue;
+    for(let dy=-DR;dy<=DR;dy++) for(let dx=-DR;dx<=DR;dx++) for(let dz=-DR;dz<=DR;dz++)
+      dil[VI2(ix+dx,iy+dy,iz+dz)]=1;
+  }
+  const bg=new Uint8Array(N3),q=new Int32Array(N3);let qh=0,qt=0;
+  const sb=(a,b,c)=>{const i=VI2(a,b,c);if(!dil[i]&&!bg[i]){bg[i]=1;q[qt++]=i;}};
+  for(let a=0;a<RES;a++) for(let b=0;b<RES;b++){sb(0,a,b);sb(RES-1,a,b);sb(a,0,b);sb(a,RES-1,b);sb(a,b,0);sb(a,b,RES-1);}
+  while(qh<qt){
+    const idx=q[qh++];
+    const ix=Math.floor(idx/(RES*RES)),iy=Math.floor((idx%(RES*RES))/RES),iz=idx%RES;
+    for(const ni of[ix>0?VI2(ix-1,iy,iz):-1,ix<RES-1?VI2(ix+1,iy,iz):-1,
+                    iy>0?VI2(ix,iy-1,iz):-1,iy<RES-1?VI2(ix,iy+1,iz):-1,
+                    iz>0?VI2(ix,iy,iz-1):-1,iz<RES-1?VI2(ix,iy,iz+1):-1])
+      if(ni>=0&&!dil[ni]&&!bg[ni]){bg[ni]=1;q[qt++]=ni;}
+  }
+  for(let i=0;i<N3;i++) occ[i]=(dil[i]||!bg[i])?1:0;
+  const tmp=new Float32Array(N3);
+  const LAMBDA=0.50,MU=-0.52;
+  for(let pass=0;pass<SMOOTH;pass++){
+    const lam=pass%2===0?LAMBDA:MU;
+    for(let ix=1;ix<RES-1;ix++) for(let iy=1;iy<RES-1;iy++) for(let iz=1;iz<RES-1;iz++){
+      const c=occ[VI2(ix,iy,iz)];
+      const nb=(occ[VI2(ix-1,iy,iz)]+occ[VI2(ix+1,iy,iz)]+
+                occ[VI2(ix,iy-1,iz)]+occ[VI2(ix,iy+1,iz)]+
+                occ[VI2(ix,iy,iz-1)]+occ[VI2(ix,iy,iz+1)])/6;
+      tmp[VI2(ix,iy,iz)]=c+lam*(nb-c);
+    }
+    for(let i=0;i<N3;i++) occ[i]=tmp[i]||occ[i];
+  }
+  return runMarchingCubes(occ,RES,HALF,STEP,VI2);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MARCHING CUBES
+   Improvements: per-vertex gradient normal (trilinear interpolated)
+   instead of per-face normal → smoother shading
+═══════════════════════════════════════════════════════ */
+function runMarchingCubes(occ,RES,HALF,STEP,VI){
+  // Full 256-entry edge & triangle tables
+  const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
+  const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
+  const EP=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const CV=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+  const THRESH=.42;
+
+  const verts=[],normals=[],uvs=[],indices=[],vmap=new Map();
+  let vIdx=0;
+
+  function interp(p1,p2,v1,v2){
+    const t=(v1===v2)?.5:clamp((THRESH-v1)/(v2-v1),0,1);
+    return[p1[0]+(p2[0]-p1[0])*t,p1[1]+(p2[1]-p1[1])*t,p1[2]+(p2[2]-p1[2])*t];
+  }
+
+  // Per-vertex gradient normal (trilinear)
+  function gradN(ix,iy,iz){
+    const gx=occ[VI(Math.min(ix+1,RES-1),iy,iz)]-occ[VI(Math.max(ix-1,0),iy,iz)];
+    const gy=occ[VI(ix,Math.min(iy+1,RES-1),iz)]-occ[VI(ix,Math.max(iy-1,0),iz)];
+    const gz=occ[VI(ix,iy,Math.min(iz+1,RES-1))]-occ[VI(ix,iy,Math.max(iz-1,0))];
+    const l=Math.sqrt(gx*gx+gy*gy+gz*gz)||1;
+    return[-gx/l,-gy/l,-gz/l];
+  }
+
+  function addV(p,nx,ny,nz){
+    const u=.5+Math.atan2(p[2],p[0])/(Math.PI*2);
+    const v=clamp(.5-p[1]/(HALF*2),0,1);
+    const k=`${Math.round(p[0]/STEP*2)}_${Math.round(p[1]/STEP*2)}_${Math.round(p[2]/STEP*2)}`;
+    if(vmap.has(k)) return vmap.get(k);
+    vmap.set(k,vIdx);
+    verts.push(p[0],p[1],p[2]);normals.push(nx,ny,nz);uvs.push(u,v);
+    return vIdx++;
+  }
+
+  for(let ix=0;ix<RES-1;ix++) for(let iy=0;iy<RES-1;iy++) for(let iz=0;iz<RES-1;iz++){
+    const vals=[occ[VI(ix,iy,iz)],occ[VI(ix+1,iy,iz)],occ[VI(ix+1,iy+1,iz)],occ[VI(ix,iy+1,iz)],
+                occ[VI(ix,iy,iz+1)],occ[VI(ix+1,iy,iz+1)],occ[VI(ix+1,iy+1,iz+1)],occ[VI(ix,iy+1,iz+1)]];
+    let ci=0;for(let c=0;c<8;c++) if(vals[c]>THRESH) ci|=(1<<c);
+    if(ci===0||ci===255) continue;
+    const et=ET[ci];if(!et) continue;
+    const cp=CV.map(([a,b,c2])=>[-HALF+(ix+a)*STEP,-HALF+(iy+b)*STEP,-HALF+(iz+c2)*STEP]);
+    const ev=new Array(12);
+    for(let e=0;e<12;e++){if(!(et&(1<<e)))continue;ev[e]=interp(cp[EP[e][0]],cp[EP[e][1]],vals[EP[e][0]],vals[EP[e][1]]);}
+    const tris=TT[ci];if(!tris||!tris.length) continue;
+
+    // Per-triangle interpolated normals
+    const cornerNormals=[[ix,iy,iz],[ix+1,iy,iz],[ix+1,iy+1,iz],[ix,iy+1,iz],
+                          [ix,iy,iz+1],[ix+1,iy,iz+1],[ix+1,iy+1,iz+1],[ix,iy+1,iz+1]].map(([a,b,c])=>gradN(a,b,c));
+
+    for(let t=0;t<tris.length;t+=3){
+      const e0=tris[t],e1=tris[t+1],e2=tris[t+2];
+      if(ev[e0]===undefined||ev[e1]===undefined||ev[e2]===undefined) continue;
+      // Interpolate normals along edges
+      function edgeN(e){
+        const[ea,eb]=EP[e];
+        const ta=(vals[ea]===vals[eb])?.5:clamp((THRESH-vals[ea])/(vals[eb]-vals[ea]),0,1);
+        const na=cornerNormals[ea],nb=cornerNormals[eb];
+        const nx=lerp(na[0],nb[0],ta),ny=lerp(na[1],nb[1],ta),nz=lerp(na[2],nb[2],ta);
+        const l=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;return[nx/l,ny/l,nz/l];
+      }
+      const n0=edgeN(e0),n1=edgeN(e1),n2=edgeN(e2);
+      indices.push(addV(ev[e0],n0[0],n0[1],n0[2]),addV(ev[e1],n1[0],n1[1],n1[2]),addV(ev[e2],n2[0],n2[1],n2[2]));
+    }
+  }
+  tlog(`MC: ${vIdx.toLocaleString()} verts · ${Math.floor(indices.length/3).toLocaleString()} faces`,'t-ok');
+  return{verts,normals,uvs,indices,stats:{vCount:vIdx,fCount:Math.floor(indices.length/3)}};
+}
+
+/* ═══════════════════════════════════════════════════════
+   TEXTURE ATLAS
+═══════════════════════════════════════════════════════ */
+function buildTextureAtlas(){
+  const N=frames.length;
+  const CELL=N>=28?384:N>=18?320:256;
   const COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
-  const cv=document.createElement('canvas');cv.width=COLS*CELL;cv.height=ROWS*CELL;
-  const ctx=cv.getContext('2d');ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,cv.width,cv.height);
-
-  // Compute per-frame histogram statistics for colour correction
-  const frameStats=frames.map(f=>{
-    const d=f.imageData.data;let rSum=0,gSum=0,bSum=0,cnt=0;
-    for(let i=0;i<d.length;i+=8){rSum+=d[i];gSum+=d[i+1];bSum+=d[i+2];cnt++;}
-    return{r:rSum/cnt,g:gSum/cnt,b:bSum/cnt};
-  });
-  const globalR=frameStats.reduce((a,s)=>a+s.r,0)/N;
-  const globalG=frameStats.reduce((a,s)=>a+s.g,0)/N;
-  const globalB=frameStats.reduce((a,s)=>a+s.b,0)/N;
-
+  const cv=document.createElement('canvas');
+  cv.width=COLS*CELL;cv.height=ROWS*CELL;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#111';ctx.fillRect(0,0,cv.width,cv.height);
   frames.forEach((f,i)=>{
     const img=new Image();img.src=f.dataURL;
     const col=i%COLS,row=Math.floor(i/COLS);
     const s=Math.min(f.w,f.h),ox=(f.w-s)/2,oy=(f.h-s)/2;
-    ctx.save();
-    // Per-channel colour correction
-    const scR=clamp(globalR/(frameStats[i].r||1),.72,1.38);
-    const scG=clamp(globalG/(frameStats[i].g||1),.72,1.38);
-    const scB=clamp(globalB/(frameStats[i].b||1),.72,1.38);
-    const avgSc=(scR+scG+scB)/3;
-    ctx.filter=`brightness(${(avgSc*100).toFixed(0)}%) contrast(106%) saturate(108%)`;
-    // Draw with 3px internal padding for seam avoidance
-    ctx.drawImage(img,ox,oy,s,s,col*CELL+3,row*CELL+3,CELL-6,CELL-6);
-    ctx.restore();
-    // Fill padding by extending edge pixels (simple border)
-    // Top border
-    ctx.drawImage(img,ox,oy,s,2,col*CELL+3,row*CELL,CELL-6,3);
-    // Bottom border
-    ctx.drawImage(img,ox,oy+s-2,s,2,col*CELL+3,(row+1)*CELL-3,CELL-6,3);
+    ctx.drawImage(img,ox,oy,s,s,col*CELL,row*CELL,CELL,CELL);
   });
   return cv;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   NORMAL MAP (baked from mesh normals into UV space)
-════════════════════════════════════════════════════════════════ */
-function buildNormalMap(mesh){
-  const SIZE=512;const cv=document.createElement('canvas');cv.width=SIZE;cv.height=SIZE;
-  const ctx=cv.getContext('2d');const id2=ctx.createImageData(SIZE,SIZE);
-  // Default: flat normal pointing out
-  for(let i=0;i<SIZE*SIZE;i++){id2.data[i*4]=128;id2.data[i*4+1]=128;id2.data[i*4+2]=255;id2.data[i*4+3]=255;}
-  const{verts,normals,uvs,indices}=mesh;
-  for(let ti=0;ti<indices.length;ti+=3){
-    const a=indices[ti],b=indices[ti+1],c=indices[ti+2];
-    const ua=uvs[a*2],va=uvs[a*2+1],ub=uvs[b*2],vb=uvs[b*2+1],uc=uvs[c*2],vc2=uvs[c*2+1];
-    const na=[normals[a*3],normals[a*3+1],normals[a*3+2]];
-    const nb=[normals[b*3],normals[b*3+1],normals[b*3+2]];
-    const nc=[normals[c*3],normals[c*3+1],normals[c*3+2]];
-    const x0=Math.round(ua*SIZE),y0=Math.round(va*SIZE),x1=Math.round(ub*SIZE),y1=Math.round(vb*SIZE),x2=Math.round(uc*SIZE),y2=Math.round(vc2*SIZE);
-    const minX=Math.max(0,Math.min(x0,x1,x2)),maxX=Math.min(SIZE-1,Math.max(x0,x1,x2));
-    const minY=Math.max(0,Math.min(y0,y1,y2)),maxY=Math.min(SIZE-1,Math.max(y0,y1,y2));
-    const denom=(y1-y2)*(x0-x2)+(x2-x1)*(y0-y2)||1;
-    for(let py=minY;py<=maxY;py++)for(let px=minX;px<=maxX;px++){
-      const w0=((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/denom;
-      const w1=((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/denom;const w2=1-w0-w1;
-      if(w0<0||w1<0||w2<0)continue;
-      const nx2=clamp(w0*na[0]+w1*nb[0]+w2*nc[0],-1,1);
-      const ny2=clamp(w0*na[1]+w1*nb[1]+w2*nc[1],-1,1);
-      const nz2=clamp(w0*na[2]+w1*nb[2]+w2*nc[2],-1,1);
-      const ii=(py*SIZE+px)*4;
-      id2.data[ii]=Math.round((nx2+1)/2*255);id2.data[ii+1]=Math.round((ny2+1)/2*255);id2.data[ii+2]=Math.round((nz2+1)/2*255);id2.data[ii+3]=255;
-    }
-  }
-  ctx.putImageData(id2,0,0);return cv;
-}
-
-/* ════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    OBJ EXPORT
-════════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════ */
 function buildOBJ(){
-  if(!meshData)return'';const{verts,normals,uvs,indices,stats}=meshData;
-  const L=['# SCAN3D v5 Export',`# Verts:${stats.vCount} Faces:${stats.fCount}`,'mtllib scan3d.mtl','o ScannedObject',''];
-  for(let i=0;i<verts.length;i+=3)L.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
-  L.push('');for(let i=0;i<uvs.length;i+=2)L.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
-  L.push('');for(let i=0;i<normals.length;i+=3)L.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
+  if(!meshData) return'';
+  const{verts,normals,uvs,indices,stats}=meshData;
+  const L=['# SCAN3D v2 Export',`# Photos:${frames.length} Verts:${stats.vCount} Faces:${stats.fCount}`,
+    '# Seg:'+segMode.toUpperCase(),'mtllib scan3d.mtl','o ScannedObject',''];
+  for(let i=0;i<verts.length;i+=3)
+    L.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
+  L.push('');
+  for(let i=0;i<uvs.length;i+=2)
+    L.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
+  L.push('');
+  for(let i=0;i<normals.length;i+=3)
+    L.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
   L.push('','usemtl Scanned','s 1','');
-  for(let i=0;i<indices.length;i+=3){const a=indices[i]+1,b=indices[i+1]+1,c=indices[i+2]+1;L.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);}
+  for(let i=0;i<indices.length;i+=3){
+    const a=indices[i]+1,b=indices[i+1]+1,c=indices[i+2]+1;
+    L.push(`f ${a}/${a}/${a} ${b}/${b}/${b} ${c}/${c}/${c}`);
+  }
   return L.join('\n');
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    GLB EXPORT (Binary glTF 2.0)
-════════════════════════════════════════════════════════════════ */
+   Hand-rolled to avoid extra library dependency
+═══════════════════════════════════════════════════════ */
 function buildGLB(){
-  if(!meshData)return null;const{verts,normals,uvs,indices}=meshData;
-  const posArr=new Float32Array(verts),nrmArr=new Float32Array(normals),uvArr=new Float32Array(uvs),idxArr=new Uint32Array(indices);
+  if(!meshData) return null;
+  const{verts,normals,uvs,indices}=meshData;
+
+  // Convert to typed arrays
+  const posArr=new Float32Array(verts);
+  const nrmArr=new Float32Array(normals);
+  const uvArr =new Float32Array(uvs);
+  const idxArr=new Uint32Array(indices);
+
+  // Compute bounding box for accessor min/max
   let minP=[Infinity,Infinity,Infinity],maxP=[-Infinity,-Infinity,-Infinity];
-  for(let i=0;i<posArr.length;i+=3)for(let c=0;c<3;c++){if(posArr[i+c]<minP[c])minP[c]=posArr[i+c];if(posArr[i+c]>maxP[c])maxP[c]=posArr[i+c];}
-  function cat(a,b){const o=new Uint8Array(a.byteLength+b.byteLength);o.set(new Uint8Array(a));o.set(new Uint8Array(b),a.byteLength);return o.buffer;}
-  function pad4(buf){if(buf.byteLength%4===0)return buf;const o=new Uint8Array(Math.ceil(buf.byteLength/4)*4);o.set(new Uint8Array(buf));return o.buffer;}
+  for(let i=0;i<posArr.length;i+=3){
+    for(let c=0;c<3;c++){
+      if(posArr[i+c]<minP[c]) minP[c]=posArr[i+c];
+      if(posArr[i+c]>maxP[c]) maxP[c]=posArr[i+c];
+    }
+  }
+
+  function align4(buf){
+    while(buf.byteLength%4!==0) buf=appendBuf(buf,new Uint8Array(4-buf.byteLength%4));
+    return buf;
+  }
+  function appendBuf(a,b){
+    const c=new Uint8Array(a.byteLength+b.byteLength);c.set(new Uint8Array(a));c.set(new Uint8Array(b),a.byteLength);return c.buffer;
+  }
+
+  // BIN chunk: indices | positions | normals | uvs
+  const idxBuf=idxArr.buffer;
+  const posBuf=posArr.buffer;
+  const nrmBuf=nrmArr.buffer;
+  const uvBuf =uvArr.buffer;
+
   let bin=new ArrayBuffer(0);
-  const idxOff=0;bin=cat(bin,idxArr.buffer);const idxLen=idxArr.buffer.byteLength;
-  const posOff=bin.byteLength;bin=cat(bin,posArr.buffer);const posLen=posArr.buffer.byteLength;
-  const nrmOff=bin.byteLength;bin=cat(bin,nrmArr.buffer);const nrmLen=nrmArr.buffer.byteLength;
-  const uvOff=bin.byteLength;bin=cat(bin,uvArr.buffer);const uvLen=uvArr.buffer.byteLength;
-  let imgJSON,texJSON,sampJSON,imgBVEntry,matPBR={metallicFactor:0.04,roughnessFactor:0.58};
-  if(atlasCanvas){const uri=atlasCanvas.toDataURL('image/jpeg',.94);const b64=uri.split(',')[1];const raw=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)).buffer;const imgPad=pad4(raw);const imgOff=bin.byteLength;bin=cat(bin,imgPad);imgBVEntry={buffer:0,byteOffset:imgOff,byteLength:imgPad.byteLength};imgJSON=[{bufferView:4,mimeType:'image/jpeg'}];texJSON=[{sampler:0,source:0}];sampJSON=[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}];matPBR={baseColorTexture:{index:0},metallicFactor:0.04,roughnessFactor:0.58};}
-  bin=pad4(bin);const vc=posArr.length/3,ic=idxArr.length;
-  const bv=[{buffer:0,byteOffset:idxOff,byteLength:idxLen,target:34963},{buffer:0,byteOffset:posOff,byteLength:posLen,byteStride:12,target:34962},{buffer:0,byteOffset:nrmOff,byteLength:nrmLen,byteStride:12,target:34962},{buffer:0,byteOffset:uvOff,byteLength:uvLen,byteStride:8,target:34962},...(imgBVEntry?[imgBVEntry]:[])];
-  const ac=[{bufferView:0,componentType:5125,count:ic,type:'SCALAR'},{bufferView:1,componentType:5126,count:vc,type:'VEC3',min:minP,max:maxP},{bufferView:2,componentType:5126,count:vc,type:'VEC3'},{bufferView:3,componentType:5126,count:vc,type:'VEC2'}];
-  const json={asset:{version:'2.0',generator:'SCAN3D v5'},scene:0,scenes:[{name:'Scene',nodes:[0]}],nodes:[{name:'ScannedObject',mesh:0}],meshes:[{name:'ScannedObject',primitives:[{attributes:{POSITION:1,NORMAL:2,TEXCOORD_0:3},indices:0,material:0,mode:4}]}],materials:[{name:'Scanned',pbrMetallicRoughness:matPBR,doubleSided:true}],bufferViews:bv,accessors:ac,buffers:[{byteLength:bin.byteLength}],...(imgJSON?{images:imgJSON,textures:texJSON,samplers:sampJSON}:{})};
-  const jb=new TextEncoder().encode(JSON.stringify(json));const jp=new Uint8Array(Math.ceil(jb.length/4)*4).fill(32);jp.set(jb);
-  const total=12+8+jp.length+8+bin.byteLength;const glb=new Uint8Array(total);const dv=new DataView(glb.buffer);
-  dv.setUint32(0,0x46546C67,true);dv.setUint32(4,2,true);dv.setUint32(8,total,true);dv.setUint32(12,jp.length,true);dv.setUint32(16,0x4E4F534A,true);glb.set(jp,20);
-  const bo=20+jp.length;dv.setUint32(bo,bin.byteLength,true);dv.setUint32(bo+4,0x004E4942,true);glb.set(new Uint8Array(bin),bo+8);return glb.buffer;
+  const idxOff=0,idxLen=idxBuf.byteLength;
+  bin=appendBuf(bin,idxBuf);
+  const posOff=idxLen,posLen=posBuf.byteLength;
+  bin=appendBuf(bin,posBuf);
+  const nrmOff=posOff+posLen,nrmLen=nrmBuf.byteLength;
+  bin=appendBuf(bin,nrmBuf);
+  const uvOff=nrmOff+nrmLen,uvLen=uvBuf.byteLength;
+  bin=appendBuf(bin,uvBuf);
+
+  // Texture (atlas PNG → base64 data URI embedded as image)
+  let imgIdx=null,texIdx=null,matExtras={};
+  if(atlasCanvas){
+    const dataURI=atlasCanvas.toDataURL('image/png');
+    const b64=dataURI.split(',')[1];
+    const imgBin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    // Pad to 4-byte boundary
+    const padded=new Uint8Array(Math.ceil(imgBin.length/4)*4);
+    padded.set(imgBin);
+    const imgOff=bin.byteLength,imgLen=padded.byteLength;
+    bin=appendBuf(bin,padded.buffer);
+    imgIdx=0; texIdx=0;
+    matExtras={
+      pbrMetallicRoughness:{
+        baseColorTexture:{index:0},
+        metallicFactor:0.04,roughnessFactor:0.62
+      }
+    };
+    // Build image/texture/sampler accessors in JSON
+    var imgJSON=[{bufferView:4,mimeType:'image/png'}];
+    var texJSON=[{sampler:0,source:0}];
+    var sampJSON=[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}];
+    // bufferView 4 = image data
+    var imgBV={buffer:0,byteOffset:imgOff,byteLength:imgLen};
+    var extraBVs=[imgBV];
+  }
+
+  bin=align4(bin);
+
+  const vc=posArr.length/3,ic=idxArr.length;
+  const uvc=uvArr.length/2;
+
+  const bufferViews=[
+    {buffer:0,byteOffset:idxOff,byteLength:idxLen,target:34963},  // ELEMENT_ARRAY_BUFFER
+    {buffer:0,byteOffset:posOff,byteLength:posLen,byteStride:12,target:34962},
+    {buffer:0,byteOffset:nrmOff,byteLength:nrmLen,byteStride:12,target:34962},
+    {buffer:0,byteOffset:uvOff, byteLength:uvLen, byteStride:8, target:34962},
+    ...(typeof imgBV!=='undefined'?[imgBV]:[])
+  ];
+
+  const accessors=[
+    {bufferView:0,componentType:5125,count:ic,type:'SCALAR'},                          // indices UNSIGNED_INT
+    {bufferView:1,componentType:5126,count:vc,type:'VEC3',min:minP,max:maxP},         // position
+    {bufferView:2,componentType:5126,count:vc,type:'VEC3'},                            // normal
+    {bufferView:3,componentType:5126,count:uvc,type:'VEC2'},                           // texcoord
+  ];
+
+  const material={name:'ScannedMaterial',...matExtras,
+    pbrMetallicRoughness:matExtras.pbrMetallicRoughness||{metallicFactor:0.04,roughnessFactor:0.62},
+    doubleSided:true};
+
+  const json={
+    asset:{version:'2.0',generator:'SCAN3D v2'},
+    scene:0,scenes:[{name:'Scene',nodes:[0]}],
+    nodes:[{name:'ScannedObject',mesh:0}],
+    meshes:[{name:'ScannedObject',primitives:[{
+      attributes:{POSITION:1,NORMAL:2,TEXCOORD_0:3},
+      indices:0,
+      material:0,
+      mode:4
+    }]}],
+    materials:[material],
+    bufferViews,
+    accessors,
+    buffers:[{byteLength:bin.byteLength}],
+    ...(typeof imgJSON!=='undefined'?{images:imgJSON,textures:texJSON,samplers:sampJSON}:{})
+  };
+
+  const jsonStr=JSON.stringify(json);
+  const jsonBytes=new TextEncoder().encode(jsonStr);
+  const jsonPad=new Uint8Array(Math.ceil(jsonBytes.length/4)*4).fill(32);
+  jsonPad.set(jsonBytes);
+
+  // GLB header + JSON chunk + BIN chunk
+  const totalLen=12+8+jsonPad.length+8+bin.byteLength;
+  const glb=new Uint8Array(totalLen);
+  const view=new DataView(glb.buffer);
+  // Header
+  view.setUint32(0,0x46546C67,true); // magic 'glTF'
+  view.setUint32(4,2,true);          // version 2
+  view.setUint32(8,totalLen,true);
+  // JSON chunk
+  view.setUint32(12,jsonPad.length,true);
+  view.setUint32(16,0x4E4F534A,true); // type 'JSON'
+  glb.set(jsonPad,20);
+  // BIN chunk
+  const binOff=20+jsonPad.length;
+  view.setUint32(binOff,bin.byteLength,true);
+  view.setUint32(binOff+4,0x004E4942,true); // type 'BIN\0'
+  glb.set(new Uint8Array(bin),binOff+8);
+
+  return glb.buffer;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   THREE.JS VIEWER
-════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   THREE.JS VIEWER (r128)
+   Improvements:
+   - ACES filmic tone mapping + exposure
+   - Normal-map debug view
+   - Explode view
+   - Stronger neon edges with pulse
+   - Touch/pinch-zoom for mobile
+   - Reflective floor
+   - Environment PMREM approximation (hemisphere)
+═══════════════════════════════════════════════════════ */
 function showViewer(){
   const pv=$('panelViewer');pv.style.display='block';pv.scrollIntoView({behavior:'smooth'});
   const C2=Math.ceil(Math.sqrt(frames.length)),R2=Math.ceil(frames.length/C2);
-  $('vstat').innerHTML=[`<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,`<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,`<div class="vsl">${frames.length} photos</div>`,`<div class="vsl">${meshRes}³ voxels</div>`,`<div class="vsl">${C2}×${R2} atlas</div>`].join('');
-  $('btnDlGLB').onclick=()=>{const b=buildGLB();if(!b){toast('GLB failed','err');return;}const bl=new Blob([b],{type:'model/gltf-binary'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v5.glb';a.click();toast('GLB downloaded — open in Blender, Reality Composer, etc.');};
-  $('btnDlOBJ').onclick=()=>{const bl=new Blob([buildOBJ()],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v5.obj';a.click();toast('OBJ downloaded');};
-  $('btnDlTex').onclick=()=>{if(!atlasCanvas)return;atlasCanvas.toBlob(bl=>{const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v5_texture.png';a.click();toast('Texture downloaded');});};
+  $('viewerStats').innerHTML=[
+    `<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,
+    `<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,
+    `<div class="vsl">${frames.length} photos</div>`,
+    `<div class="vsl">${C2}×${R2} atlas</div>`,
+    `<div class="vsl">${segMode.toUpperCase()}</div>`,
+  ].join('');
+
+  $('btnDlGLB').onclick=()=>{
+    const buf=buildGLB();
+    if(!buf){toast('GLB build failed','err');return;}
+    const bl=new Blob([buf],{type:'model/gltf-binary'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_model.glb';a.click();
+    toast('GLB downloaded — open in Blender, Windows 3D Viewer, or AR');
+  };
+  $('btnDlOBJ').onclick=()=>{
+    const bl=new Blob([buildOBJ()],{type:'text/plain'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_model.obj';a.click();
+    toast('OBJ downloaded');
+  };
+  $('btnDlTex').onclick=()=>{
+    if(!atlasCanvas) return;
+    atlasCanvas.toBlob(bl=>{
+      const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_texture.png';a.click();
+      toast('Texture atlas downloaded');
+    });
+  };
   initThree();
 }
 
 function initThree(){
-  const wrap=$('threeCanvas').parentElement;const W=wrap.clientWidth,H=wrap.clientHeight;
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x050709);scene.fog=new THREE.FogExp2(0x050709,.08);
+  const wrap=$('threeCanvas').parentElement;
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x050709);
+  scene.fog=new THREE.FogExp2(0x050709,.1);
+
+  // Grid floor
   const grid=new THREE.GridHelper(10,32,0x1a2030,0x111820);grid.position.y=-1.4;scene.add(grid);
-  const floorG=new THREE.PlaneGeometry(14,14);
-  const floorM=new THREE.MeshStandardMaterial({color:0x0a0c10,metalness:.9,roughness:.2,transparent:true,opacity:.5});
-  const floor=new THREE.Mesh(floorG,floorM);floor.rotation.x=-Math.PI/2;floor.position.y=-1.42;floor.receiveShadow=true;scene.add(floor);
-  const cam=new THREE.PerspectiveCamera(46,W/H,.01,300);cam.position.set(0,.4,3.8);
-  const renderer=new THREE.WebGLRenderer({canvas:$('threeCanvas'),antialias:true});
+
+  // Reflective floor plane
+  const floorGeo=new THREE.PlaneGeometry(12,12);
+  const floorMat=new THREE.MeshStandardMaterial({color:0x0a0c10,metalness:.8,roughness:.3,transparent:true,opacity:.6});
+  const floor=new THREE.Mesh(floorGeo,floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=-1.42;
+  floor.receiveShadow=true;scene.add(floor);
+
+  const cam=new THREE.PerspectiveCamera(48,W/H,.01,300);cam.position.set(0,.5,3.8);
+  const renderer=new THREE.WebGLRenderer({canvas:$('threeCanvas'),antialias:true,alpha:false});
   renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;
-  scene.add(new THREE.HemisphereLight(0x223355,0x080810,.7));
-  const key=new THREE.DirectionalLight(0x00e5b5,2.0);key.position.set(2.5,4,2);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);
-  const fill=new THREE.DirectionalLight(0x0066ff,.9);fill.position.set(-3,1,-2);scene.add(fill);
-  const rim=new THREE.DirectionalLight(0xffffff,.35);rim.position.set(0,-2,-4);scene.add(rim);
-  const acc3pl=new THREE.PointLight(0x7b2fff,.7,8);acc3pl.position.set(-1,2,1);scene.add(acc3pl);
 
+  // Hemisphere ambient
+  scene.add(new THREE.HemisphereLight(0x223355,0x080810,.8));
+  // Key light
+  const key=new THREE.DirectionalLight(0x00e5b5,2.2);key.position.set(2.5,4,2);
+  key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.near=.1;key.shadow.camera.far=20;
+  scene.add(key);
+  // Fill
+  const fill=new THREE.DirectionalLight(0x0066ff,1.0);fill.position.set(-3,1,-2);scene.add(fill);
+  // Rim
+  const rim=new THREE.DirectionalLight(0xffffff,.4);rim.position.set(0,-2,-4);scene.add(rim);
+  // Accent
+  const acc3=new THREE.PointLight(0x7b2fff,.8,8);acc3.position.set(-1,2,1);scene.add(acc3);
+
+  // Build geometry
   const geo=new THREE.BufferGeometry();
-  const posArr=new Float32Array(meshData.verts),nrmArr=new Float32Array(meshData.normals),uvArr=new Float32Array(meshData.uvs);
-  geo.setAttribute('position',new THREE.BufferAttribute(posArr,3));
-  geo.setAttribute('normal',new THREE.BufferAttribute(nrmArr,3));
-  geo.setAttribute('uv',new THREE.BufferAttribute(uvArr,2));
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(meshData.verts),3));
+  geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(meshData.normals),3));
+  geo.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(meshData.uvs),2));
   geo.setIndex(meshData.indices);
-  geo.computeVertexNormals();
+  geo.computeVertexNormals(); // re-compute smooth normals
   geo.computeBoundingBox();
   const centre=new THREE.Vector3();geo.boundingBox.getCenter(centre);
   const size=new THREE.Vector3();geo.boundingBox.getSize(size);
-  const sc=2.4/Math.max(size.x,size.y,size.z);
+  const scale=2.4/Math.max(size.x,size.y,size.z);
 
-  // View-angle UV remap (best matching camera per vertex)
-  const N2=frames.length,COLS2=Math.ceil(Math.sqrt(N2)),ROWS2=Math.ceil(N2/COLS2);
-  const pa=geo.attributes.position.array;
-  const uv2=new Float32Array(geo.attributes.uv.array.length);
-  const vnArr=geo.attributes.normal.array;
-  for(let vi=0;vi<pa.length/3;vi++){
-    const x=pa[vi*3],y=pa[vi*3+1],z=pa[vi*3+2];
-    const nx=vnArr[vi*3],ny2=vnArr[vi*3+1],nz=vnArr[vi*3+2];
+  // Remap UVs for per-photo atlas
+  const N=frames.length,COLS=Math.ceil(Math.sqrt(N)),ROWS=Math.ceil(N/COLS);
+  const posArr=geo.attributes.position.array;
+  const uvArr=new Float32Array(geo.attributes.uv.array.length);
+  for(let vi=0;vi<posArr.length/3;vi++){
+    const x=posArr[vi*3],z=posArr[vi*3+2];
     const az=Math.atan2(x,z);
-    let best=0,bestScore=-Infinity;
-    for(let fi=0;fi<N2;fi++){
-      const ca=(fi/N2)*Math.PI*2;
-      const camDirX=-Math.sin(ca),camDirZ=-Math.cos(ca);
-      // Score = dot product of vertex normal with camera direction (front-facing preferred)
-      const dot=-(nx*camDirX+nz*camDirZ);
-      // Also prefer cameras close in azimuth
-      let angDiff=Math.abs(az-ca);if(angDiff>Math.PI)angDiff=2*Math.PI-angDiff;
-      const angScore=Math.max(0,1-angDiff/1.2);
-      const score=dot*0.6+angScore*0.4;
-      if(score>bestScore){bestScore=score;best=fi;}
+    let best=0,bestD=Infinity;
+    for(let fi=0;fi<N;fi++){
+      const ca=(fi/N)*Math.PI*2-Math.PI;
+      let d=Math.abs(az-ca);if(d>Math.PI)d=2*Math.PI-d;
+      if(d<bestD){bestD=d;best=fi;}
     }
     const ov=geo.attributes.uv.array[vi*2+1];
-    const col2=best%COLS2,row2=Math.floor(best/COLS2);
-    // Map to atlas cell with padding offset
-    uv2[vi*2]=(col2+(3/512)+ov*((512-6)/512))/COLS2;
-    uv2[vi*2+1]=(row2+(3/512)+(1-ov)*((512-6)/512))/ROWS2;
+    const col=best%COLS,row=Math.floor(best/COLS);
+    uvArr[vi*2]=(col+.08+ov*.84)/COLS;
+    uvArr[vi*2+1]=(row+.08+(1-ov)*.84)/ROWS;
   }
-  geo.setAttribute('uv',new THREE.BufferAttribute(uv2,2));
+  geo.setAttribute('uv',new THREE.BufferAttribute(uvArr,2));
 
+  // Materials
   const atlasTex=new THREE.CanvasTexture(atlasCanvas);
-  atlasTex.anisotropy=renderer.capabilities.getMaxAnisotropy();
-  let normTex=null;
-  if(normalCanvas){normTex=new THREE.CanvasTexture(normalCanvas);normTex.anisotropy=atlasTex.anisotropy;}
-
-  const mat=new THREE.MeshStandardMaterial({map:atlasTex,normalMap:normTex||undefined,normalScale:new THREE.Vector2(.7,.7),metalness:.04,roughness:.52,side:THREE.DoubleSide,envMapIntensity:.4});
-  const wireMat=new THREE.MeshBasicMaterial({color:0x00e5b5,wireframe:true,transparent:true,opacity:.45});
-  const normMatV=new THREE.MeshNormalMaterial({side:THREE.DoubleSide});
-  const aoMat=new THREE.MeshLambertMaterial({map:atlasTex,side:THREE.DoubleSide});
-  // Sharp-edge view: flat shading to see polygon faces
-  const sharpMat=new THREE.MeshStandardMaterial({map:atlasTex,flatShading:true,metalness:.04,roughness:.52,side:THREE.DoubleSide});
+  const mat=new THREE.MeshStandardMaterial({map:atlasTex,metalness:.05,roughness:.58,side:THREE.DoubleSide,envMapIntensity:.4});
+  const wireMat=new THREE.MeshBasicMaterial({color:0x00e5b5,wireframe:true,transparent:true,opacity:.5});
+  const normMat=new THREE.MeshNormalMaterial({side:THREE.DoubleSide});
 
   const mesh=new THREE.Mesh(geo,mat);
-  mesh.position.sub(centre.multiplyScalar(sc));mesh.scale.setScalar(sc);
-  mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);
+  mesh.position.sub(centre.multiplyScalar(scale));mesh.scale.setScalar(scale);
+  mesh.castShadow=mesh.receiveShadow=true;
+  scene.add(mesh);
 
-  // Neon edges
-  function buildEdgeGeo(g){const pos2=g.attributes.position.array,idx2=g.index?g.index.array:null;const es=new Set(),lv=[];const ae=(a,b)=>{const k=a<b?`${a}_${b}`:`${b}_${a}`;if(es.has(k))return;es.add(k);lv.push(pos2[a*3],pos2[a*3+1],pos2[a*3+2],pos2[b*3],pos2[b*3+1],pos2[b*3+2]);};const fc=idx2?idx2.length/3:pos2.length/9;for(let f=0;f<fc;f++){const a=idx2?idx2[f*3]:f*3,b=idx2?idx2[f*3+1]:f*3+1,c=idx2?idx2[f*3+2]:f*3+2;ae(a,b);ae(b,c);ae(c,a);}const g3=new THREE.BufferGeometry();g3.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lv),3));return g3;}
+  // Build edge geometry for neon overlay
+  function buildEdgeGeo(g){
+    const pos=g.attributes.position.array,idx=g.index?g.index.array:null;
+    const es=new Set(),lv=[];
+    const ae=(a,b)=>{const k=a<b?`${a}_${b}`:`${b}_${a}`;if(es.has(k))return;es.add(k);
+      lv.push(pos[a*3],pos[a*3+1],pos[a*3+2],pos[b*3],pos[b*3+1],pos[b*3+2]);};
+    const fc=idx?idx.length/3:pos.length/9;
+    for(let f=0;f<fc;f++){const a=idx?idx[f*3]:f*3,b=idx?idx[f*3+1]:f*3+1,c=idx?idx[f*3+2]:f*3+2;ae(a,b);ae(b,c);ae(c,a);}
+    const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lv),3));return g2;
+  }
   const eg=buildEdgeGeo(geo);
-  function mkLine(color,op,sc2,ord){const m=new THREE.LineBasicMaterial({color,transparent:true,opacity:op,depthTest:false,depthWrite:false});const l=new THREE.LineSegments(eg,m);l.position.copy(mesh.position);l.scale.copy(mesh.scale).multiplyScalar(sc2);l.renderOrder=ord;scene.add(l);return m;}
-  const lm1=mkLine(0x00ff88,1.0,1.000,999);const lm2=mkLine(0x00e5b5,.55,1.015,998);const lm3=mkLine(0x7b2fff,.22,1.035,997);
+  function mkLine(color,opacity,sc,order){
+    const lm=new THREE.LineBasicMaterial({color,transparent:true,opacity,depthTest:false,depthWrite:false});
+    const ls=new THREE.LineSegments(eg,lm);
+    ls.position.copy(mesh.position);ls.scale.copy(mesh.scale).multiplyScalar(sc);ls.renderOrder=order;
+    scene.add(ls);return lm;
+  }
+  const lm1=mkLine(0x00ff88,1.0,1.000,999);
+  const lm2=mkLine(0x00e5b5,.6,1.015,998);
+  const lm3=mkLine(0x7b2fff,.25,1.035,997);
   const allLines=scene.children.filter(c=>c instanceof THREE.LineSegments);
 
-  let wf=false,tx=true,ne=true,ro=true,nm=false,ao=false,sh=false;
-  $('vtbWF').onclick=()=>{wf=!wf;nm=ao=sh=false;mesh.material=wf?wireMat:mat;['vtbWF','vtbNM','vtbAO','vtbSH'].forEach(id=>$(id).classList.toggle('on',id==='vtbWF'&&wf));};
+  // Controls state
+  let wf=false,tx=true,ne=true,ro=true,nm=false,ex=false;
+  let exFactor=0,exTarget=0;
+
+  $('vtbWF').onclick=()=>{wf=!wf;mesh.material=wf?wireMat:nm?normMat:mat;$('vtbWF').classList.toggle('on',wf);};
   $('vtbTX').onclick=()=>{tx=!tx;mat.map=tx?atlasTex:null;mat.needsUpdate=true;$('vtbTX').classList.toggle('on',tx);};
   $('vtbNE').onclick=()=>{ne=!ne;allLines.forEach(l=>l.visible=ne);$('vtbNE').classList.toggle('on',ne);};
   $('vtbRO').onclick=()=>{ro=!ro;$('vtbRO').classList.toggle('on',ro);};
-  $('vtbNM').onclick=()=>{nm=!nm;wf=ao=sh=false;mesh.material=nm?normMatV:mat;['vtbWF','vtbNM','vtbAO','vtbSH'].forEach(id=>$(id).classList.toggle('on',id==='vtbNM'&&nm));};
-  $('vtbAO').onclick=()=>{ao=!ao;wf=nm=sh=false;mesh.material=ao?aoMat:mat;['vtbWF','vtbNM','vtbAO','vtbSH'].forEach(id=>$(id).classList.toggle('on',id==='vtbAO'&&ao));};
-  $('vtbSH').onclick=()=>{sh=!sh;wf=nm=ao=false;mesh.material=sh?sharpMat:mat;['vtbWF','vtbNM','vtbAO','vtbSH'].forEach(id=>$(id).classList.toggle('on',id==='vtbSH'&&sh));};
+  $('vtbNM').onclick=()=>{nm=!nm;if(!wf)mesh.material=nm?normMat:mat;$('vtbNM').classList.toggle('on',nm);};
+  $('vtbXR').onclick=()=>{ex=!ex;exTarget=ex?1:0;$('vtbXR').classList.toggle('on',ex);};
 
-  let dn=false,rd=false,lx=0,ly=0,rX=0,rY=0,pX=0,pY=0,zm=3.8;let lastPD=0;
+  // Mouse/touch controls
+  let dn=false,rd=false,lx=0,ly=0,rX=0,rY=0,pX=0,pY=0,zm=3.8;
+  let lastPinchDist=0;
   const cv=$('threeCanvas');
-  cv.addEventListener('pointerdown',e=>{dn=true;rd=e.button===2;lx=e.clientX;ly=e.clientY;ro=false;$('vtbRO').classList.remove('on');e.preventDefault();},{passive:false});
-  window.addEventListener('pointermove',e=>{if(!dn)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;if(rd){pX+=dx*.003;pY-=dy*.003;}else{rY+=dx*.30;rX=clamp(rX+dy*.30,-82,82);}});
+
+  cv.addEventListener('pointerdown',e=>{
+    dn=true;rd=e.button===2;lx=e.clientX;ly=e.clientY;ro=false;$('vtbRO').classList.remove('on');e.preventDefault();
+  },{passive:false});
+  window.addEventListener('pointermove',e=>{
+    if(!dn)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
+    if(rd){pX+=dx*.003;pY-=dy*.003;}else{rY+=dx*.32;rX=clamp(rX+dy*.32,-85,85);}
+  });
   window.addEventListener('pointerup',()=>dn=false);
   cv.addEventListener('contextmenu',e=>e.preventDefault());
-  cv.addEventListener('wheel',e=>{zm=clamp(zm+e.deltaY*.005,.25,14);},{passive:true});
-  cv.addEventListener('touchstart',e=>{if(e.touches.length===2)lastPD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:true});
-  cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zm=clamp(zm-(d-lastPD)*.015,.25,14);lastPD=d;}},{passive:true});
-  window.addEventListener('resize',()=>{const w=wrap.clientWidth,h=wrap.clientHeight;cam.aspect=w/h;cam.updateProjectionMatrix();renderer.setSize(w,h);});
+  cv.addEventListener('wheel',e=>{zm=clamp(zm+e.deltaY*.005,.3,12);},{passive:true});
 
-  let aa=0;
-  (function anim(){requestAnimationFrame(anim);if(ro)aa+=.22;
+  // Pinch zoom
+  const touches={};
+  cv.addEventListener('touchstart',e=>{
+    [...e.touches].forEach(t=>touches[t.identifier]={x:t.clientX,y:t.clientY});
+    if(e.touches.length===2){
+      const t=e.touches;lastPinchDist=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+    }
+  },{passive:true});
+  cv.addEventListener('touchmove',e=>{
+    if(e.touches.length===2){
+      const t=e.touches,dist=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+      zm=clamp(zm-(dist-lastPinchDist)*.015,.3,12);lastPinchDist=dist;
+    }
+  },{passive:true});
+
+  window.addEventListener('resize',()=>{
+    const w=wrap.clientWidth,h=wrap.clientHeight;
+    cam.aspect=w/h;cam.updateProjectionMatrix();renderer.setSize(w,h);
+  });
+
+  let aa=0,animId=null;
+  function anim(){
+    animId=requestAnimationFrame(anim);
+    if(ro) aa+=.25;
     const ry=(rY+aa)*Math.PI/180,rx=rX*Math.PI/180;
-    cam.position.set(Math.sin(ry)*Math.cos(rx)*zm+pX,Math.sin(rx)*zm+pY,Math.cos(ry)*Math.cos(rx)*zm);cam.lookAt(pX,pY,0);
-    if(ne){const t=Date.now()*.0018;lm1.opacity=.88+Math.sin(t)*.12;lm2.opacity=.42+Math.sin(t+1)*.13;lm3.opacity=.18+Math.sin(t+2)*.07;acc3pl.intensity=.7+Math.sin(t*.7)*.35;}
+    cam.position.set(Math.sin(ry)*Math.cos(rx)*zm+pX,Math.sin(rx)*zm+pY,Math.cos(ry)*Math.cos(rx)*zm);
+    cam.lookAt(pX,pY,0);
+
+    // Explode animation
+    if(Math.abs(exFactor-exTarget)>.001){
+      exFactor=lerp(exFactor,exTarget,.05);
+      // Expand mesh along vertex normals
+      const posAttr=geo.attributes.position;
+      const nrmAttr=geo.attributes.normal;
+      const origPos=new Float32Array(meshData.verts);
+      for(let i=0;i<posAttr.count;i++){
+        posAttr.setXYZ(i,
+          origPos[i*3]+nrmAttr.getX(i)*exFactor*.3,
+          origPos[i*3+1]+nrmAttr.getY(i)*exFactor*.3,
+          origPos[i*3+2]+nrmAttr.getZ(i)*exFactor*.3);
+      }
+      posAttr.needsUpdate=true;geo.computeBoundingBox();
+    }
+
+    // Neon pulse
+    if(ne){
+      const t=Date.now()*.0016;
+      lm1.opacity=.90+Math.sin(t)*.10;lm2.opacity=.50+Math.sin(t+1)*.15;lm3.opacity=.20+Math.sin(t+2)*.08;
+      acc3.intensity=.8+Math.sin(t*.7)*.4;
+    }
     renderer.render(scene,cam);
-  })();
+  }
+  anim();
 }
 
-/* ════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    RESET
-════════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════ */
 function doReset(){
   cancelCapture();stopOutlineLoop();
-  frames=[];depthMaps=[];meshData=null;atlasCanvas=null;normalCanvas=null;
-  $('frameStrip').innerHTML='';$('capProg').classList.remove('show');$('capBar').style.width='0%';
+  frames=[];depthMaps=[];meshData=null;atlasCanvas=null;
+  $('frameStrip').innerHTML='';$('captureProgress').classList.remove('show');$('captureBar').style.width='0%';
   $('panelProcess').style.display='none';$('panelViewer').style.display='none';
   $('depthSec').classList.remove('show');$('depthStrip').innerHTML='';
-  $('procBar').style.width='0%';$('terminal').innerHTML='<div class="t-dim">$ SCAN3D v5 pro reconstruction engine initialised…</div>';
+  $('procBar').style.width='0%';
+  $('terminal').innerHTML='<div class="t-dim">$ Initialising AI reconstruction pipeline v2…</div>';
   $('btnStartScan').disabled=!stream;$('btnReset').style.display='none';
   $('slFrames').disabled=$('slInterval').disabled=$('slRes').disabled=$('slSmooth').disabled=false;
   $('btnStopCam').style.display=stream?'inline-flex':'none';
   $('hudInstr').textContent=stream?'Hold still · background learning…':'Enable camera to begin';
-  if(stream)startOutlineLoop();window.scrollTo({top:0,behavior:'smooth'});
+  if(stream) startOutlineLoop();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-$('btnStartScan').onclick=startScan;$('btnReset').onclick=doReset;$('btnNewScan').onclick=doReset;
 
-(async()=>{if(navigator.mediaDevices?.getUserMedia)try{await startCamera();}catch(e){}})();
+$('btnStartScan').onclick=startScan;
+$('btnReset').onclick=doReset;
+$('btnNewScan').onclick=doReset;
+
+// Auto-start camera
+(async()=>{
+  if(navigator.mediaDevices?.getUserMedia){
+    try{await startCamera();}catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
+
