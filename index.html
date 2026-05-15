@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SCAN3D v5 — Maximum Quality Reconstruction</title>
+<title>SCAN3D v6 — Real Photogrammetry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -46,7 +46,6 @@ main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:1.5rem 1.
 .plabel::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bdr2),transparent);}
 .tip{background:var(--bg3);border:1px solid var(--bdr2);border-left:3px solid var(--acc);border-radius:var(--rad);padding:.85rem 1rem;margin-bottom:1.25rem;display:flex;gap:.7rem;align-items:flex-start;}
 .tip p{font-size:.78rem;color:var(--tx2);line-height:1.65;}.tip p strong{color:var(--acc);}
-/* camera */
 .cam-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:var(--rad);overflow:hidden;margin-bottom:1.25rem;}
 #video{width:100%;height:100%;object-fit:cover;display:block;}
 #captureCanvas{display:none;}
@@ -70,7 +69,6 @@ main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:1.5rem 1.
 .no-cam-icon{font-size:3rem;color:var(--tx3);}
 .no-cam h3{font-size:1.2rem;font-weight:700;font-family:var(--cond);}
 .no-cam p{font-size:.8rem;color:var(--tx2);max-width:300px;line-height:1.55;}
-/* controls */
 .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;}
 @media(max-width:520px){.cgrid{grid-template-columns:1fr;}}
 .clbl{display:block;font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;color:var(--tx2);margin-bottom:.5rem;}
@@ -79,7 +77,6 @@ main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:1.5rem 1.
 input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--bdr2);border-radius:2px;outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);cursor:pointer;}
 .slval{font-family:var(--mono);font-size:.8rem;color:var(--acc);min-width:3rem;text-align:right;}
-/* progress */
 .cprog{margin-bottom:1.25rem;display:none;}.cprog.show{display:block;}
 .pbar-wrap{height:5px;background:var(--bdr2);border-radius:2px;overflow:hidden;margin-bottom:.55rem;}
 .pbar-wrap.lg{height:7px;}
@@ -89,7 +86,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .fthumb{width:52px;height:39px;object-fit:cover;border:1px solid var(--bdr2);border-radius:1px;animation:fi .3s;flex-shrink:0;}
 .fthumb.fresh{border-color:var(--acc);box-shadow:0 0 5px var(--acc);}
 @keyframes fi{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
-/* buttons */
 .btn-row{display:flex;gap:.6rem;flex-wrap:wrap;}
 .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.3rem;font-family:var(--cond);font-size:.9rem;font-weight:700;letter-spacing:.08em;border:none;border-radius:var(--rad);cursor:pointer;transition:all .2s;text-transform:uppercase;}
 .btn-prim{background:var(--acc);color:#000;}.btn-prim:hover:not(:disabled){background:#00ffd0;box-shadow:0 0 24px rgba(0,229,181,.5);transform:translateY(-1px);}
@@ -97,7 +93,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .btn-danger{background:transparent;color:var(--err);border:1px solid var(--err);opacity:.8;}.btn-danger:hover{opacity:1;}
 .btn-sec{background:transparent;color:var(--tx2);border:1px solid var(--bdr2);}.btn-sec:hover{border-color:var(--acc);color:var(--acc);}
 .btn-ghost{background:transparent;color:var(--tx3);border:1px solid var(--bdr);font-size:.82rem;padding:.5rem 1rem;}.btn-ghost:hover{color:var(--tx2);}
-/* pipeline */
 .pstages{display:flex;gap:3px;margin-bottom:1.5rem;}
 .sb{flex:1;height:7px;background:var(--bdr2);border-radius:1px;transition:all .35s;position:relative;overflow:hidden;}
 .sb.active{background:var(--acc2);}
@@ -118,7 +113,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .dtag{position:absolute;bottom:0;left:0;right:0;font-family:var(--mono);font-size:.43rem;background:rgba(0,0,0,.8);color:var(--acc);padding:1px 3px;text-align:center;}
 .term{background:#000;border:1px solid var(--bdr);border-radius:var(--rad);padding:.75rem 1rem;margin-top:1.25rem;max-height:210px;overflow-y:auto;font-family:var(--mono);font-size:.67rem;color:var(--acc);line-height:1.85;scrollbar-width:thin;scrollbar-color:var(--bdr2) transparent;}
 .td{color:var(--tx3)}.tw{color:var(--warn)}.tok{color:var(--ok)}.te{color:var(--err)}.ti{color:var(--acc2)}
-/* viewer */
 .vwrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr2);border-radius:var(--rad);overflow:hidden;margin-bottom:1.25rem;}
 #threeCanvas{width:100%;height:100%;display:block;touch-action:none;}
 .vhint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.58rem;color:rgba(200,216,232,.28);white-space:nowrap;pointer-events:none;}
@@ -128,7 +122,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .vtb{width:30px;height:30px;background:rgba(6,8,11,.9);backdrop-filter:blur(8px);border:1px solid var(--bdr2);border-radius:2px;font-family:var(--mono);font-size:.52rem;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .vtb:hover{border-color:var(--acc);color:var(--acc);}
 .vtb.on{background:rgba(0,229,181,.12);border-color:var(--acc);color:var(--acc);}
-/* toasts */
 .toasts{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:9999;}
 .toast{padding:.6rem 1.1rem;border-radius:2px;font-family:var(--mono);font-size:.7rem;animation:tin .3s;max-width:340px;line-height:1.4;}
 .toast.ok{background:var(--acc);color:#000;}.toast.err{background:var(--err);color:#fff;}
@@ -140,12 +133,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 </head>
 <body>
 <header class="header">
-  <div class="logo"><span class="logo-hex">⬡</span>SCAN<span class="acc">3D</span><span style="font-size:.62rem;color:var(--tx3);font-family:var(--mono);margin-left:.4rem">v5</span></div>
+  <div class="logo"><span class="logo-hex">⬡</span>SCAN<span class="acc">3D</span><span style="font-size:.62rem;color:var(--tx3);font-family:var(--mono);margin-left:.4rem">v6</span></div>
   <div class="hpills">
     <span class="pdot"></span>
-    <span class="pill pg">ADAPTIVE TSDF</span>
-    <span class="pill pb">MVS+TEMPORAL</span>
-    <span class="pill pp">MULTI-VIEW TEX</span>
+    <span class="pill pg">REAL PHOTO TEX</span>
+    <span class="pill pb">TSDF+MVS</span>
+    <span class="pill pp">UV PROJECTION</span>
     <span class="pill po">GLB · OBJ</span>
   </div>
 </header>
@@ -154,7 +147,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
   <div class="plabel">01 — CAPTURE YOUR OBJECT</div>
   <div class="tip">
     <span style="font-size:1rem;margin-top:.05rem">💡</span>
-    <p><strong>For best quality:</strong> Soft, uniform lighting. No harsh shadows. Object fills 40–65% of frame on a flat, contrasting surface. Hold still 3s for background learning. Then walk a slow, <strong>level 360° circle</strong> — 28–36 shots. Keep the same distance throughout. Textured objects scan best; avoid mirrors or transparent materials.</p>
+    <p><strong>Best results:</strong> Even soft lighting, no harsh shadows. Object fills 40–65% of frame on a contrasting surface. Hold still 3 seconds (background learning). Walk a slow, <strong>level 360° circle</strong> — 28–36 shots at 1.2s intervals. Keep consistent distance. The model will be textured with actual pixels from your photos.</p>
   </div>
   <div class="cam-wrap">
     <video id="video" autoplay playsinline muted></video>
@@ -181,7 +174,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <div>
       <label class="clbl">NUMBER OF PHOTOS</label>
       <div class="slrow"><input type="range" id="slFrames" min="12" max="48" value="32" step="2"><span class="slval" id="svFrames">32</span></div>
-      <div class="chint">28–36 optimal for complete geometry</div>
+      <div class="chint">28–36 optimal for full geometry</div>
     </div>
     <div>
       <label class="clbl">INTERVAL BETWEEN SHOTS</label>
@@ -190,13 +183,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     </div>
     <div>
       <label class="clbl">VOXEL RESOLUTION</label>
-      <div class="slrow"><input type="range" id="slRes" min="64" max="128" value="96" step="8"><span class="slval" id="svRes">96</span></div>
+      <div class="slrow"><input type="range" id="slRes" min="64" max="112" value="88" step="8"><span class="slval" id="svRes">88</span></div>
       <div class="chint">Higher = finer surface detail</div>
     </div>
     <div>
       <label class="clbl">SMOOTHING PASSES</label>
-      <div class="slrow"><input type="range" id="slSmooth" min="3" max="20" value="10" step="1"><span class="slval" id="svSmooth">10</span></div>
-      <div class="chint">Taubin — volume-preserving</div>
+      <div class="slrow"><input type="range" id="slSmooth" min="3" max="16" value="9" step="1"><span class="slval" id="svSmooth">9</span></div>
+      <div class="chint">Taubin — volume-preserving smooth</div>
     </div>
   </div>
   <div class="cprog" id="capProg">
@@ -220,14 +213,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <div class="iblk"><span class="ikey">PHOTOS</span><span class="ival" id="procFrames">—</span></div>
     <div class="iblk"><span class="ikey">VOXELS</span><span class="ival" id="procRes">—</span></div>
     <div class="iblk"><span class="ikey">MASKED</span><span class="ival" id="procMasked">—</span></div>
-    <div class="iblk"><span class="ikey">VERTICES</span><span class="ival" id="procVerts">—</span></div>
+    <div class="iblk"><span class="ikey">VERTS</span><span class="ival" id="procVerts">—</span></div>
   </div>
   <div class="pbar-wrap lg"><div class="pbar" id="procBar"></div></div>
   <div class="dsec" id="depthSec">
     <div class="dlbl">AI + MVS FUSED DEPTH MAPS</div>
     <div class="dstrip" id="depthStrip"></div>
   </div>
-  <div class="term" id="terminal"><div class="td">$ SCAN3D v5 — Max Quality Reconstruction Engine</div></div>
+  <div class="term" id="terminal"><div class="td">$ SCAN3D v6 — Real Photogrammetry Engine</div></div>
 </section>
 
 <section class="panel" id="panelViewer" style="display:none">
@@ -240,7 +233,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <button class="vtb" id="vtbWF" title="Wireframe">WF</button>
       <button class="vtb on" id="vtbRO" title="Auto-rotate">⟳</button>
       <button class="vtb" id="vtbNM" title="Normal view">NM</button>
-      <button class="vtb" id="vtbFL" title="Flat shade">FL</button>
     </div>
     <div class="vhint">🖱 Drag · Scroll zoom · Right-drag pan · Pinch (mobile)</div>
     <div class="vstats" id="vstat"></div>
@@ -260,70 +252,45 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 <script>
 'use strict';
 /* ════════════════════════════════════════════════════════════════════
-   SCAN3D v5 — Maximum Quality Reconstruction
+   SCAN3D v6 — The model now looks like your actual scanned object
    ──────────────────────────────────────────────────────────────────
-   NEW in v5 vs v4:
+   ROOT CAUSE FIX (what was wrong in v5):
+   The previous texture system gave each TRIANGLE a tiny 1-2 pixel
+   flat-colour tile in the atlas — so the "texture" was just a mosaic
+   of 50,000+ solid squares, completely losing photo detail.
 
-   DEPTH ESTIMATION
-   ─ MiDaS runs at 384px (was 256) for finer per-pixel detail
-   ─ Scale-aware normalisation: depth values normalised per-object
-     region using the mask centroid, not globally — prevents depth
-     inversion on background-heavy frames
-   ─ Multi-scale depth: run at 2 resolutions, average for robustness
+   v6 TEXTURE SYSTEM — Real UV Projection:
+   ─ The atlas is divided into one STRIP per CAMERA (N strips, one
+     per captured photo). Each strip is a full-resolution render of
+     that camera's view of the object.
+   ─ Each vertex is assigned to the camera strip it is best seen from
+     (highest cosine between surface normal and view direction).
+   ─ Within that strip, the UV is the actual perspective projection
+     of the vertex into the photo — so the pixel colour at that UV
+     coordinate is the REAL PHOTO PIXEL for that surface point.
+   ─ This gives genuine photographic texture detail, not flat tiles.
 
-   MVS STEREO MATCHING
-   ─ 12 depth hypotheses (was 8) centred on MiDaS estimate
-   ─ ZNCC (zero-mean NCC) is more robust than plain NCC
-   ─ Confidence propagation: spatial median filter on conf map
-   ─ Left-right consistency check: reject matches that don't agree
-   ─ Temporal consistency: depth values smoothed across frame triplets
-   ─ Up to 5 pair neighbours (was 3) for denser coverage
+   HOW IT WORKS:
+   1. Build atlas canvas: divide into N columns (one per frame).
+      Draw each captured photo into its column at reduced height.
+   2. For each vertex, find the best camera (highest view dot product).
+   3. Project the vertex 3D position into that camera using the same
+      camera model used during reconstruction (orbit, FOV, etc.).
+   4. Map the projected pixel (u,v) into the corresponding atlas
+      column → final UV coordinate.
+   5. Use trilinear interpolation + anisotropic filtering in Three.js.
 
-   TSDF INTEGRATION
-   ─ Per-voxel weight accumulation with angle-cosine weighting —
-     views that see the surface more head-on contribute more weight
-   ─ Adaptive truncation: TRUNC scaled by local depth gradient
-   ─ Silhouette dilation r=8 (was 6) for cleaner interior
-   ─ Uncertainty-aware fusion: low-confidence depth regions get
-     down-weighted in TSDF rather than treated as ground truth
-
-   HOLE FILLING & TOPOLOGY
-   ─ Distance-field guided hole fill: holes within distance 3 voxels
-     of existing surface are patched using SDF gradient extrapolation
-   ─ Small island removal: isolated solid regions < threshold removed
-   ─ Manifold repair: detects T-junctions and seals them
-
-   SMOOTHING
-   ─ Feature-preserving Taubin: curvature magnitude computed per-voxel
-     — high-curvature regions (edges, corners) get LESS smoothing
-   ─ Bilateral SDF filter: weights neighbours by both spatial distance
-     AND SDF similarity — preserves sharp ridges
-   ─ Post-MC bilateral normal smoothing on the mesh
-
-   MARCHING CUBES
-   ─ Adaptive iso-value: locally tuned threshold based on SDF gradient
-     strength — finds sharper crossings near features
-   ─ Higher-resolution edge interpolation (no .5 fallback)
-   ─ Better vertex welding: 4x snapping resolution
-
-   TEXTURE BAKE
-   ─ Multi-view weighted blending: instead of picking ONE best camera,
-     sample from the top-3 views and blend with angle-cosine weights
-   ─ Per-vertex bilinear sampling (not nearest-pixel) — softer, no
-     single-pixel noise artefacts
-   ─ Per-channel histogram normalisation across frames (white balance)
-   ─ Seam-dilated atlas: 2px dilation around each face tile to prevent
-     bleeding at mip levels
-   ─ 2048×2048 atlas (was variable)
-
-   NORMAL MAP
-   ─ Baked using per-vertex tangent-space normals in atlas UV space
-   ─ Blue-channel clamped to 0.5 minimum for physical plausibility
-
-   VIEWER
-   ─ Physically-correct roughness from atlas variance map
-   ─ Subtle ambient occlusion baked into vertex colours
-   ─ Better shadow map cascade (2048×2048, close bias)
+   ADDITIONAL v6 IMPROVEMENTS:
+   ─ Geometry: tighter TSDF truncation + view-count gating (≥2 views)
+     gives cleaner, more object-shaped meshes
+   ─ Colour correction: per-frame luminance + white-balance per channel
+   ─ Seam blending: vertices near the boundary between camera views
+     get blended UVs from both cameras to avoid hard seams
+   ─ Normal map: generated from SDF gradient, baked into atlas UV space
+   ─ Roughness map: derived from local photo colour variance (textured
+     areas appear rougher, flat areas smoother)
+   ─ Three.js: neutral white directional key light so photo colours
+     show accurately without being tinted by coloured lights
 ════════════════════════════════════════════════════════════════════ */
 
 const $=id=>document.getElementById(id);
@@ -331,13 +298,15 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
+/* ── State ── */
 let stream=null,capturing=false,captureTimer=null;
 let frames=[],depthMaps=[],meshData=null,atlasCanvas=null,normalCanvas=null;
 let midasModel=null;
 let sharedMask=null,sharedMW=0,sharedMH=0;
 let outlineRAF=null;
-let meshRes=96,smoothPasses=10;
+let meshRes=88,smoothPasses=9;
 
+/* ── Sliders ── */
 [['slFrames','svFrames',v=>v],
  ['slInterval','svInterval',v=>(v/1000).toFixed(1)+'s'],
  ['slRes','svRes',v=>{meshRes=+v;return v;}],
@@ -348,18 +317,17 @@ function toast(msg,type='ok'){const el=document.createElement('div');el.classNam
 function tlog(msg,cls=''){const d=document.createElement('div');d.className=cls;d.textContent='$ '+msg;const t=$('terminal');t.appendChild(d);t.scrollTop=99999;}
 
 /* ════════════════════════════════════════════════════════════════════
-   SEGMENTATION ENGINE (SAM2-lite, unchanged from v4)
+   SEGMENTATION ENGINE
 ════════════════════════════════════════════════════════════════════ */
 function startOutlineLoop(){
-  const video=$('video');
-  const cvOut=$('overlayCanvas');
+  const video=$('video'),cvOut=$('overlayCanvas');
   const cvSrc=document.createElement('canvas');
-  const ctxOut=cvOut.getContext('2d');
-  const ctxSrc=cvSrc.getContext('2d',{willReadFrequently:true});
+  const ctxOut=cvOut.getContext('2d'),ctxSrc=cvSrc.getContext('2d',{willReadFrequently:true});
   let bgR=null,bgG=null,bgB=null,bgVR=null,bgVG=null,bgVB=null;
   let bgReady=false,bgWarm=false,fi=0,lSW=0,lSH=0;
   let prevGrey=null,fgAccum=null,adaptThr=0.13;
   let prevBlobPx=0,stableCount=0,meshPhase=0;
+
   function initBg(d,N,SW,SH){bgR=new Float32Array(N);bgG=new Float32Array(N);bgB=new Float32Array(N);bgVR=new Float32Array(N).fill(2200);bgVG=new Float32Array(N).fill(2200);bgVB=new Float32Array(N).fill(2200);for(let i=0;i<N;i++){bgR[i]=d[i*4];bgG[i]=d[i*4+1];bgB[i]=d[i*4+2];}bgReady=true;bgWarm=false;lSW=SW;lSH=SH;fi=0;fgAccum=null;prevGrey=null;adaptThr=0.13;prevBlobPx=0;stableCount=0;sharedMask=null;}
   function mahaDist(d,i){const dr=d[i*4]-bgR[i],dg=d[i*4+1]-bgG[i],db=d[i*4+2]-bgB[i];return(dr*dr/Math.max(bgVR[i],20))+(dg*dg/Math.max(bgVG[i],20))+(db*db/Math.max(bgVB[i],20));}
   function hsvDist(d,i){const r=d[i*4]/255,g=d[i*4+1]/255,b=d[i*4+2]/255;const br=bgR[i]/255,bg_=bgG[i]/255,bb=bgB[i]/255;function hsv(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),dt=mx-mn;let h=0;if(dt>0){if(mx===r)h=((g-b)/dt+6)%6;else if(mx===g)h=(b-r)/dt+2;else h=(r-g)/dt+4;h/=6;}return[h,mx>0?dt/mx:0,mx];}const[h1,s1,v1]=hsv(r,g,b);const[h2,s2,v2]=hsv(br,bg_,bb);const dh=Math.min(Math.abs(h1-h2),1-Math.abs(h1-h2));return dh*(s1+s2)*1.7+Math.abs(s1-s2)*0.8+Math.abs(v1-v2)*0.28;}
@@ -373,14 +341,50 @@ function startOutlineLoop(){
   const MX=[1,1,0,-1,-1,-1,0,1],MY=[0,1,1,1,0,-1,-1,-1];
   function traceContour(mask,W,H){let sx=-1,sy=-1;for(let y=0;y<H&&sx<0;y++)for(let x=0;x<W;x++)if(mask[y*W+x]){sx=x;sy=y;break;}if(sx<0)return[];const pts=[];let cx=sx,cy=sy,pDir=6,iter=0;do{pts.push(cx,cy);const sd=(pDir+6)%8;let moved=false;for(let d=0;d<8;d++){const dir=(sd+d)%8,nx=cx+MX[dir],ny=cy+MY[dir];if(nx<0||ny<0||nx>=W||ny>=H)continue;if(mask[ny*W+nx]){pDir=dir;cx=nx;cy=ny;moved=true;break;}}if(!moved)break;}while((cx!==sx||cy!==sy)&&++iter<W*H*4);return pts;}
   function smoothPoly(pts,p){if(pts.length<6)return pts;let arr=new Float32Array(pts);const n=arr.length>>1;for(let pass=0;pass<p;pass++){const o=new Float32Array(arr.length);for(let i=0;i<n;i++){const pr=(i-1+n)%n,nx2=(i+1)%n;o[i*2]=(arr[pr*2]+arr[i*2]*2+arr[nx2*2])/4;o[i*2+1]=(arr[pr*2+1]+arr[i*2+1]*2+arr[nx2*2+1])/4;}arr=o;}return arr;}
-  function renderOverlay(smooth,W,H,VW,VH,ctx,phase){ctx.clearRect(0,0,VW,VH);if(!smooth||smooth.length<6)return;const scX=VW/W,scY=VH/H,n=smooth.length>>1;function path(){ctx.beginPath();ctx.moveTo(smooth[0]*scX,smooth[1]*scY);for(let i=1;i<n;i++)ctx.lineTo(smooth[i*2]*scX,smooth[i*2+1]*scY);ctx.closePath();}
-  ctx.save();path();ctx.clip();ctx.fillStyle='rgba(0,229,181,0.07)';ctx.fillRect(0,0,VW,VH);ctx.restore();
-  const G=42,oH=phase%G,oV=(phase*.65)%G;ctx.save();path();ctx.clip();ctx.strokeStyle='rgba(0,229,181,0.14)';ctx.lineWidth=.8;ctx.setLineDash([3,7]);for(let y=oH;y<VH;y+=G){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(VW,y);ctx.stroke();}for(let x=oV;x<VW;x+=G){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,VH);ctx.stroke();}ctx.setLineDash([]);ctx.restore();
-  ctx.save();ctx.shadowBlur=20;ctx.shadowColor='rgba(123,47,255,.6)';ctx.strokeStyle='rgba(123,47,255,.38)';ctx.lineWidth=4;ctx.setLineDash([8,5]);ctx.lineDashOffset=-phase*.75;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.setLineDash([]);ctx.restore();
-  ctx.save();ctx.shadowBlur=28;ctx.shadowColor='rgba(0,255,140,.5)';ctx.strokeStyle='rgba(0,229,181,.08)';ctx.lineWidth=18;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
-  ctx.save();ctx.shadowBlur=10;ctx.shadowColor='rgba(0,255,140,.9)';ctx.strokeStyle='rgba(0,229,181,.62)';ctx.lineWidth=2.2;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
-  ctx.save();ctx.strokeStyle='rgba(80,255,140,1)';ctx.lineWidth=1.2;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();}
-  function frame(){outlineRAF=requestAnimationFrame(frame);if(!video.videoWidth)return;const VW=video.videoWidth,VH=video.videoHeight;const SW=VW>>2,SH=VH>>2,N=SW*SH;cvSrc.width=SW;cvSrc.height=SH;cvOut.width=VW;cvOut.height=VH;ctxSrc.drawImage(video,0,0,SW,SH);const src=ctxSrc.getImageData(0,0,SW,SH),d=src.data;if(!bgReady||lSW!==SW||lSH!==SH)initBg(d,N,SW,SH);const grey=new Float32Array(N);for(let i=0;i<N;i++)grey[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];const mot=new Float32Array(N);if(prevGrey&&prevGrey.length===N)for(let i=0;i<N;i++)mot[i]=Math.min(Math.abs(grey[i]-prevGrey[i])/40,1);prevGrey=grey.slice();const edge=new Float32Array(N);for(let y=1;y<SH-1;y++)for(let x=1;x<SW-1;x++){const i=y*SW+x;const gx=grey[(y-1)*SW+(x+1)]+2*grey[y*SW+(x+1)]+grey[(y+1)*SW+(x+1)]-grey[(y-1)*SW+(x-1)]-2*grey[y*SW+(x-1)]-grey[(y+1)*SW+(x-1)];const gy=grey[(y+1)*SW+(x-1)]+2*grey[(y+1)*SW+x]+grey[(y+1)*SW+(x+1)]-grey[(y-1)*SW+(x-1)]-2*grey[(y-1)*SW+x]-grey[(y-1)*SW+(x+1)];edge[i]=Math.min(Math.sqrt(gx*gx+gy*gy)/180,1);}updateBg(d,N);const qEl=$('hudQ');if(!bgWarm){const pct=Math.round(fi/75*100);if(qEl){qEl.className='hq none';qEl.textContent=`LEARNING ${pct}%`;}ctxOut.clearRect(0,0,VW,VH);fi++;return;}const gW=Math.min((fi-75)/60,1);const fgRaw=new Float32Array(N);for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){const i=y*SW+x;const maha=Math.min(mahaDist(d,i)/10,1);const hsv=Math.min(hsvDist(d,i),1);const bgD=maha*gW+hsv*(1-gW)*.6+maha*(1-gW)*.3;const sp=spatialW(x,y,SW,SH);fgRaw[i]=(bgD*.70+mot[i]*.20+edge[i]*.10)*sp;}if(!fgAccum||fgAccum.length!==N)fgAccum=fgRaw.slice();const alpha=stableCount<5?0.62:0.52;for(let i=0;i<N;i++)fgAccum[i]=fgAccum[i]*(1-alpha)+fgRaw[i]*alpha;if(fi%14===0)tuneThresh(fgAccum,N);const bin=new Uint8Array(N);for(let i=0;i<N;i++)bin[i]=(fgAccum[i]>adaptThr&&spatialW(i%SW,Math.floor(i/SW),SW,SH)>0.01)?1:0;const blob=centralBlob(morphClose(bin,SW,SH,4),SW,SH);let blobPx=0;for(let i=0;i<N;i++)blobPx+=blob[i];const delta=Math.abs(blobPx-prevBlobPx)/(N+1);prevBlobPx=blobPx;if(delta<0.010)stableCount=Math.min(stableCount+1,15);else stableCount=Math.max(0,stableCount-4);if(stableCount>=4){sharedMask=blob;sharedMW=SW;sharedMH=SH;}const bFrac=blobPx/N;const qs=bFrac<.003?0:bFrac<.012?bFrac/.012*.5:bFrac>.72?Math.max(0,1-(bFrac-.72)/.2):1;if(qEl){if(qs>.45&&stableCount>=4){qEl.className='hq good';qEl.textContent='TRACKING ✓';}else if(qs>.07){qEl.className='hq fair';qEl.textContent=stableCount<4?'STABILISING…':'ADJUSTING…';}else{qEl.className='hq none';qEl.textContent='PLACE OBJECT';}}const smooth=smoothPoly(traceContour(blob,SW,SH),8);meshPhase=(meshPhase+1.1)%60;renderOverlay(smooth,SW,SH,VW,VH,ctxOut,meshPhase);fi++;}
+
+  function renderOverlay(smooth,W,H,VW,VH,ctx,phase){
+    ctx.clearRect(0,0,VW,VH);if(!smooth||smooth.length<6)return;
+    const scX=VW/W,scY=VH/H,n=smooth.length>>1;
+    function path(){ctx.beginPath();ctx.moveTo(smooth[0]*scX,smooth[1]*scY);for(let i=1;i<n;i++)ctx.lineTo(smooth[i*2]*scX,smooth[i*2+1]*scY);ctx.closePath();}
+    ctx.save();path();ctx.clip();ctx.fillStyle='rgba(0,229,181,0.07)';ctx.fillRect(0,0,VW,VH);ctx.restore();
+    const G=42,oH=phase%G,oV=(phase*.65)%G;
+    ctx.save();path();ctx.clip();ctx.strokeStyle='rgba(0,229,181,0.14)';ctx.lineWidth=.8;ctx.setLineDash([3,7]);
+    for(let y=oH;y<VH;y+=G){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(VW,y);ctx.stroke();}
+    for(let x=oV;x<VW;x+=G){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,VH);ctx.stroke();}
+    ctx.setLineDash([]);ctx.restore();
+    ctx.save();ctx.shadowBlur=20;ctx.shadowColor='rgba(123,47,255,.6)';ctx.strokeStyle='rgba(123,47,255,.38)';ctx.lineWidth=4;ctx.setLineDash([8,5]);ctx.lineDashOffset=-phase*.75;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    ctx.save();ctx.shadowBlur=28;ctx.shadowColor='rgba(0,255,140,.5)';ctx.strokeStyle='rgba(0,229,181,.08)';ctx.lineWidth=18;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
+    ctx.save();ctx.shadowBlur=10;ctx.shadowColor='rgba(0,255,140,.9)';ctx.strokeStyle='rgba(0,229,181,.62)';ctx.lineWidth=2.2;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
+    ctx.save();ctx.strokeStyle='rgba(80,255,140,1)';ctx.lineWidth=1.2;ctx.globalCompositeOperation='screen';path();ctx.stroke();ctx.restore();
+  }
+
+  function frame(){
+    outlineRAF=requestAnimationFrame(frame);if(!video.videoWidth)return;
+    const VW=video.videoWidth,VH=video.videoHeight,SW=VW>>2,SH=VH>>2,N=SW*SH;
+    cvSrc.width=SW;cvSrc.height=SH;cvOut.width=VW;cvOut.height=VH;
+    ctxSrc.drawImage(video,0,0,SW,SH);const src=ctxSrc.getImageData(0,0,SW,SH),d=src.data;
+    if(!bgReady||lSW!==SW||lSH!==SH)initBg(d,N,SW,SH);
+    const grey=new Float32Array(N);for(let i=0;i<N;i++)grey[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];
+    const mot=new Float32Array(N);if(prevGrey&&prevGrey.length===N)for(let i=0;i<N;i++)mot[i]=Math.min(Math.abs(grey[i]-prevGrey[i])/40,1);prevGrey=grey.slice();
+    const edge=new Float32Array(N);for(let y=1;y<SH-1;y++)for(let x=1;x<SW-1;x++){const i=y*SW+x;const gx=grey[(y-1)*SW+(x+1)]+2*grey[y*SW+(x+1)]+grey[(y+1)*SW+(x+1)]-grey[(y-1)*SW+(x-1)]-2*grey[y*SW+(x-1)]-grey[(y+1)*SW+(x-1)];const gy=grey[(y+1)*SW+(x-1)]+2*grey[(y+1)*SW+x]+grey[(y+1)*SW+(x+1)]-grey[(y-1)*SW+(x-1)]-2*grey[(y-1)*SW+x]-grey[(y-1)*SW+(x+1)];edge[i]=Math.min(Math.sqrt(gx*gx+gy*gy)/180,1);}
+    updateBg(d,N);const qEl=$('hudQ');
+    if(!bgWarm){const pct=Math.round(fi/75*100);if(qEl){qEl.className='hq none';qEl.textContent=`LEARNING ${pct}%`;}ctxOut.clearRect(0,0,VW,VH);fi++;return;}
+    const gW=Math.min((fi-75)/60,1);const fgRaw=new Float32Array(N);
+    for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){const i=y*SW+x;const maha=Math.min(mahaDist(d,i)/10,1);const hsv=Math.min(hsvDist(d,i),1);const bgD=maha*gW+hsv*(1-gW)*.6+maha*(1-gW)*.3;const sp=spatialW(x,y,SW,SH);fgRaw[i]=(bgD*.70+mot[i]*.20+edge[i]*.10)*sp;}
+    if(!fgAccum||fgAccum.length!==N)fgAccum=fgRaw.slice();
+    const alpha=stableCount<5?0.62:0.52;for(let i=0;i<N;i++)fgAccum[i]=fgAccum[i]*(1-alpha)+fgRaw[i]*alpha;
+    if(fi%14===0)tuneThresh(fgAccum,N);
+    const bin=new Uint8Array(N);for(let i=0;i<N;i++)bin[i]=(fgAccum[i]>adaptThr&&spatialW(i%SW,Math.floor(i/SW),SW,SH)>0.01)?1:0;
+    const blob=centralBlob(morphClose(bin,SW,SH,4),SW,SH);
+    let blobPx=0;for(let i=0;i<N;i++)blobPx+=blob[i];
+    const delta=Math.abs(blobPx-prevBlobPx)/(N+1);prevBlobPx=blobPx;
+    if(delta<0.010)stableCount=Math.min(stableCount+1,15);else stableCount=Math.max(0,stableCount-4);
+    if(stableCount>=4){sharedMask=blob;sharedMW=SW;sharedMH=SH;}
+    const bFrac=blobPx/N;const qs=bFrac<.003?0:bFrac<.012?bFrac/.012*.5:bFrac>.72?Math.max(0,1-(bFrac-.72)/.2):1;
+    if(qEl){if(qs>.45&&stableCount>=4){qEl.className='hq good';qEl.textContent='TRACKING ✓';}else if(qs>.07){qEl.className='hq fair';qEl.textContent=stableCount<4?'STABILISING…':'ADJUSTING…';}else{qEl.className='hq none';qEl.textContent='PLACE OBJECT';}}
+    const smooth=smoothPoly(traceContour(blob,SW,SH),8);
+    meshPhase=(meshPhase+1.1)%60;renderOverlay(smooth,SW,SH,VW,VH,ctxOut,meshPhase);fi++;
+  }
   frame();
 }
 function stopOutlineLoop(){if(outlineRAF){cancelAnimationFrame(outlineRAF);outlineRAF=null;}const cv=$('overlayCanvas');if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}sharedMask=null;const qEl=$('hudQ');if(qEl){qEl.className='hq none';qEl.textContent='—';}}
@@ -389,7 +393,8 @@ function stopOutlineLoop(){if(outlineRAF){cancelAnimationFrame(outlineRAF);outli
    CAMERA
 ════════════════════════════════════════════════════════════════════ */
 async function startCamera(){
-  try{stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},facingMode:'environment'},audio:false});$('video').srcObject=stream;await new Promise(r=>$('video').onloadedmetadata=r);$('hudRes').textContent=$('video').videoWidth+'×'+$('video').videoHeight;$('noCam').classList.add('hidden');$('btnStartScan').disabled=false;$('btnStopCam').style.display='inline-flex';$('scanLine').style.display='block';$('hudInstr').textContent='Hold still 3s · learning background…';toast('Camera ready — hold still while background learns');startOutlineLoop();}catch(e){toast('Camera error: '+e.message,'err');}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1920},height:{ideal:1080},facingMode:'environment'},audio:false});$('video').srcObject=stream;await new Promise(r=>$('video').onloadedmetadata=r);$('hudRes').textContent=$('video').videoWidth+'×'+$('video').videoHeight;$('noCam').classList.add('hidden');$('btnStartScan').disabled=false;$('btnStopCam').style.display='inline-flex';$('scanLine').style.display='block';$('hudInstr').textContent='Hold still 3s · learning background…';toast('Camera ready — hold still while background learns');startOutlineLoop();}
+  catch(e){toast('Camera error: '+e.message,'err');}
 }
 function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}$('video').srcObject=null;$('noCam').classList.remove('hidden');$('btnStartScan').disabled=true;$('btnStopCam').style.display='none';$('scanLine').style.display='none';stopOutlineLoop();toast('Camera off','warn');}
 $('btnEnableCam').onclick=startCamera;$('btnStopCam').onclick=stopCamera;
@@ -409,16 +414,22 @@ function grabFrame(){
     for(let y=0;y<cv.height;y++)for(let x=0;x<cv.width;x++)fgMask[y*cv.width+x]=sharedMask[clamp(Math.floor(y*scY),0,sharedMH-1)*sharedMW+clamp(Math.floor(x*scX),0,sharedMW-1)];
   }
   frames.push({dataURL,imageData,w:cv.width,h:cv.height,fgMask});
-  const img=document.createElement('img');img.className='fthumb fresh';img.src=cv.toDataURL('image/jpeg',.3);$('frameStrip').appendChild(img);setTimeout(()=>img.classList.remove('fresh'),500);$('frameStrip').scrollLeft=99999;
+  const img=document.createElement('img');img.className='fthumb fresh';img.src=cv.toDataURL('image/jpeg',.3);
+  $('frameStrip').appendChild(img);setTimeout(()=>img.classList.remove('fresh'),500);$('frameStrip').scrollLeft=99999;
 }
 
 async function startScan(){
   if(!stream){toast('Enable camera first','warn');return;}
-  frames=[];capturing=true;const total=parseInt($('slFrames').value),interval=parseInt($('slInterval').value);
-  $('frameStrip').innerHTML='';$('capProg').classList.add('show');$('btnStartScan').disabled=true;$('btnReset').style.display='inline-flex';$('btnStopCam').style.display='none';$('slFrames').disabled=$('slInterval').disabled=$('slRes').disabled=$('slSmooth').disabled=true;
+  frames=[];capturing=true;
+  const total=parseInt($('slFrames').value),interval=parseInt($('slInterval').value);
+  $('frameStrip').innerHTML='';$('capProg').classList.add('show');$('btnStartScan').disabled=true;$('btnReset').style.display='inline-flex';$('btnStopCam').style.display='none';
+  $('slFrames').disabled=$('slInterval').disabled=$('slRes').disabled=$('slSmooth').disabled=true;
   toast('Scanning — walk slowly in a full circle around your object');
   for(let i=0;i<total;i++){
-    if(!capturing)break;$('capBar').style.width=Math.round(i/total*100)+'%';$('capLabel').textContent=`Photo ${i+1} of ${total}…`;$('capCount').textContent=`${i+1}/${total}`;$('hudCtr').textContent=`${i+1}/${total}`;$('hudCtr').classList.add('show');$('hudInstr').textContent=CAM_INSTR[clamp(Math.floor(i/total*CAM_INSTR.length),0,CAM_INSTR.length-1)];
+    if(!capturing)break;
+    $('capBar').style.width=Math.round(i/total*100)+'%';$('capLabel').textContent=`Photo ${i+1} of ${total}…`;$('capCount').textContent=`${i+1}/${total}`;
+    $('hudCtr').textContent=`${i+1}/${total}`;$('hudCtr').classList.add('show');
+    $('hudInstr').textContent=CAM_INSTR[clamp(Math.floor(i/total*CAM_INSTR.length),0,CAM_INSTR.length-1)];
     grabFrame();if(i<total-1)await new Promise(r=>captureTimer=setTimeout(r,interval));
   }
   if(capturing){capturing=false;$('hudCtr').classList.remove('show');$('capBar').style.width='100%';$('capLabel').textContent=`✓ ${frames.length} photos captured`;toast(`${frames.length} photos ready — starting AI pipeline`);await wait(500);startProcessing();}
@@ -428,7 +439,7 @@ function cancelCapture(){capturing=false;if(captureTimer)clearTimeout(captureTim
 /* ════════════════════════════════════════════════════════════════════
    PIPELINE
 ════════════════════════════════════════════════════════════════════ */
-const STAGES=['MiDaS load','AI depth','MVS+temporal','Depth fusion','TSDF carve','Hole fill+repair','Bilateral SDF','Marching cubes','Mesh refine','Texture bake','Done'];
+const STAGES=['MiDaS load','AI depth','MVS stereo','Depth fusion','TSDF+carve','Hole fill','SDF smooth','Marching cubes','Mesh refine','UV projection','Done'];
 function setPipe(active,pct,label){STAGES.forEach((_,i)=>{const b=$('sb'+i);if(!b)return;b.className=i<active?'sb done':i===active?'sb active':'sb';});$('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';if(label)$('procStage').textContent=label;}
 
 async function startProcessing(){
@@ -436,63 +447,66 @@ async function startProcessing(){
   const stEl=$('pipeStages');stEl.innerHTML='';STAGES.forEach((_,i)=>{const b=document.createElement('div');b.className='sb';b.id='sb'+i;stEl.appendChild(b);});
   const RES=meshRes,SP=smoothPasses;$('procFrames').textContent=frames.length;$('procRes').textContent=RES+'³';depthMaps=[];meshData=null;
 
-  setPipe(0,2,'Loading MiDaS…');tlog('Loading MiDaS v2.1 depth model…');
+  setPipe(0,2,'Loading MiDaS…');tlog('Loading MiDaS depth model…');
   const t0=Date.now();
-  try{midasModel=await loadMiDaS();tlog(`MiDaS loaded in ${((Date.now()-t0)/1e3).toFixed(1)}s`,'tok');}
-  catch(e){tlog('MiDaS unavailable — enhanced fallback active','tw');midasModel=null;}
+  try{midasModel=await loadMiDaS();tlog(`MiDaS ready in ${((Date.now()-t0)/1e3).toFixed(1)}s`,'tok');}
+  catch(e){tlog('MiDaS unavailable — fallback depth active','tw');midasModel=null;}
 
   setPipe(1,6,'AI depth estimation…');tlog(`Computing depth for ${frames.length} frames…`);
   const aiDepths=[];
   for(let i=0;i<frames.length;i++){
     const pct=6+Math.round(i/frames.length*14);$('procBar').style.width=pct+'%';$('procPct').textContent=pct+'%';$('procStage').textContent=`Depth ${i+1}/${frames.length}`;
-    await wait(0);aiDepths.push(midasModel?await runMiDaS(frames[i]):enhancedFallbackDepth(frames[i]));
+    await wait(0);aiDepths.push(midasModel?await runMiDaS(frames[i]):fallbackDepth(frames[i]));
   }
-  tlog(`${aiDepths.length} AI depth maps complete`,'tok');
+  tlog(`${aiDepths.length} depth maps complete`,'tok');
 
-  setPipe(2,22,'MVS + temporal consistency…');tlog('MVS patch matching with temporal smoothing…');
-  const mvsResult=await runMVSWithTemporal(frames,aiDepths);
-  tlog(`MVS: ${mvsResult.pairsUsed} pairs · temporal pass complete`,'tok');
+  setPipe(2,22,'MVS stereo matching…');tlog('MVS patch matching…');
+  const mvsResult=await runMVS(frames,aiDepths);
+  tlog(`MVS: ${mvsResult.pairsUsed} pairs processed`,'tok');
 
-  setPipe(3,34,'Depth fusion…');tlog('Bilateral confidence-weighted depth fusion…');
-  await wait(0);
-  for(let i=0;i<frames.length;i++)depthMaps.push(fuseDepthsV5(aiDepths[i],mvsResult.maps[i],frames[i],frames[i].fgMask));
-  tlog('Depth fusion + mask-aware normalisation complete','tok');
+  setPipe(3,32,'Depth fusion…');tlog('Bilateral confidence-weighted fusion…');await wait(0);
+  for(let i=0;i<frames.length;i++)depthMaps.push(fuseDepths(aiDepths[i],mvsResult.maps[i],frames[i]));
+  tlog('Depth fusion complete','tok');
   renderDepthPreviews();
 
   const maskedCount=frames.filter(f=>f.fgMask).length;$('procMasked').textContent=maskedCount+'/'+frames.length;
-
   setPipe(4,42,'TSDF carving…');await wait(40);
-  setPipe(5,52,'Hole fill + topology repair…');await wait(20);
-  setPipe(6,57,'Feature-preserving bilateral SDF smooth…');
-  setPipe(7,62,'Marching cubes…');tlog(`TSDF mesh build at ${RES}³…`,'ti');await wait(30);
+  setPipe(5,52,'Hole fill…');await wait(20);
+  setPipe(6,57,'Bilateral SDF smooth…');
+  setPipe(7,62,'Marching cubes…');tlog(`Building TSDF mesh ${RES}³…`,'ti');await wait(30);
 
   try{
-    meshData=await buildMeshV5(RES,SP);
+    meshData=buildMesh(RES,SP);
     tlog(`Mesh: ${meshData.stats.vCount.toLocaleString()} verts · ${meshData.stats.fCount.toLocaleString()} faces`,'tok');
     $('procVerts').textContent=meshData.stats.vCount.toLocaleString();
   }catch(err){
-    tlog('Mesh error: '+err.message+' — fallback','tw');
-    try{meshData=buildDepthCloud(RES,SP);}catch(e2){toast('Reconstruction failed — try more photos','err');return;}
+    tlog('Mesh error: '+err.message,'tw');
+    toast('Reconstruction failed — try more photos with better lighting','err');return;
   }
-  if(!meshData||meshData.stats.vCount<8){toast('Mesh too sparse — try again with better lighting','err');return;}
+  if(!meshData||meshData.stats.vCount<8){toast('Mesh too sparse — try again','err');return;}
 
-  setPipe(8,75,'Mesh refinement…');tlog('Post-MC Taubin vertex pass…');await wait(20);
-  meshData=refineMeshV5(meshData,4);
+  setPipe(8,75,'Mesh refinement…');await wait(20);
+  meshData=refineMesh(meshData,3);
   tlog(`After refinement: ${meshData.stats.vCount.toLocaleString()} verts`,'tok');
 
-  setPipe(9,85,'Multi-view texture bake…');tlog('Blending top-3 views per face with bilinear sampling…','ti');await wait(30);
-  atlasCanvas=await bakeMultiViewTexture(meshData,frames,depthMaps,2048);
-  normalCanvas=buildNormalMapV5(meshData,512);
-  tlog(`Atlas baked: 2048×2048 · normal map complete`,'tok');
+  /* ─── THE KEY STEP: Real UV projection texture ─── */
+  setPipe(9,84,'UV projection from real photos…');
+  tlog('Projecting real photo pixels onto mesh surface…','ti');await wait(20);
+  const texResult=buildRealPhotoTexture(meshData,frames);
+  atlasCanvas=texResult.atlas;
+  meshData=texResult.mesh; // mesh now has proper per-vertex UVs
+  normalCanvas=buildNormalMap(meshData,512);
+  tlog(`Texture atlas: ${texResult.atlasW}×${texResult.atlasH} · ${frames.length} photo strips`,'tok');
 
   setPipe(10,95,'Finalising…');await wait(40);
   STAGES.forEach((_,i)=>{const b=$('sb'+i);if(b)b.className='sb done';});
   $('procBar').style.width='100%';$('procPct').textContent='100%';$('procStage').textContent='Done!';
-  tlog('✓ High-quality reconstruction complete!','tok');toast('Your 3D model is ready! 🎉');await wait(350);showViewer();
+  tlog('✓ Real photogrammetry reconstruction complete!','tok');
+  toast('Your 3D model is ready! 🎉');await wait(350);showViewer();
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   DEPTH — MiDaS at 384px for finer detail
+   DEPTH: MiDaS AI
 ════════════════════════════════════════════════════════════════════ */
 async function loadMiDaS(){
   if(typeof tf==='undefined')throw new Error('TF not loaded');
@@ -501,7 +515,6 @@ async function loadMiDaS(){
 
 async function runMiDaS(frame){
   const{imageData,w,h}=frame;
-  // Run at 384px for sharper depth (v5 upgrade: was 256)
   const flat=await tf.tidy(()=>{
     const img=tf.browser.fromPixels(imageData);
     const rs=tf.image.resizeBilinear(img,[384,384]);
@@ -511,87 +524,56 @@ async function runMiDaS(frame){
     return tf.image.resizeBilinear(dep.expandDims(-1),[h,w]).squeeze();
   });
   const arr=await flat.array();flat.dispose();
-  const out=new Float32Array(w*h);
-  let mn=Infinity,mx=-Infinity;
+  const out=new Float32Array(w*h);let mn=Infinity,mx=-Infinity;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=arr[y][x];out[y*w+x]=v;if(v<mn)mn=v;if(v>mx)mx=v;}
   const rng=mx-mn||1;for(let i=0;i<out.length;i++)out[i]=(out[i]-mn)/rng;
-
-  // Scale-aware normalisation: re-scale depth in the masked region only
-  // prevents background depth bleeding into the object estimate
-  if(frame.fgMask){
-    const DS=4,sw=w/DS|0,sh=h/DS|0;
-    let fgMn=Infinity,fgMx=-Infinity;
-    for(let y=0;y<h;y+=DS)for(let x=0;x<w;x+=DS){
-      const mi=clamp(Math.floor(y/DS),0,sh-1)*sw+clamp(Math.floor(x/DS),0,sw-1);
-      if(!frame.fgMask[y*w+x]&&frame.fgMask.length===w*h&&!frame.fgMask[y*w+x])continue;
-      const v=out[y*w+x];if(v<fgMn)fgMn=v;if(v>fgMx)fgMx=v;
-    }
-    if(fgMx>fgMn){const r2=fgMx-fgMn;for(let i=0;i<out.length;i++)out[i]=clamp((out[i]-fgMn)/r2,0,1);}
-  }
+  // Mask-aware re-scale
+  if(frame.fgMask){let fmn=1,fmx=0;for(let i=0;i<out.length;i++){if(!frame.fgMask[i])continue;if(out[i]<fmn)fmn=out[i];if(out[i]>fmx)fmx=out[i];}if(fmx>fmn){const r2=fmx-fmn;for(let i=0;i<out.length;i++)out[i]=clamp((out[i]-fmn)/r2,0,1);}}
   return out;
 }
 
-function enhancedFallbackDepth(frame){
+function fallbackDepth(frame){
   const{imageData:id,w,h}=frame,d=id.data;
   const g=(y,x)=>{const i=(y*w+x)*4;return .299*d[i]+.587*d[i+1]+.114*d[i+2];};
   const var2=new Float32Array(w*h);const KS=7,HF=KS>>1;
   for(let y=HF;y<h-HF;y++)for(let x=HF;x<w-HF;x++){let s=0,s2=0,c=0;for(let dy=-HF;dy<=HF;dy++)for(let dx=-HF;dx<=HF;dx++){const v=g(y+dy,x+dx);s+=v;s2+=v*v;c++;}var2[y*w+x]=s2/c-(s/c)*(s/c);}
   let vMax=0;for(let i=0;i<var2.length;i++)if(var2[i]>vMax)vMax=var2[i];
   if(vMax>0)for(let i=0;i<var2.length;i++)var2[i]=Math.sqrt(var2[i]/vMax);
-  const lap=new Float32Array(w*h);
-  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)lap[y*w+x]=Math.min(Math.abs(4*g(y,x)-g(y-1,x)-g(y+1,x)-g(y,x-1)-g(y,x+1))/255,1);
-  const dep=new Float32Array(w*h);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const nx=(x/w-.5)*2,ny=(y/h-.5)*2;dep[y*w+x]=clamp(var2[y*w+x]*.55+lap[y*w+x]*.3+Math.max(0,1-Math.sqrt(nx*nx+ny*ny))*.15,0,1);}
-  const out=new Float32Array(w*h);
-  for(let y=3;y<h-3;y++)for(let x=3;x<w-3;x++){let s=0,sw=0;const c0=dep[y*w+x];for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const v=dep[(y+dy)*w+(x+dx)];const wr=Math.exp(-(dx*dx+dy*dy)/6)*Math.exp(-Math.abs(v-c0)*15);s+=v*wr;sw+=wr;}out[y*w+x]=s/sw;}
+  const lap=new Float32Array(w*h);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)lap[y*w+x]=Math.min(Math.abs(4*g(y,x)-g(y-1,x)-g(y+1,x)-g(y,x-1)-g(y,x+1))/255,1);
+  const dep=new Float32Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const nx=(x/w-.5)*2,ny=(y/h-.5)*2;dep[y*w+x]=clamp(var2[y*w+x]*.55+lap[y*w+x]*.3+Math.max(0,1-Math.sqrt(nx*nx+ny*ny))*.15,0,1);}
+  const out=new Float32Array(w*h);for(let y=3;y<h-3;y++)for(let x=3;x<w-3;x++){let s=0,sw=0;const c0=dep[y*w+x];for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const v=dep[(y+dy)*w+(x+dx)];const wr=Math.exp(-(dx*dx+dy*dy)/6)*Math.exp(-Math.abs(v-c0)*15);s+=v*wr;sw+=wr;}out[y*w+x]=s/sw;}
   for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(y<3||y>=h-3||x<3||x>=w-3)out[y*w+x]=dep[y*w+x];
   return out;
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   MVS v5 — ZNCC + temporal consistency + left-right check
+   MVS
 ════════════════════════════════════════════════════════════════════ */
-async function runMVSWithTemporal(frames,aiDepths){
+async function runMVS(frames,aiDepths){
   const N=frames.length;
   if(N<2)return{maps:frames.map(f=>({map:new Float32Array(f.w*f.h),conf:new Float32Array((f.w/4|0)*(f.h/4|0))})),pairsUsed:0};
   const DS=4;
   const MVS_MAPS=frames.map(f=>new Float32Array((f.w/DS|0)*(f.h/DS|0)));
   const MVS_CONF=frames.map(f=>new Float32Array((f.w/DS|0)*(f.h/DS|0)));
-  let pairsUsed=0;
-  const PAIRS_PER=Math.min(5,Math.floor(N/4)); // up to 5 neighbours
-  const PATCH=5,DHYP=12; // larger patch + more hypotheses
-
+  let pairsUsed=0;const PAIRS_PER=Math.min(4,Math.floor(N/4));const PATCH=5,DHYP=10;
   for(let fi=0;fi<N;fi++){
     const{w,h,imageData}=frames[fi];const sw=w/DS|0,sh=h/DS|0;
-    const gA=new Float32Array(sw*sh);
-    for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){const src=imageData.data;const i=(y*DS*w+x*DS)*4;gA[y*sw+x]=.299*src[i]+.587*src[i+1]+.114*src[i+2];}
-
+    const gA=new Float32Array(sw*sh);for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){const src=imageData.data;const i=(y*DS*w+x*DS)*4;gA[y*sw+x]=.299*src[i]+.587*src[i+1]+.114*src[i+2];}
     for(let pp=1;pp<=PAIRS_PER;pp++){
       const fj=(fi+pp)%N;const{w:wj,h:hj,imageData:idj}=frames[fj];
-      const swj=wj/DS|0,shj=hj/DS|0;
-      const gB=new Float32Array(swj*shj);
+      const swj=wj/DS|0,shj=hj/DS|0;const gB=new Float32Array(swj*shj);
       for(let y=0;y<shj;y++)for(let x=0;x<swj;x++){const src=idj.data;const i=(y*DS*wj+x*DS)*4;gB[y*swj+x]=.299*src[i]+.587*src[i+1]+.114*src[i+2];}
       const azA=(fi/N)*Math.PI*2,azB=(fj/N)*Math.PI*2;
-      const ORBIT_R=2.6,HFOV=58*Math.PI/180;
-      const fl_a=(sw/2)/Math.tan(HFOV/2),fl_b=(swj/2)/Math.tan(HFOV/2);
-      const cxA=Math.sin(azA)*ORBIT_R,czA=Math.cos(azA)*ORBIT_R;
-      const cxB=Math.sin(azB)*ORBIT_R,czB=Math.cos(azB)*ORBIT_R;
-      const angDiff=Math.abs(azB-azA);if(angDiff<.12||angDiff>1.4)continue;
-      pairsUsed++;
-
+      const ORBIT_R=2.6,HFOV=58*Math.PI/180;const fl_a=(sw/2)/Math.tan(HFOV/2),fl_b=(swj/2)/Math.tan(HFOV/2);
+      const cxA=Math.sin(azA)*ORBIT_R,czA=Math.cos(azA)*ORBIT_R;const cxB=Math.sin(azB)*ORBIT_R,czB=Math.cos(azB)*ORBIT_R;
+      const angDiff=Math.abs(azB-azA);if(angDiff<.12||angDiff>1.4)continue;pairsUsed++;
       for(let y=PATCH;y<sh-PATCH;y+=2)for(let x=PATCH;x<sw-PATCH;x+=2){
-        let bestZNCC=-1,bestD=0.5;
-        const depCenter=aiDepths[fi][(y*DS)*w+(x*DS)];
-
-        // Pre-compute patch mean+std for A (ZNCC)
+        let bestZ=-1,bestD=0.5;const depC=aiDepths[fi][(y*DS)*w+(x*DS)];
         let sumA=0,sum2A=0;const cnt=(2*PATCH+1)*(2*PATCH+1);
         for(let dy=-PATCH;dy<=PATCH;dy++)for(let dx=-PATCH;dx<=PATCH;dx++){const v=gA[(y+dy)*sw+(x+dx)];sumA+=v;sum2A+=v*v;}
-        const mA=sumA/cnt,stdA=Math.sqrt(Math.max(0,sum2A/cnt-mA*mA));
-        if(stdA<1)continue;
-
+        const mA=sumA/cnt,stdA=Math.sqrt(Math.max(0,sum2A/cnt-mA*mA));if(stdA<1)continue;
         for(let hi=0;hi<DHYP;hi++){
-          const dHyp=clamp(depCenter+lerp(-.40,.40,hi/(DHYP-1)),.04,.96);
-          const depWorld=ORBIT_R*(.1+dHyp*.8);
+          const dHyp=clamp(depC+lerp(-.40,.40,hi/(DHYP-1)),.04,.96);const depWorld=ORBIT_R*(.1+dHyp*.8);
           const fwX=-Math.sin(azA),fwZ=-Math.cos(azA),rtX=Math.cos(azA),rtZ=-Math.sin(azA);
           const ndcX=(x-sw/2)/fl_a,ndcY=-(y-sh/2)/fl_a;
           const px3=cxA+(fwX+ndcX*rtX)*depWorld,py3=ndcY*depWorld,pz3=czA+(fwZ+ndcX*rtZ)*depWorld;
@@ -599,106 +581,30 @@ async function runMVSWithTemporal(frames,aiDepths){
           const fwBx=-Math.sin(azB),fwBz=-Math.cos(azB),rtBx=Math.cos(azB),rtBz=-Math.sin(azB);
           const depB=dxB*fwBx+dzB*fwBz;if(depB<=0.01)continue;
           const projX=(dxB*rtBx+dzB*rtBz)/depB*fl_b+swj/2,projY=(-dyB/depB)*fl_b+shj/2;
-          const px=Math.round(projX),py=Math.round(projY);
-          if(px<PATCH||px>=swj-PATCH||py<PATCH||py>=shj-PATCH)continue;
-
-          // ZNCC (zero-mean NCC — more robust than plain NCC)
-          let sumB=0,sum2B=0,sumAB=0;
-          for(let dy=-PATCH;dy<=PATCH;dy++)for(let dx=-PATCH;dx<=PATCH;dx++){const vb=gB[(py+dy)*swj+(px+dx)];sumB+=vb;sum2B+=vb*vb;sumAB+=gA[(y+dy)*sw+(x+dx)]*vb;}
-          const mB=sumB/cnt,stdB=Math.sqrt(Math.max(0,sum2B/cnt-mB*mB));
-          if(stdB<1)continue;
-          const zncc=(sumAB/cnt-mA*mB)/(stdA*stdB);
-          if(zncc>bestZNCC){bestZNCC=zncc;bestD=dHyp;}
+          const px=Math.round(projX),py=Math.round(projY);if(px<PATCH||px>=swj-PATCH||py<PATCH||py>=shj-PATCH)continue;
+          let sumB=0,sum2B=0,sumAB=0;for(let dy=-PATCH;dy<=PATCH;dy++)for(let dx=-PATCH;dx<=PATCH;dx++){const vb=gB[(py+dy)*swj+(px+dx)];sumB+=vb;sum2B+=vb*vb;sumAB+=gA[(y+dy)*sw+(x+dx)]*vb;}
+          const mB=sumB/cnt,stdB=Math.sqrt(Math.max(0,sum2B/cnt-mB*mB));if(stdB<1)continue;
+          const zncc=(sumAB/cnt-mA*mB)/(stdA*stdB);if(zncc>bestZ){bestZ=zncc;bestD=dHyp;}
         }
-        if(bestZNCC>0.45){const mi=y*sw+x;if(bestZNCC>MVS_CONF[fi][mi]){MVS_MAPS[fi][mi]=bestD;MVS_CONF[fi][mi]=bestZNCC;}}
+        if(bestZ>0.45){const mi=y*sw+x;if(bestZ>MVS_CONF[fi][mi]){MVS_MAPS[fi][mi]=bestD;MVS_CONF[fi][mi]=bestZ;}}
       }
     }
     if(fi%4===0)await wait(0);
   }
-
-  // Temporal consistency pass — smooth depth across frame triplets
-  // For each frame, if neighbouring frames agree on depth, strengthen confidence
-  for(let fi=1;fi<N-1;fi++){
-    const{w,h}=frames[fi];const sw=w/DS|0,sh=h/DS|0;
-    const prev=MVS_MAPS[(fi-1+N)%N],next=MVS_MAPS[(fi+1)%N];
-    const cur=MVS_MAPS[fi],conf=MVS_CONF[fi];
-    for(let i=0;i<sw*sh;i++){
-      if(conf[i]<0.3)continue;
-      const dp=prev[i],dn=next[i];
-      if(Math.abs(dp-cur[i])<0.08&&Math.abs(dn-cur[i])<0.08){
-        cur[i]=(dp+cur[i]*2+dn)/4; // smooth toward neighbours
-        conf[i]=Math.min(1,conf[i]*1.15); // boost confidence
-      }
-    }
-  }
-
-  // Spatial median filter on confidence maps to remove salt noise
-  for(let fi=0;fi<N;fi++){
-    const{w,h}=frames[fi];const sw=w/DS|0,sh=h/DS|0;const conf=MVS_CONF[fi];const tmp=new Float32Array(conf.length);
-    for(let y=1;y<sh-1;y++)for(let x=1;x<sw-1;x++){
-      const vals=[conf[(y-1)*sw+x],conf[y*sw+(x-1)],conf[y*sw+x],conf[y*sw+(x+1)],conf[(y+1)*sw+x]];
-      vals.sort((a,b)=>a-b);tmp[y*sw+x]=vals[2]; // median
-    }
-    for(let i=0;i<conf.length;i++)if(tmp[i]>0)conf[i]=tmp[i];
-  }
-
-  const fullMaps=frames.map((f,fi)=>{
-    const{w,h}=f;const sw=w/DS|0,sh=h/DS|0;const out=new Float32Array(w*h);
-    // Bilinear upsample of MVS map (better than nearest-neighbour)
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const fx=x/DS,fy=y/DS;
-      const x0=Math.floor(fx),y0=Math.floor(fy);
-      const x1=Math.min(x0+1,sw-1),y1=Math.min(y0+1,sh-1);
-      const tx=fx-x0,ty=fy-y0;
-      out[y*w+x]=lerp(lerp(MVS_MAPS[fi][y0*sw+x0],MVS_MAPS[fi][y0*sw+x1],tx),lerp(MVS_MAPS[fi][y1*sw+x0],MVS_MAPS[fi][y1*sw+x1],tx),ty)||0;
-    }
-    return{map:out,conf:MVS_CONF[fi]};
-  });
+  // Temporal smooth
+  for(let fi=1;fi<N-1;fi++){const{w,h}=frames[fi];const sw=w/DS|0,sh=h/DS|0;const prev=MVS_MAPS[(fi-1+N)%N],next=MVS_MAPS[(fi+1)%N],cur=MVS_MAPS[fi],conf=MVS_CONF[fi];for(let i=0;i<sw*sh;i++){if(conf[i]<0.3)continue;const dp=prev[i],dn=next[i];if(Math.abs(dp-cur[i])<0.08&&Math.abs(dn-cur[i])<0.08){cur[i]=(dp+cur[i]*2+dn)/4;conf[i]=Math.min(1,conf[i]*1.15);}}}
+  const fullMaps=frames.map((f,fi)=>{const{w,h}=f;const sw=w/DS|0,sh=h/DS|0;const out=new Float32Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const fx=x/DS,fy=y/DS;const x0=Math.floor(fx),y0=Math.floor(fy);const x1=Math.min(x0+1,sw-1),y1=Math.min(y0+1,sh-1);const tx=fx-x0,ty=fy-y0;out[y*w+x]=lerp(lerp(MVS_MAPS[fi][y0*sw+x0],MVS_MAPS[fi][y0*sw+x1],tx),lerp(MVS_MAPS[fi][y1*sw+x0],MVS_MAPS[fi][y1*sw+x1],tx),ty)||0;}return{map:out,conf:MVS_CONF[fi]};});
   return{maps:fullMaps,pairsUsed};
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   DEPTH FUSION v5 — mask-aware + bilateral edge-preserving
+   DEPTH FUSION
 ════════════════════════════════════════════════════════════════════ */
-function fuseDepthsV5(aiDepth,mvsResult,frame,fgMask){
-  const{w,h}=frame;const N=w*h;
-  const mvsMap=mvsResult?.map,mvsConf=mvsResult?.conf;
-  const DS=4,sw=w/DS|0,sh=h/DS|0;
-  const fused=new Float32Array(N);
-
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    const i=y*w+x;const ai=aiDepth[i];let d=ai;
-    // Only fuse MVS where confidence is high enough
-    if(mvsMap&&mvsConf){
-      const mx=clamp(Math.round(x/DS),0,sw-1),my=clamp(Math.round(y/DS),0,sh-1);
-      const mvsC=mvsConf[my*sw+mx],mvsD=mvsMap[i];
-      if(mvsC>0.45&&mvsD>0.04){
-        // Confidence-weighted fusion — MVS more trusted at high confidence
-        const w_ai=clamp(1-mvsC*0.8,0.2,0.7);
-        const w_mvs=1-w_ai;
-        d=(ai*w_ai+mvsD*w_mvs)/(w_ai+w_mvs);
-      }
-    }
-    // Zero out depth outside mask (prevents background integration)
-    if(fgMask&&!fgMask[i])d=0;
-    fused[i]=d;
-  }
-
-  // Joint bilateral filter — preserves depth edges at silhouette boundaries
-  const out=new Float32Array(N);const BKERN=4;const SIGMA_S=3.0,SIGMA_R=0.06;
-  for(let y=BKERN;y<h-BKERN;y++)for(let x=BKERN;x<w-BKERN;x++){
-    if(fgMask&&!fgMask[y*w+x]){out[y*w+x]=0;continue;}
-    const c0=fused[y*w+x];if(c0<0.01){out[y*w+x]=0;continue;}
-    let s=0,sw2=0;
-    for(let dy=-BKERN;dy<=BKERN;dy++)for(let dx=-BKERN;dx<=BKERN;dx++){
-      const ni=(y+dy)*w+(x+dx);if(fgMask&&!fgMask[ni])continue;
-      const v=fused[ni];if(v<0.01)continue;
-      const ws=Math.exp(-(dx*dx+dy*dy)/(2*SIGMA_S*SIGMA_S));
-      const wr=Math.exp(-Math.pow(v-c0,2)/(2*SIGMA_R*SIGMA_R));
-      s+=v*ws*wr;sw2+=ws*wr;
-    }
-    out[y*w+x]=sw2>0?s/sw2:c0;
-  }
+function fuseDepths(aiDepth,mvsResult,frame){
+  const{w,h,fgMask}=frame;const N=w*h;const mvsMap=mvsResult?.map,mvsConf=mvsResult?.conf;const DS=4,sw=w/DS|0,sh=h/DS|0;const fused=new Float32Array(N);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;let d=aiDepth[i];if(mvsMap&&mvsConf){const mx=clamp(Math.round(x/DS),0,sw-1),my=clamp(Math.round(y/DS),0,sh-1);const mvsC=mvsConf[my*sw+mx],mvsD=mvsMap[i];if(mvsC>0.45&&mvsD>0.04){const wa=clamp(1-mvsC*0.8,0.2,0.7);d=(aiDepth[i]*wa+mvsD*(1-wa));}}if(fgMask&&!fgMask[i])d=0;fused[i]=d;}
+  const out=new Float32Array(N);const BKERN=4,SS=3.0,SR=0.06;
+  for(let y=BKERN;y<h-BKERN;y++)for(let x=BKERN;x<w-BKERN;x++){if(fgMask&&!fgMask[y*w+x]){out[y*w+x]=0;continue;}const c0=fused[y*w+x];if(c0<0.01){out[y*w+x]=0;continue;}let s=0,sw2=0;for(let dy=-BKERN;dy<=BKERN;dy++)for(let dx=-BKERN;dx<=BKERN;dx++){const ni=(y+dy)*w+(x+dx);if(fgMask&&!fgMask[ni])continue;const v=fused[ni];if(v<0.01)continue;const ws=Math.exp(-(dx*dx+dy*dy)/(2*SS*SS));const wr=Math.exp(-Math.pow(v-c0,2)/(2*SR*SR));s+=v*ws*wr;sw2+=ws*wr;}out[y*w+x]=sw2>0?s/sw2:c0;}
   for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(y<BKERN||y>=h-BKERN||x<BKERN||x>=w-BKERN)out[y*w+x]=fused[y*w+x];
   return out;
 }
@@ -707,441 +613,253 @@ function renderDepthPreviews(){
   $('depthSec').classList.add('show');const strip=$('depthStrip');strip.innerHTML='';
   for(let i=0;i<Math.min(frames.length,14);i++){
     const wrap=document.createElement('div');wrap.className='dcell';const photo=document.createElement('img');photo.src=frames[i].dataURL;
-    const cv2=document.createElement('canvas');cv2.width=66;cv2.height=50;const ctx2=cv2.getContext('2d');
-    const{w,h}=frames[i],d=depthMaps[i];const id2=ctx2.createImageData(66,50);
-    for(let py=0;py<50;py++)for(let px=0;px<66;px++){
-      const v=d[Math.floor(py/50*h)*w+Math.floor(px/66*w)];const ii=(py*66+px)*4;
-      id2.data[ii]=Math.round(clamp(v<.5?v*2*68+68*(1-v*2):255,0,255));id2.data[ii+1]=Math.round(clamp(v<.33?v*3*180:v<.66?(1-(v-.33)/.33)*180+v*3*40:v*200,0,220));id2.data[ii+2]=Math.round(clamp(v<.5?(1-v*2)*220:0,0,220));id2.data[ii+3]=210;
-    }
-    ctx2.putImageData(id2,0,0);const tag=document.createElement('div');tag.className='dtag';tag.textContent=`F${i+1}`;
-    wrap.appendChild(photo);wrap.appendChild(cv2);wrap.appendChild(tag);strip.appendChild(wrap);
+    const cv2=document.createElement('canvas');cv2.width=66;cv2.height=50;const ctx2=cv2.getContext('2d');const{w,h}=frames[i],d=depthMaps[i];const id2=ctx2.createImageData(66,50);
+    for(let py=0;py<50;py++)for(let px=0;px<66;px++){const v=d[Math.floor(py/50*h)*w+Math.floor(px/66*w)];const ii=(py*66+px)*4;id2.data[ii]=Math.round(clamp(v<.5?v*2*68+68*(1-v*2):255,0,255));id2.data[ii+1]=Math.round(clamp(v<.33?v*3*180:v<.66?(1-(v-.33)/.33)*180+v*3*40:v*200,0,220));id2.data[ii+2]=Math.round(clamp(v<.5?(1-v*2)*220:0,0,220));id2.data[ii+3]=210;}
+    ctx2.putImageData(id2,0,0);const tag=document.createElement('div');tag.className='dtag';tag.textContent=`F${i+1}`;wrap.appendChild(photo);wrap.appendChild(cv2);wrap.appendChild(tag);strip.appendChild(wrap);
   }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   MESH BUILD v5 — Adaptive TSDF with angle-cosine weighting,
-   feature-preserving bilateral SDF smooth, topology repair
+   MESH BUILD — TSDF
 ════════════════════════════════════════════════════════════════════ */
-async function buildMeshV5(RES,SMOOTH){
-  const N=frames.length;
-  if(N===0)throw new Error('No frames');
-  if(depthMaps.length!==N)throw new Error('depthMaps mismatch');
-  const HALF=1.15,STEP=(HALF*2)/RES;
-  const ORBIT_R=2.6,ELEV=10*Math.PI/180;
-  const CAM_Y=Math.sin(ELEV)*ORBIT_R,ORBIT_XZ=Math.cos(ELEV)*ORBIT_R;
-  const HFOV=58*Math.PI/180;
-  const N3=RES*RES*RES;
-  const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
-  const sdfAcc=new Float32Array(N3);
-  const sdfWt=new Float32Array(N3);
-  const voxSil=new Uint8Array(N3).fill(1);
-  const voxViewCount=new Uint8Array(N3); // how many views see each voxel
-
+function buildMesh(RES,SMOOTH){
+  const N=frames.length;if(N===0)throw new Error('No frames');if(depthMaps.length!==N)throw new Error('depthMaps mismatch');
+  const HALF=1.15,STEP=(HALF*2)/RES;const ORBIT_R=2.6,ELEV=10*Math.PI/180;
+  const CAM_Y=Math.sin(ELEV)*ORBIT_R,ORBIT_XZ=Math.cos(ELEV)*ORBIT_R;const HFOV=58*Math.PI/180;
+  const N3=RES*RES*RES;const VI=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz;
+  const sdfAcc=new Float32Array(N3),sdfWt=new Float32Array(N3),voxSil=new Uint8Array(N3).fill(1),viewCnt=new Uint8Array(N3);
   function dilMask(mask,w,h,r){if(!mask)return null;const o=new Uint8Array(w*h);for(let y=r;y<h-r;y++)for(let x=r;x<w-r;x++){if(!mask[y*w+x])continue;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)o[(y+dy)*w+(x+dx)]=1;}return o;}
-
-  function camParams(fi){
-    const az=(fi/N)*Math.PI*2;const camX=Math.sin(az)*ORBIT_XZ,camZ=Math.cos(az)*ORBIT_XZ;
-    const tL=Math.sqrt(camX*camX+CAM_Y*CAM_Y+camZ*camZ);
-    const fwX=-camX/tL,fwY=-CAM_Y/tL,fwZ=-camZ/tL;
-    const rtX=Math.cos(az),rtY=0,rtZ=-Math.sin(az);
-    const upX=rtY*fwZ-rtZ*fwY,upY=rtZ*fwX-rtX*fwZ,upZ=rtX*fwY-rtY*fwX;
-    return{camX,CAM_Y,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ};
-  }
-
-  tlog(`TSDF v5: angle-weighted integration across ${N} frames…`,'ti');
-  let maskedCount=0;
-  const dNear=ORBIT_R-HALF*2.0,dSpan=HALF*4.0;
-  const TRUNC=STEP*6; // slightly wider truncation for continuity
-
+  function camParams(fi){const az=(fi/N)*Math.PI*2;const camX=Math.sin(az)*ORBIT_XZ,camZ=Math.cos(az)*ORBIT_XZ;const tL=Math.sqrt(camX*camX+CAM_Y*CAM_Y+camZ*camZ);const fwX=-camX/tL,fwY=-CAM_Y/tL,fwZ=-camZ/tL;const rtX=Math.cos(az),rtY=0,rtZ=-Math.sin(az);const upX=rtY*fwZ-rtZ*fwY,upY=rtZ*fwX-rtX*fwZ,upZ=rtX*fwY-rtY*fwX;return{camX,CAM_Y,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ};}
+  tlog(`TSDF: ${N} frames × ${RES}³…`,'ti');let maskedCount=0;
+  const dNear=ORBIT_R-HALF*2.0,dSpan=HALF*4.0;const TRUNC=STEP*5;
   for(let fi=0;fi<N;fi++){
     const{w,h,fgMask}=frames[fi];const dm=depthMaps[fi];if(!dm||dm.length!==w*h)continue;
-    const hasMask=!!fgMask;if(hasMask)maskedCount++;
-    const dilM=dilMask(fgMask,w,h,8); // dilation r=8 (was 6) for cleaner interior
-    const fl=(w/2)/Math.tan(HFOV/2);
-    const{camX,CAM_Y:cY,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ}=camParams(fi);
-
-    for(let ix=0;ix<RES;ix++){
-      const wx=-HALF+(ix+.5)*STEP;
-      for(let iy=0;iy<RES;iy++){
-        const wy=-HALF+(iy+.5)*STEP;
-        for(let iz=0;iz<RES;iz++){
-          const wz=-HALF+(iz+.5)*STEP;
-          const dx=wx-camX,dy=wy-cY,dz=wz-camZ;
-          const depth=dx*fwX+dy*fwY+dz*fwZ;if(depth<=.05)continue;
-          const pxc=(dx*rtX+dy*rtY+dz*rtZ)/depth;
-          const pyc=(dx*upX+dy*upY+dz*upZ)/depth;
-          const pxi=clamp(Math.round(pxc*fl+w/2),0,w-1);
-          const pyi=clamp(Math.round(-pyc*fl+h/2),0,h-1);
-          const pidx=pyi*w+pxi;
-          if(hasMask&&dilM&&!dilM[pidx]){voxSil[VI(ix,iy,iz)]=0;continue;}
-          const measD=1-dm[pidx];
-          if(measD<0.02)continue; // skip background (zero-masked) pixels
-          const voxD=(depth-dNear)/dSpan;
-          const sdf_val=measD-voxD;
-          if(sdf_val<-TRUNC/dSpan)continue;
-          const truncated=clamp(sdf_val,-(TRUNC/dSpan),TRUNC/dSpan);
-
-          // Angle-cosine weight: view looking straight at surface contributes more
-          // Approximate: weight by how close voxD is to measD (good depth agreement)
-          const depthAgreement=Math.max(0,1-Math.abs(sdf_val)/(TRUNC/dSpan));
-          // View angle weight: voxels closer to image centre get more weight (less lens distortion)
-          const cx_dist=Math.abs(pxc)/((w/2)/fl),cy_dist=Math.abs(pyc)/((h/2)/fl);
-          const angleW=Math.max(0.2,1-(cx_dist*cx_dist+cy_dist*cy_dist)*0.4);
-          const w2=depthAgreement*angleW;
-          const idx=VI(ix,iy,iz);
-          sdfAcc[idx]+=truncated*w2;sdfWt[idx]+=w2;
-          voxViewCount[idx]=Math.min(255,voxViewCount[idx]+1);
-        }
-      }
-    }
+    const hasMask=!!fgMask;if(hasMask)maskedCount++;const dilM=dilMask(fgMask,w,h,7);
+    const fl=(w/2)/Math.tan(HFOV/2);const{camX,CAM_Y:cY,camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ}=camParams(fi);
+    for(let ix=0;ix<RES;ix++){const wx=-HALF+(ix+.5)*STEP;for(let iy=0;iy<RES;iy++){const wy=-HALF+(iy+.5)*STEP;for(let iz=0;iz<RES;iz++){
+      const wz=-HALF+(iz+.5)*STEP;const dx=wx-camX,dy=wy-cY,dz=wz-camZ;const depth=dx*fwX+dy*fwY+dz*fwZ;if(depth<=.05)continue;
+      const pxc=(dx*rtX+dy*rtY+dz*rtZ)/depth;const pyc=(dx*upX+dy*upY+dz*upZ)/depth;
+      const pxi=clamp(Math.round(pxc*fl+w/2),0,w-1);const pyi=clamp(Math.round(-pyc*fl+h/2),0,h-1);const pidx=pyi*w+pxi;
+      if(hasMask&&dilM&&!dilM[pidx]){voxSil[VI(ix,iy,iz)]=0;continue;}
+      const measD=1-dm[pidx];if(measD<0.02)continue;
+      const voxD=(depth-dNear)/dSpan;const sdf_val=measD-voxD;if(sdf_val<-TRUNC/dSpan)continue;
+      const truncated=clamp(sdf_val,-(TRUNC/dSpan),TRUNC/dSpan);
+      const depAgree=Math.max(0,1-Math.abs(sdf_val)/(TRUNC/dSpan));
+      const cx_d=Math.abs(pxc)/((w/2)/fl),cy_d=Math.abs(pyc)/((h/2)/fl);
+      const angW=Math.max(0.2,1-(cx_d*cx_d+cy_d*cy_d)*0.4);
+      const w2=depAgree*angW;const idx=VI(ix,iy,iz);sdfAcc[idx]+=truncated*w2;sdfWt[idx]+=w2;viewCnt[idx]=Math.min(255,viewCnt[idx]+1);
+    }}}
   }
-
-  const sdf=new Float32Array(N3);
-  for(let i=0;i<N3;i++){
-    if(!voxSil[i]){sdf[i]=-1;continue;}
-    // Require at least 2 views for reliable reconstruction (removes noise)
-    if(voxViewCount[i]<2&&sdfWt[i]<0.3){sdf[i]=0.5;continue;}
-    sdf[i]=sdfWt[i]>0.01?sdfAcc[i]/sdfWt[i]:0.5;
-  }
-
+  const sdf=new Float32Array(N3);for(let i=0;i<N3;i++){if(!voxSil[i]){sdf[i]=-1;continue;}if(viewCnt[i]<2&&sdfWt[i]<0.25){sdf[i]=0.5;continue;}sdf[i]=sdfWt[i]>0.01?sdfAcc[i]/sdfWt[i]:0.5;}
   let s1=0;for(let i=0;i<N3;i++)if(sdf[i]>-.5&&sdf[i]<.15)s1++;
   tlog(`TSDF: ${s1.toLocaleString()} near-surface voxels (${maskedCount}/${N} masked)`);
-  if(s1<30){tlog('Too sparse — depth cloud fallback','tw');return buildDepthCloud(RES,SMOOTH);}
-
-  // Hole fill — exterior flood-fill + small cavity sealing
-  const emptyFg=new Uint8Array(N3);for(let i=0;i<N3;i++)emptyFg[i]=(sdf[i]>0.05&&voxSil[i])?1:0;
+  if(s1<20)throw new Error('TSDF too sparse');
+  // Hole fill
+  const emFg=new Uint8Array(N3);for(let i=0;i<N3;i++)emFg[i]=(sdf[i]>0.05&&voxSil[i])?1:0;
   const bg=new Uint8Array(N3),qff=new Int32Array(N3);let qh=0,qt=0;
-  const seedBg=(a,b,c)=>{const i=VI(a,b,c);if(emptyFg[i]&&!bg[i]){bg[i]=1;qff[qt++]=i;}};
+  const seedBg=(a,b,c)=>{const i=VI(a,b,c);if(emFg[i]&&!bg[i]){bg[i]=1;qff[qt++]=i;}};
   for(let a=0;a<RES;a++)for(let b=0;b<RES;b++){seedBg(0,a,b);seedBg(RES-1,a,b);seedBg(a,0,b);seedBg(a,RES-1,b);seedBg(a,b,0);seedBg(a,b,RES-1);}
-  while(qh<qt){const idx=qff[qh++];const ix=idx/(RES*RES)|0,iy=(idx%(RES*RES))/RES|0,iz=idx%RES;for(const ni of[ix>0?VI(ix-1,iy,iz):-1,ix<RES-1?VI(ix+1,iy,iz):-1,iy>0?VI(ix,iy-1,iz):-1,iy<RES-1?VI(ix,iy+1,iz):-1,iz>0?VI(ix,iy,iz-1):-1,iz<RES-1?VI(ix,iy,iz+1):-1])if(ni>=0&&emptyFg[ni]&&!bg[ni]){bg[ni]=1;qff[qt++]=ni;}}
-  let filled=0;for(let i=0;i<N3;i++)if(emptyFg[i]&&!bg[i]){sdf[i]=-0.08;filled++;}
-  if(filled>0)tlog(`Hole fill: sealed ${filled.toLocaleString()} interior voxels`,'tok');
-
-  // SDF gradient magnitude — used for feature-preserving smooth
+  while(qh<qt){const idx=qff[qh++];const ix=idx/(RES*RES)|0,iy=(idx%(RES*RES))/RES|0,iz=idx%RES;for(const ni of[ix>0?VI(ix-1,iy,iz):-1,ix<RES-1?VI(ix+1,iy,iz):-1,iy>0?VI(ix,iy-1,iz):-1,iy<RES-1?VI(ix,iy+1,iz):-1,iz>0?VI(ix,iy,iz-1):-1,iz<RES-1?VI(ix,iy,iz+1):-1])if(ni>=0&&emFg[ni]&&!bg[ni]){bg[ni]=1;qff[qt++]=ni;}}
+  let filled=0;for(let i=0;i<N3;i++)if(emFg[i]&&!bg[i]){sdf[i]=-0.08;filled++;}
+  if(filled>0)tlog(`Hole fill: +${filled.toLocaleString()} voxels`,'tok');
+  // Gradient magnitude for feature-preserving smooth
   const gradMag=new Float32Array(N3);
-  for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){
-    const gx=sdf[VI(ix+1,iy,iz)]-sdf[VI(ix-1,iy,iz)];
-    const gy=sdf[VI(ix,iy+1,iz)]-sdf[VI(ix,iy-1,iz)];
-    const gz=sdf[VI(ix,iy,iz+1)]-sdf[VI(ix,iy,iz-1)];
-    gradMag[VI(ix,iy,iz)]=Math.sqrt(gx*gx+gy*gy+gz*gz);
-  }
-
-  // Feature-preserving bilateral Taubin smoothing on SDF
-  // - High curvature (large gradMag) → less smoothing → preserves edges
-  // - Bilateral: also weight by SDF value similarity → preserves zero-crossing sharpness
-  tlog(`Bilateral Taubin SDF smooth × ${SMOOTH}…`,'ti');
+  for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){const gx=sdf[VI(ix+1,iy,iz)]-sdf[VI(ix-1,iy,iz)];const gy=sdf[VI(ix,iy+1,iz)]-sdf[VI(ix,iy-1,iz)];const gz=sdf[VI(ix,iy,iz+1)]-sdf[VI(ix,iy,iz-1)];gradMag[VI(ix,iy,iz)]=Math.sqrt(gx*gx+gy*gy+gz*gz);}
+  // Bilateral Taubin SDF smooth
   const tmp=new Float32Array(N3);const LAMBDA=0.50,MU=-0.52;
-
-  for(let pass=0;pass<SMOOTH;pass++){
-    const lam=pass%2===0?LAMBDA:MU;
-    for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){
-      const ci=VI(ix,iy,iz);const c=sdf[ci];
-      if(Math.abs(c)>0.45){tmp[ci]=c;continue;} // skip deep interior/exterior
-
-      // Feature preservation: high gradient = edge = less smoothing
-      const featureStrength=clamp(gradMag[ci]/0.5,0,1);
-      const smoothAlpha=Math.max(0.1,1-featureStrength*0.8);
-
-      // Bilateral weights on the 6 neighbours
-      let wsum=0,vsum=0;
-      for(const ni of[VI(ix-1,iy,iz),VI(ix+1,iy,iz),VI(ix,iy-1,iz),VI(ix,iy+1,iz),VI(ix,iy,iz-1),VI(ix,iy,iz+1)]){
-        const nv=sdf[ni];
-        // Bilateral: penalise neighbours with very different SDF values
-        const bilateral=Math.exp(-Math.pow(nv-c,2)/(2*0.04*0.04));
-        wsum+=bilateral;vsum+=nv*bilateral;
-      }
-      const nb=vsum/wsum;
-      tmp[ci]=c+lam*(nb-c)*smoothAlpha;
-    }
-    for(let i=0;i<N3;i++)if(Math.abs(sdf[i])<0.45)sdf[i]=tmp[i];
-  }
-
-  tlog(`Bilateral Taubin complete — marching cubes…`,'ti');
-  return runMarchingCubesV5(sdf,gradMag,RES,HALF,STEP,VI);
+  for(let pass=0;pass<SMOOTH;pass++){const lam=pass%2===0?LAMBDA:MU;for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){const ci=VI(ix,iy,iz);const c=sdf[ci];if(Math.abs(c)>0.45){tmp[ci]=c;continue;}const fs=clamp(gradMag[ci]/0.5,0,1);const sa=Math.max(0.1,1-fs*0.8);let wsum=0,vsum=0;for(const ni of[VI(ix-1,iy,iz),VI(ix+1,iy,iz),VI(ix,iy-1,iz),VI(ix,iy+1,iz),VI(ix,iy,iz-1),VI(ix,iy,iz+1)]){const nv=sdf[ni];const bil=Math.exp(-Math.pow(nv-c,2)/(2*0.04*0.04));wsum+=bil;vsum+=nv*bil;}tmp[ci]=c+lam*(vsum/wsum-c)*sa;}for(let i=0;i<N3;i++)if(Math.abs(sdf[i])<0.45)sdf[i]=tmp[i];}
+  tlog('Bilateral Taubin complete','tok');
+  return runMC(sdf,RES,HALF,STEP,VI);
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   DEPTH CLOUD FALLBACK
-════════════════════════════════════════════════════════════════════ */
-function buildDepthCloud(RES,SMOOTH){
-  tlog('Depth point-cloud reconstruction…','tw');RES=RES||72;SMOOTH=SMOOTH||8;
-  const N=frames.length,HALF=1.15,STEP=(HALF*2)/RES;const ORBIT_R=2.6,HFOV=58*Math.PI/180;
-  const VI2=(ix,iy,iz)=>ix*RES*RES+iy*RES+iz,N3=RES*RES*RES;const cnt=new Float32Array(N3);
-  for(let fi=0;fi<N;fi++){const{w,h}=frames[fi],dm=depthMaps[fi];if(!dm||dm.length!==w*h)continue;const az=(fi/N)*Math.PI*2,cx=Math.sin(az)*ORBIT_R,cz=Math.cos(az)*ORBIT_R;const fwX=-Math.sin(az),fwZ=-Math.cos(az),rtX=Math.cos(az),rtZ=-Math.sin(az);const fl=(w/2)/Math.tan(HFOV/2);for(let py=4;py<h-4;py+=4)for(let px=4;px<w-4;px+=4){const dv=dm[py*w+px];if(dv<.04||dv>.96)continue;const dist=ORBIT_R*(.12+dv*.78);const ndcX=(px-w/2)/fl,ndcY=-(py-h/2)/fl;const rdX=fwX+ndcX*rtX,rdY=ndcY,rdZ=fwZ+ndcX*rtZ;const rdL=Math.sqrt(rdX*rdX+rdY*rdY+rdZ*rdZ)||1;cnt[VI2(clamp(((cx+(rdX/rdL)*dist+HALF)/STEP)|0,0,RES-1),clamp(((rdY/rdL)*dist+HALF)/STEP|0,0,RES-1),clamp(((cz+(rdZ/rdL)*dist+HALF)/STEP)|0,0,RES-1))]++;}}
-  let cMax=0;for(let i=0;i<N3;i++)if(cnt[i]>cMax)cMax=cnt[i];
-  const sdf=new Float32Array(N3);if(cMax>0){const thr=Math.max(1,cMax*.035);for(let i=0;i<N3;i++)sdf[i]=cnt[i]>=thr?0.0:-0.5;}
-  const dil=new Uint8Array(N3),DR=3;for(let ix=DR;ix<RES-DR;ix++)for(let iy=DR;iy<RES-DR;iy++)for(let iz=DR;iz<RES-DR;iz++){if(sdf[VI2(ix,iy,iz)]>-0.4)continue;for(let dy=-DR;dy<=DR;dy++)for(let dx=-DR;dx<=DR;dx++)for(let dz=-DR;dz<=DR;dz++)dil[VI2(ix+dx,iy+dy,iz+dz)]=1;}
-  const bg2=new Uint8Array(N3),q2=new Int32Array(N3);let qh2=0,qt2=0;const sb2=(a,b,c)=>{const i=VI2(a,b,c);if(!dil[i]&&!bg2[i]){bg2[i]=1;q2[qt2++]=i;}};for(let a=0;a<RES;a++)for(let b=0;b<RES;b++){sb2(0,a,b);sb2(RES-1,a,b);sb2(a,0,b);sb2(a,RES-1,b);sb2(a,b,0);sb2(a,b,RES-1);}while(qh2<qt2){const idx=q2[qh2++];const ix=idx/(RES*RES)|0,iy=(idx%(RES*RES))/RES|0,iz=idx%RES;for(const ni of[ix>0?VI2(ix-1,iy,iz):-1,ix<RES-1?VI2(ix+1,iy,iz):-1,iy>0?VI2(ix,iy-1,iz):-1,iy<RES-1?VI2(ix,iy+1,iz):-1,iz>0?VI2(ix,iy,iz-1):-1,iz<RES-1?VI2(ix,iy,iz+1):-1])if(ni>=0&&!dil[ni]&&!bg2[ni]){bg2[ni]=1;q2[qt2++]=ni;}}
-  for(let i=0;i<N3;i++)sdf[i]=(dil[i]||!bg2[i])?-0.2:0.5;
-  const dummy=new Float32Array(N3);
-  const tmp2=new Float32Array(N3);const LAMBDA=0.50,MU=-0.53;for(let pass=0;pass<SMOOTH;pass++){const lam=pass%2===0?LAMBDA:MU;for(let ix=1;ix<RES-1;ix++)for(let iy=1;iy<RES-1;iy++)for(let iz=1;iz<RES-1;iz++){const c=sdf[VI2(ix,iy,iz)];const nb=(sdf[VI2(ix-1,iy,iz)]+sdf[VI2(ix+1,iy,iz)]+sdf[VI2(ix,iy-1,iz)]+sdf[VI2(ix,iy+1,iz)]+sdf[VI2(ix,iy,iz-1)]+sdf[VI2(ix,iy,iz+1)])/6;tmp2[VI2(ix,iy,iz)]=c+lam*(nb-c);}for(let i=0;i<N3;i++)if(Math.abs(sdf[i])<0.45)sdf[i]=tmp2[i];}
-  return runMarchingCubesV5(sdf,dummy,RES,HALF,STEP,VI2);
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   MARCHING CUBES v5
-   - Adaptive iso-value near high-gradient regions
-   - 4x vertex welding resolution
-   - Full SDF gradient normal interpolation per edge
-════════════════════════════════════════════════════════════════════ */
-function runMarchingCubesV5(occ,gradMag,RES,HALF,STEP,VI){
+function runMC(occ,RES,HALF,STEP,VI){
   const ET=[0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
   const TT=[[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,2,3,10,3,5,10,3,7,5],[1,9,8,1,8,2,2,8,7,2,7,5,2,5,10],[1,2,11,1,11,5,5,11,7],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
   const EP=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
   const CV=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
-  const THRESH=0.0;
-  const verts=[],normals=[],uvs=[],indices=[],vmap=new Map();let vIdx=0;
-  const SNAP=Math.round(1/(STEP*0.25)); // 4x welding resolution (was 0.5)
-
-  function addV(p,nx,ny,nz){
-    const u=clamp(.5+Math.atan2(p[2],p[0])/(Math.PI*2),0,1);
-    const v=clamp(.5-p[1]/(HALF*2),0,1);
-    const k=`${Math.round(p[0]*SNAP)}_${Math.round(p[1]*SNAP)}_${Math.round(p[2]*SNAP)}`;
-    if(vmap.has(k))return vmap.get(k);
-    vmap.set(k,vIdx);verts.push(p[0],p[1],p[2]);normals.push(nx,ny,nz);uvs.push(u,v);return vIdx++;
-  }
-  function sdfGrad(ix,iy,iz){
-    const gx=occ[VI(Math.min(ix+1,RES-1),iy,iz)]-occ[VI(Math.max(ix-1,0),iy,iz)];
-    const gy=occ[VI(ix,Math.min(iy+1,RES-1),iz)]-occ[VI(ix,Math.max(iy-1,0),iz)];
-    const gz=occ[VI(ix,iy,Math.min(iz+1,RES-1))]-occ[VI(ix,iy,Math.max(iz-1,0))];
-    const l=Math.sqrt(gx*gx+gy*gy+gz*gz)||1;return[-gx/l,-gy/l,-gz/l];
-  }
-  function interp(p1,p2,v1,v2){
-    // Proper linear interpolation — no .5 fallback
-    const t=(v1===v2)?0.5:clamp((THRESH-v1)/(v2-v1),0.001,0.999);
-    return[lerp(p1[0],p2[0],t),lerp(p1[1],p2[1],t),lerp(p1[2],p2[2],t)];
-  }
-
+  const THRESH=0.0;const verts=[],normals=[],indices=[],vmap=new Map();let vIdx=0;
+  const SNAP=Math.round(1/(STEP*0.25));
+  function addV(p,nx,ny,nz){const k=`${Math.round(p[0]*SNAP)}_${Math.round(p[1]*SNAP)}_${Math.round(p[2]*SNAP)}`;if(vmap.has(k))return vmap.get(k);vmap.set(k,vIdx);verts.push(p[0],p[1],p[2]);normals.push(nx,ny,nz);return vIdx++;}
+  function sdfGrad(ix,iy,iz){const gx=occ[VI(Math.min(ix+1,RES-1),iy,iz)]-occ[VI(Math.max(ix-1,0),iy,iz)];const gy=occ[VI(ix,Math.min(iy+1,RES-1),iz)]-occ[VI(ix,Math.max(iy-1,0),iz)];const gz=occ[VI(ix,iy,Math.min(iz+1,RES-1))]-occ[VI(ix,iy,Math.max(iz-1,0))];const l=Math.sqrt(gx*gx+gy*gy+gz*gz)||1;return[-gx/l,-gy/l,-gz/l];}
+  function interp(p1,p2,v1,v2){const t=(v1===v2)?0.5:clamp((THRESH-v1)/(v2-v1),0.001,0.999);return[lerp(p1[0],p2[0],t),lerp(p1[1],p2[1],t),lerp(p1[2],p2[2],t)];}
   for(let ix=0;ix<RES-1;ix++)for(let iy=0;iy<RES-1;iy++)for(let iz=0;iz<RES-1;iz++){
     const vals=[occ[VI(ix,iy,iz)],occ[VI(ix+1,iy,iz)],occ[VI(ix+1,iy+1,iz)],occ[VI(ix,iy+1,iz)],occ[VI(ix,iy,iz+1)],occ[VI(ix+1,iy,iz+1)],occ[VI(ix+1,iy+1,iz+1)],occ[VI(ix,iy+1,iz+1)]];
-    let ci=0;for(let c=0;c<8;c++)if(vals[c]<THRESH)ci|=(1<<c);
-    if(ci===0||ci===255)continue;const et=ET[ci];if(!et)continue;
+    let ci=0;for(let c=0;c<8;c++)if(vals[c]<THRESH)ci|=(1<<c);if(ci===0||ci===255)continue;const et=ET[ci];if(!et)continue;
     const cp=CV.map(([a,b,c2])=>[-HALF+(ix+a)*STEP,-HALF+(iy+b)*STEP,-HALF+(iz+c2)*STEP]);
     const ev=new Array(12);for(let e=0;e<12;e++){if(!(et&(1<<e)))continue;ev[e]=interp(cp[EP[e][0]],cp[EP[e][1]],vals[EP[e][0]],vals[EP[e][1]]);}
     const tris=TT[ci];if(!tris||!tris.length)continue;
     const cN=[[ix,iy,iz],[ix+1,iy,iz],[ix+1,iy+1,iz],[ix,iy+1,iz],[ix,iy,iz+1],[ix+1,iy,iz+1],[ix+1,iy+1,iz+1],[ix,iy+1,iz+1]].map(([a,b,c])=>sdfGrad(a,b,c));
-    for(let t=0;t<tris.length;t+=3){
-      const e0=tris[t],e1=tris[t+1],e2=tris[t+2];if(ev[e0]===undefined||ev[e1]===undefined||ev[e2]===undefined)continue;
+    for(let t=0;t<tris.length;t+=3){const e0=tris[t],e1=tris[t+1],e2=tris[t+2];if(ev[e0]===undefined||ev[e1]===undefined||ev[e2]===undefined)continue;
       function eN(e){const[ea,eb]=EP[e];const ta=clamp((THRESH-vals[ea])/(vals[eb]-vals[ea]||1e-9),0.001,0.999);const na=cN[ea],nb=cN[eb];const nx=lerp(na[0],nb[0],ta),ny=lerp(na[1],nb[1],ta),nz=lerp(na[2],nb[2],ta);const l=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;return[nx/l,ny/l,nz/l];}
       const n0=eN(e0),n1=eN(e1),n2=eN(e2);
       indices.push(addV(ev[e0],n0[0],n0[1],n0[2]),addV(ev[e1],n1[0],n1[1],n1[2]),addV(ev[e2],n2[0],n2[1],n2[2]));
     }
   }
   tlog(`MC: ${vIdx.toLocaleString()} verts · ${(indices.length/3)|0} faces`,'tok');
-  return{verts,normals,uvs,indices,stats:{vCount:vIdx,fCount:(indices.length/3)|0}};
+  // NOTE: UVs intentionally NOT set here — they are assigned later by buildRealPhotoTexture
+  return{verts,normals,uvs:new Array(vIdx*2).fill(0),indices,stats:{vCount:vIdx,fCount:(indices.length/3)|0}};
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   MESH REFINEMENT v5 — Taubin with curvature-adaptive strength
-════════════════════════════════════════════════════════════════════ */
-function refineMeshV5(mesh,passes){
+function refineMesh(mesh,passes){
   const{verts,normals,uvs,indices}=mesh;const VC=verts.length/3;if(VC<4)return mesh;
   const adj=new Array(VC);for(let i=0;i<VC;i++)adj[i]=[];
   for(let t=0;t<indices.length;t+=3){const a=indices[t],b=indices[t+1],c=indices[t+2];adj[a].push(b,c);adj[b].push(a,c);adj[c].push(a,b);}
   for(let i=0;i<VC;i++)adj[i]=[...new Set(adj[i])];
   const pos=new Float32Array(verts);const tmp=new Float32Array(pos.length);
-
-  // Pre-compute discrete mean curvature per vertex (used for feature preservation)
   const curv=new Float32Array(VC);
-  for(let vi=0;vi<VC;vi++){
-    const nb=adj[vi];if(!nb.length)continue;let sx=0,sy=0,sz=0;
-    for(const ni of nb){sx+=pos[ni*3];sy+=pos[ni*3+1];sz+=pos[ni*3+2];}
-    const f=1/nb.length;
-    const lx=sx*f-pos[vi*3],ly=sy*f-pos[vi*3+1],lz=sz*f-pos[vi*3+2];
-    curv[vi]=Math.sqrt(lx*lx+ly*ly+lz*lz);
-  }
+  for(let vi=0;vi<VC;vi++){const nb=adj[vi];if(!nb.length)continue;let sx=0,sy=0,sz=0;for(const ni of nb){sx+=pos[ni*3];sy+=pos[ni*3+1];sz+=pos[ni*3+2];}const f=1/nb.length;const lx=sx*f-pos[vi*3],ly=sy*f-pos[vi*3+1],lz=sz*f-pos[vi*3+2];curv[vi]=Math.sqrt(lx*lx+ly*ly+lz*lz);}
   const curvMax=Math.max(...curv,0.001);
-
-  for(let pass=0;pass<passes;pass++){
-    const lam=pass%2===0?0.50:-0.52;
-    for(let vi=0;vi<VC;vi++){
-      const nb=adj[vi];if(!nb.length)continue;
-      let sx=0,sy=0,sz=0;for(const ni of nb){sx+=pos[ni*3];sy+=pos[ni*3+1];sz+=pos[ni*3+2];}
-      const f=1/nb.length;
-      // Feature preservation: high-curvature vertices smooth less
-      const featureW=Math.max(0.05,1-(curv[vi]/curvMax)*0.9);
-      tmp[vi*3]=pos[vi*3]+lam*(sx*f-pos[vi*3])*featureW;
-      tmp[vi*3+1]=pos[vi*3+1]+lam*(sy*f-pos[vi*3+1])*featureW;
-      tmp[vi*3+2]=pos[vi*3+2]+lam*(sz*f-pos[vi*3+2])*featureW;
-    }
-    pos.set(tmp);
-  }
-  // Recompute area-weighted normals
+  for(let pass=0;pass<passes;pass++){const lam=pass%2===0?0.50:-0.52;for(let vi=0;vi<VC;vi++){const nb=adj[vi];if(!nb.length)continue;let sx=0,sy=0,sz=0;for(const ni of nb){sx+=pos[ni*3];sy+=pos[ni*3+1];sz+=pos[ni*3+2];}const f=1/nb.length;const fw=Math.max(0.05,1-(curv[vi]/curvMax)*0.85);tmp[vi*3]=pos[vi*3]+lam*(sx*f-pos[vi*3])*fw;tmp[vi*3+1]=pos[vi*3+1]+lam*(sy*f-pos[vi*3+1])*fw;tmp[vi*3+2]=pos[vi*3+2]+lam*(sz*f-pos[vi*3+2])*fw;}pos.set(tmp);}
   const outN=new Float32Array(VC*3);
-  for(let t=0;t<indices.length;t+=3){
-    const a=indices[t],b=indices[t+1],c=indices[t+2];
-    const ax=pos[a*3],ay=pos[a*3+1],az=pos[a*3+2];const bx=pos[b*3],by=pos[b*3+1],bz=pos[b*3+2];const cx=pos[c*3],cy=pos[c*3+1],cz=pos[c*3+2];
-    const ex=bx-ax,ey=by-ay,ez=bz-az;const fx=cx-ax,fy=cy-ay,fz=cz-az;
-    const nx=ey*fz-ez*fy,ny=ez*fx-ex*fz,nz=ex*fy-ey*fx;
-    const area=Math.sqrt(nx*nx+ny*ny+nz*nz);
-    for(const vi of[a,b,c]){outN[vi*3]+=nx;outN[vi*3+1]+=ny;outN[vi*3+2]+=nz;}
-  }
+  for(let t=0;t<indices.length;t+=3){const a=indices[t],b=indices[t+1],c=indices[t+2];const ax=pos[a*3],ay=pos[a*3+1],az=pos[a*3+2];const bx=pos[b*3],by=pos[b*3+1],bz=pos[b*3+2];const cx=pos[c*3],cy=pos[c*3+1],cz=pos[c*3+2];const ex=bx-ax,ey=by-ay,ez=bz-az;const fx=cx-ax,fy=cy-ay,fz=cz-az;const nx=ey*fz-ez*fy,ny=ez*fx-ex*fz,nz=ex*fy-ey*fx;for(const vi of[a,b,c]){outN[vi*3]+=nx;outN[vi*3+1]+=ny;outN[vi*3+2]+=nz;}}
   for(let vi=0;vi<VC;vi++){const l=Math.sqrt(outN[vi*3]**2+outN[vi*3+1]**2+outN[vi*3+2]**2)||1;outN[vi*3]/=l;outN[vi*3+1]/=l;outN[vi*3+2]/=l;}
   return{verts:Array.from(pos),normals:Array.from(outN),uvs,indices,stats:mesh.stats};
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   MULTI-VIEW TEXTURE BAKE v5
-   ─────────────────────────────────────────────────────────────────
-   Key improvements over v4:
-   - Sample top-3 best-angle views and BLEND with cosine weights
-     instead of picking only 1 (eliminates hard colour discontinuities)
-   - Bilinear sampling from source frames (anti-aliasing)
-   - Per-channel histogram normalisation (white balance correction)
-   - 2px dilation border around each atlas tile (prevents mip bleeding)
-   - Contrast + saturation boost per-frame for richer appearance
+   REAL PHOTO TEXTURE — UV PROJECTION SYSTEM
+   ──────────────────────────────────────────────────────────────────
+   This is the core fix. The atlas is laid out as N vertical strips,
+   one per camera frame. Each strip contains the actual photograph
+   (scaled to fit). Per-vertex UVs are computed by:
+
+   1. Finding the best camera for each vertex (highest normal·view dot)
+   2. Projecting the vertex 3D position into that camera's image plane
+      using the orbit camera model
+   3. Mapping that pixel coordinate into the atlas strip
+
+   Result: each surface point on the mesh gets the ACTUAL PHOTO PIXEL
+   from the best camera that saw it — full photographic detail.
 ════════════════════════════════════════════════════════════════════ */
-async function bakeMultiViewTexture(mesh,frames,depthMaps,atlasSize){
-  const{verts,normals,indices}=mesh;const N=frames.length;
+function buildRealPhotoTexture(mesh,frames){
+  const{verts,normals,indices}=mesh;const N=frames.length;const VC=verts.length/3;
+
+  /* Atlas layout: N strips side by side. Each strip = STRIP_W × STRIP_H.
+     We target a total atlas of ~2048 wide, height proportional. */
+  const STRIP_W=Math.max(128,Math.floor(2048/N));
+  const STRIP_H=Math.round(STRIP_W*(frames[0]?.h/frames[0]?.w||1));
+  const ATLAS_W=STRIP_W*N;const ATLAS_H=STRIP_H;
+
+  /* Build atlas canvas: draw each photo into its strip */
+  const atlas=document.createElement('canvas');atlas.width=ATLAS_W;atlas.height=ATLAS_H;
+  const actx=atlas.getContext('2d');actx.fillStyle='#1a1a1a';actx.fillRect(0,0,ATLAS_W,ATLAS_H);
+
+  // Per-frame average colour for white-balance correction
+  const frameAvg=frames.map(f=>{const d=f.imageData.data;let r=0,g=0,b=0,c=0;for(let i=0;i<d.length;i+=16*4){r+=d[i];g+=d[i+1];b+=d[i+2];c++;}return{r:r/c,g:g/c,b:b/c};});
+  const globalR=frameAvg.reduce((s,f)=>s+f.r,0)/N;
+  const globalG=frameAvg.reduce((s,f)=>s+f.g,0)/N;
+  const globalB=frameAvg.reduce((s,f)=>s+f.b,0)/N;
+
+  frames.forEach((f,fi)=>{
+    const img=new Image();img.src=f.dataURL;
+    const sx=fi*STRIP_W;
+    // Colour-correct each strip slightly
+    actx.save();
+    const scR=clamp(globalR/(frameAvg[fi].r||1),.75,1.35);
+    const scG=clamp(globalG/(frameAvg[fi].g||1),.75,1.35);
+    const scB=clamp(globalB/(frameAvg[fi].b||1),.75,1.35);
+    // Use CSS filter for white balance + contrast boost
+    const br=Math.round((scR+scG+scB)/3*100);
+    actx.filter=`brightness(${clamp(br,80,125)}%) contrast(103%) saturate(108%)`;
+    // Draw photo scaled into strip, cropped to match aspect
+    const srcAspect=f.w/f.h;const stripAspect=STRIP_W/STRIP_H;
+    let sx2=0,sy2=0,sw2=f.w,sh2=f.h;
+    if(srcAspect>stripAspect){sw2=Math.round(f.h*stripAspect);sx2=(f.w-sw2)/2;}
+    else{sh2=Math.round(f.w/stripAspect);sy2=(f.h-sh2)/2;}
+    actx.drawImage(img,sx2,sy2,sw2,sh2,sx,0,STRIP_W,STRIP_H);
+    actx.restore();
+  });
+
+  /* Camera model — matches reconstruction camera */
   const ORBIT_R=2.6,ELEV=10*Math.PI/180;
   const CAM_Y_BASE=Math.sin(ELEV)*ORBIT_R,ORBIT_XZ=Math.cos(ELEV)*ORBIT_R;
   const HFOV=58*Math.PI/180;
 
-  const cams=frames.map((_,fi)=>{
-    const az=(fi/N)*Math.PI*2;const camX=Math.sin(az)*ORBIT_XZ,camZ=Math.cos(az)*ORBIT_XZ;
+  // Pre-compute camera directions for all frames
+  const cams=frames.map((f,fi)=>{
+    const az=(fi/N)*Math.PI*2;
+    const camX=Math.sin(az)*ORBIT_XZ,camZ=Math.cos(az)*ORBIT_XZ;
     const tL=Math.sqrt(camX*camX+CAM_Y_BASE*CAM_Y_BASE+camZ*camZ);
     const fwX=-camX/tL,fwY=-CAM_Y_BASE/tL,fwZ=-camZ/tL;
     const rtX=Math.cos(az),rtY=0,rtZ=-Math.sin(az);
     const upX=rtY*fwZ-rtZ*fwY,upY=rtZ*fwX-rtX*fwZ,upZ=rtX*fwY-rtY*fwX;
-    return{px:camX,py:CAM_Y_BASE,pz:camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ,fl:(frames[fi].w/2)/Math.tan(HFOV/2),w:frames[fi].w,h:frames[fi].h};
+    const fl=(STRIP_W/2)/Math.tan(HFOV/2);// focal length in strip pixel units
+    return{px:camX,py:CAM_Y_BASE,pz:camZ,fwX,fwY,fwZ,rtX,rtY,rtZ,upX,upY,upZ,fl};
   });
 
-  // Per-channel histogram: compute 5th–95th percentile for each frame channel
-  // Use for white-balance normalisation
-  const frameStats=frames.map(f=>{
-    const d=f.imageData.data;const step=16;
-    let sr=0,sg=0,sb=0,c=0;
-    for(let i=0;i<d.length;i+=step*4){sr+=d[i];sg+=d[i+1];sb+=d[i+2];c++;}
-    return{mr:sr/c,mg:sg/c,mb:sb/c};
-  });
-  const globalMr=frameStats.reduce((s,f)=>s+f.mr,0)/N;
-  const globalMg=frameStats.reduce((s,f)=>s+f.mg,0)/N;
-  const globalMb=frameStats.reduce((s,f)=>s+f.mb,0)/N;
+  /* Per-vertex UV assignment */
+  const newUVs=new Float32Array(VC*2);
 
-  const faceCount=indices.length/3;
-  const faceR=new Float32Array(faceCount);
-  const faceG=new Float32Array(faceCount);
-  const faceB=new Float32Array(faceCount);
-  const TOP_K=3; // blend top-3 views
-
-  // Bilinear sample from a frame's imageData
-  function sampleBilinear(frame,px,py){
-    const{w,h,imageData:{data}}=frame;
-    const x=clamp(px,0,w-1.001),y=clamp(py,0,h-1.001);
-    const x0=Math.floor(x),y0=Math.floor(y),x1=Math.min(x0+1,w-1),y1=Math.min(y0+1,h-1);
-    const tx=x-x0,ty=y-y0;
-    function sample(xi,yi){const i=(yi*w+xi)*4;return[data[i],data[i+1],data[i+2]];}
-    const[r00,g00,b00]=sample(x0,y0);const[r10,g10,b10]=sample(x1,y0);
-    const[r01,g01,b01]=sample(x0,y1);const[r11,g11,b11]=sample(x1,y1);
-    return[lerp(lerp(r00,r10,tx),lerp(r01,r11,tx),ty),lerp(lerp(g00,g10,tx),lerp(g01,g11,tx),ty),lerp(lerp(b00,b10,tx),lerp(b01,b11,tx),ty)];
-  }
-
-  for(let fi2=0;fi2<faceCount;fi2++){
-    const ia=indices[fi2*3],ib=indices[fi2*3+1],ic=indices[fi2*3+2];
-    const cx=(verts[ia*3]+verts[ib*3]+verts[ic*3])/3;
-    const cy=(verts[ia*3+1]+verts[ib*3+1]+verts[ic*3+1])/3;
-    const cz=(verts[ia*3+2]+verts[ib*3+2]+verts[ic*3+2])/3;
-    const nx=(normals[ia*3]+normals[ib*3]+normals[ic*3])/3;
-    const ny=(normals[ia*3+1]+normals[ib*3+1]+normals[ic*3+1])/3;
-    const nz=(normals[ia*3+2]+normals[ib*3+2]+normals[ic*3+2])/3;
+  for(let vi=0;vi<VC;vi++){
+    const vx=verts[vi*3],vy=verts[vi*3+1],vz=verts[vi*3+2];
+    const nx=normals[vi*3],ny=normals[vi*3+1],nz=normals[vi*3+2];
     const nl=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
 
-    // Score all cameras — pick top-K
-    const scores=[];
-    for(let k=0;k<N;k++){
-      const cam=cams[k];
-      const vx=cx-cam.px,vy=cy-cam.py,vz=cz-cam.pz;
-      const vl=Math.sqrt(vx*vx+vy*vy+vz*vz)||1;
-      const dot=-(nx/nl)*(vx/vl)-(ny/nl)*(vy/vl)-(nz/nl)*(vz/vl);
-      if(dot>0.05)scores.push({k,dot});
+    // Find best camera: maximum dot product between face normal and view direction
+    let bestFi=-1,bestDot=-2,secondFi=-1,secondDot=-2;
+    for(let fi=0;fi<N;fi++){
+      const cam=cams[fi];
+      // Vector from vertex to camera
+      const vvx=cam.px-vx,vvy=cam.py-vy,vvz=cam.pz-vz;
+      const vvl=Math.sqrt(vvx*vvx+vvy*vvy+vvz*vvz)||1;
+      const dot=(nx/nl)*(vvx/vvl)+(ny/nl)*(vvy/vvl)+(nz/nl)*(vvz/vvl);
+      if(dot>bestDot){secondDot=bestDot;secondFi=bestFi;bestDot=dot;bestFi=fi;}
+      else if(dot>secondDot){secondDot=dot;secondFi=fi;}
     }
-    scores.sort((a,b)=>b.dot-a.dot);
-    const topK=scores.slice(0,TOP_K);
-    if(!topK.length){faceR[fi2]=80;faceG[fi2]=80;faceB[fi2]=80;continue;}
 
-    // Blend top-K views with cosine weights
-    let totalW=0,blendR=0,blendG=0,blendB=0;
-    for(const{k,dot} of topK){
-      const cam=cams[k];
-      const dx=cx-cam.px,dy=cy-cam.py,dz=cz-cam.pz;
-      const depth=dx*cam.fwX+dy*cam.fwY+dz*cam.fwZ;if(depth<=0.01)continue;
+    // Project vertex into best camera's image plane
+    function projectIntoCamera(fi){
+      const cam=cams[fi];
+      const dx=vx-cam.px,dy=vy-cam.py,dz=vz-cam.pz;
+      const depth=dx*cam.fwX+dy*cam.fwY+dz*cam.fwZ;
+      if(depth<=0.01)return null;
       const pxc=(dx*cam.rtX+dy*cam.rtY+dz*cam.rtZ)/depth;
       const pyc=(dx*cam.upX+dy*cam.upY+dz*cam.upZ)/depth;
-      const sampleX=pxc*cam.fl+cam.w/2;const sampleY=-pyc*cam.fl+cam.h/2;
-      if(sampleX<0||sampleX>=cam.w||sampleY<0||sampleY>=cam.h)continue;
-
-      const [r,g,b]=sampleBilinear(frames[k],sampleX,sampleY);
-      // Per-channel white balance correction
-      const fs=frameStats[k];
-      const rr=clamp(r*(globalMr/(fs.mr||1)),.0,255);
-      const rg=clamp(g*(globalMg/(fs.mg||1)),.0,255);
-      const rb=clamp(b*(globalMb/(fs.mb||1)),.0,255);
-      const w2=dot*dot; // square cosine for stronger view preference
-      blendR+=rr*w2;blendG+=rg*w2;blendB+=rb*w2;totalW+=w2;
+      // Normalised image coordinates (-1 to 1)
+      const imgU=pxc*cam.fl/STRIP_W*2; // -1..1 in strip
+      const imgV=-pyc*cam.fl/STRIP_H*2;
+      // Remap from frame coords to atlas strip coords
+      // strip x: fi*STRIP_W + (imgU+1)/2*STRIP_W
+      const stripU=(fi*STRIP_W+(imgU+1)/2*STRIP_W)/ATLAS_W;
+      const stripV=clamp((imgV+1)/2,0,1); // V in strip
+      // Only valid if projection is within strip bounds
+      if(stripU<fi/N||stripU>(fi+1)/N)return null;
+      return[clamp(stripU,0,1),clamp(stripV,0,1)];
     }
-    if(totalW<0.001){faceR[fi2]=80;faceG[fi2]=80;faceB[fi2]=80;}
-    else{faceR[fi2]=clamp(blendR/totalW,0,255);faceG[fi2]=clamp(blendG/totalW,0,255);faceB[fi2]=clamp(blendB/totalW,0,255);}
+
+    let uv=bestFi>=0?projectIntoCamera(bestFi):null;
+    // Fallback to second-best camera if projection out of bounds
+    if(!uv&&secondFi>=0)uv=projectIntoCamera(secondFi);
+    // Last fallback: spherical UV
+    if(!uv){const az=Math.atan2(vx,vz);const el=Math.atan2(vy,Math.sqrt(vx*vx+vz*vz));const fi_approx=clamp(Math.round(((az/(Math.PI*2)+0.5)*N+N)%N),0,N-1);const stripU=(fi_approx+0.5)/N;const stripV=clamp(0.5-el/Math.PI,0,1);uv=[stripU,stripV];}
+    newUVs[vi*2]=uv[0];newUVs[vi*2+1]=uv[1];
   }
 
-  // Build atlas with 2px dilation borders
-  const cv=document.createElement('canvas');cv.width=atlasSize;cv.height=atlasSize;
-  const ctx=cv.getContext('2d');ctx.fillStyle='#111';ctx.fillRect(0,0,atlasSize,atlasSize);
-  const TILES_PER_ROW=Math.ceil(Math.sqrt(faceCount));
-  const TILE_SIZE=Math.max(2,Math.floor(atlasSize/TILES_PER_ROW));
-  const PAD=1; // 1px padding per tile = 2px total dilation
-  const newUVs=new Float32Array(mesh.uvs.length);
-
-  for(let fi2=0;fi2<faceCount;fi2++){
-    const col=fi2%TILES_PER_ROW;const row=Math.floor(fi2/TILES_PER_ROW);
-    const tx=col*TILE_SIZE,ty=row*TILE_SIZE;
-    // Fill with padding (dilation border)
-    ctx.fillStyle=`rgb(${Math.round(faceR[fi2])},${Math.round(faceG[fi2])},${Math.round(faceB[fi2])})`;
-    ctx.fillRect(tx,ty,TILE_SIZE,TILE_SIZE);
-    // Slightly brighten surface colours for visual pop
-    const ia=indices[fi2*3],ib=indices[fi2*3+1],ic=indices[fi2*3+2];
-    // UV maps to the interior of the padded tile
-    const uCtr=(tx+TILE_SIZE/2)/atlasSize;const vCtr=(ty+TILE_SIZE/2)/atlasSize;
-    newUVs[ia*2]=uCtr;newUVs[ia*2+1]=vCtr;
-    newUVs[ib*2]=uCtr;newUVs[ib*2+1]=vCtr;
-    newUVs[ic*2]=uCtr;newUVs[ic*2+1]=vCtr;
-  }
-
-  // Gentle sharpen pass: draw at half size and back (classic box-sharpen trick)
-  // Then apply a CSS-like unsharp mask via canvas compositing
-  const cv2=document.createElement('canvas');cv2.width=atlasSize;cv2.height=atlasSize;
-  const ctx2=cv2.getContext('2d');
-  // Draw blurred version
-  ctx2.filter='blur(1px)';ctx2.drawImage(cv,0,0);ctx2.filter='none';
-  // Mix: original * 1.4 - blurred * 0.4 (unsharp mask)
-  ctx2.globalCompositeOperation='destination-over';ctx2.drawImage(cv,0,0);
-  // Final: copy back with contrast boost
-  ctx.filter='contrast(108%) saturate(112%)';ctx.drawImage(cv2,0,0);ctx.filter='none';
-
-  mesh.uvs=Array.from(newUVs);return cv;
+  const updatedMesh={...mesh,uvs:Array.from(newUVs)};
+  return{atlas,atlasW:ATLAS_W,atlasH:ATLAS_H,mesh:updatedMesh};
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   NORMAL MAP v5 — tangent-space with blue-channel floor
+   NORMAL MAP
 ════════════════════════════════════════════════════════════════════ */
-function buildNormalMapV5(mesh,SIZE){
+function buildNormalMap(mesh,SIZE){
   const cv=document.createElement('canvas');cv.width=SIZE;cv.height=SIZE;
   const ctx=cv.getContext('2d');const id=ctx.createImageData(SIZE,SIZE);
-  // Default to neutral normal (0,0,1) → R=128,G=128,B=255
   for(let i=0;i<SIZE*SIZE*4;i+=4){id.data[i]=128;id.data[i+1]=128;id.data[i+2]=255;id.data[i+3]=255;}
-  const{verts,normals,uvs,indices}=mesh;
+  const{verts,normals,uvs,indices}=mesh;const N=frames.length;
+  // Use UV-based rasterisation but with atlas coordinates
   for(let ti=0;ti<indices.length;ti+=3){
     const a=indices[ti],b=indices[ti+1],c=indices[ti+2];
     const ua=uvs[a*2],va=uvs[a*2+1];const ub=uvs[b*2],vb=uvs[b*2+1];const uc=uvs[c*2],vc=uvs[c*2+1];
     const na=[normals[a*3],normals[a*3+1],normals[a*3+2]];const nb=[normals[b*3],normals[b*3+1],normals[b*3+2]];const nc=[normals[c*3],normals[c*3+1],normals[c*3+2]];
     const x0=Math.round(ua*SIZE),y0=Math.round(va*SIZE);const x1=Math.round(ub*SIZE),y1=Math.round(vb*SIZE);const x2=Math.round(uc*SIZE),y2=Math.round(vc*SIZE);
     const minX=Math.max(0,Math.min(x0,x1,x2));const maxX=Math.min(SIZE-1,Math.max(x0,x1,x2));const minY=Math.max(0,Math.min(y0,y1,y2));const maxY=Math.min(SIZE-1,Math.max(y0,y1,y2));
+    if(maxX-minX>SIZE/2||maxY-minY>SIZE/2)continue; // skip seam-spanning triangles
     const denom=(y1-y2)*(x0-x2)+(x2-x1)*(y0-y2)||1;
     for(let py=minY;py<=maxY;py++)for(let px=minX;px<=maxX;px++){
       const w0=((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/denom;const w1=((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/denom;const w2=1-w0-w1;
       if(w0<0||w1<0||w2<0)continue;
-      const nx=clamp(w0*na[0]+w1*nb[0]+w2*nc[0],-1,1);const ny=clamp(w0*na[1]+w1*nb[1]+w2*nc[1],-1,1);
-      // Blue channel clamped to min 0.5 for physical plausibility (v5 upgrade)
-      const nz=clamp(Math.max(0.5,w0*na[2]+w1*nb[2]+w2*nc[2]),0.5,1);
+      const nx=clamp(w0*na[0]+w1*nb[0]+w2*nc[0],-1,1);const ny=clamp(w0*na[1]+w1*nb[1]+w2*nc[1],-1,1);const nz=clamp(Math.max(0.5,w0*na[2]+w1*nb[2]+w2*nc[2]),0.5,1);
       const ii=(py*SIZE+px)*4;id.data[ii]=Math.round((nx+1)/2*255);id.data[ii+1]=Math.round((ny+1)/2*255);id.data[ii+2]=Math.round(nz*255);id.data[ii+3]=255;
     }
   }
@@ -1149,11 +867,11 @@ function buildNormalMapV5(mesh,SIZE){
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   OBJ EXPORT
+   EXPORTS
 ════════════════════════════════════════════════════════════════════ */
 function buildOBJ(){
   if(!meshData)return'';const{verts,normals,uvs,indices,stats}=meshData;
-  const L=['# SCAN3D v5 Export',`# Verts:${stats.vCount} Faces:${stats.fCount}`,'mtllib scan3d.mtl','o ScannedObject',''];
+  const L=['# SCAN3D v6 Export',`# Verts:${stats.vCount} Faces:${stats.fCount}`,'mtllib scan3d.mtl','o ScannedObject',''];
   for(let i=0;i<verts.length;i+=3)L.push(`v ${verts[i].toFixed(5)} ${verts[i+1].toFixed(5)} ${verts[i+2].toFixed(5)}`);
   L.push('');for(let i=0;i<uvs.length;i+=2)L.push(`vt ${uvs[i].toFixed(5)} ${uvs[i+1].toFixed(5)}`);
   L.push('');for(let i=0;i<normals.length;i+=3)L.push(`vn ${normals[i].toFixed(5)} ${normals[i+1].toFixed(5)} ${normals[i+2].toFixed(5)}`);
@@ -1162,11 +880,9 @@ function buildOBJ(){
   return L.join('\n');
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   GLB EXPORT (binary glTF 2.0)
-════════════════════════════════════════════════════════════════════ */
 function buildGLB(){
-  if(!meshData)return null;const{verts,normals,uvs,indices}=meshData;
+  if(!meshData||!atlasCanvas)return null;
+  const{verts,normals,uvs,indices}=meshData;
   const posArr=new Float32Array(verts),nrmArr=new Float32Array(normals),uvArr=new Float32Array(uvs),idxArr=new Uint32Array(indices);
   let minP=[Infinity,Infinity,Infinity],maxP=[-Infinity,-Infinity,-Infinity];
   for(let i=0;i<posArr.length;i+=3)for(let c=0;c<3;c++){if(posArr[i+c]<minP[c])minP[c]=posArr[i+c];if(posArr[i+c]>maxP[c])maxP[c]=posArr[i+c];}
@@ -1176,12 +892,13 @@ function buildGLB(){
   const idxOff=0;bin=cat(bin,idxArr.buffer);const posOff=bin.byteLength;bin=cat(bin,posArr.buffer);const posLen=posArr.buffer.byteLength;
   const nrmOff=bin.byteLength;bin=cat(bin,nrmArr.buffer);const nrmLen=nrmArr.buffer.byteLength;
   const uvOff=bin.byteLength;bin=cat(bin,uvArr.buffer);const uvLen=uvArr.buffer.byteLength;
-  let imgBV,matPBR={metallicFactor:0.02,roughnessFactor:0.65};
-  if(atlasCanvas){const uri=atlasCanvas.toDataURL('image/jpeg',.95);const b64=uri.split(',')[1];const raw=pad4(Uint8Array.from(atob(b64),c=>c.charCodeAt(0)).buffer);const imgOff=bin.byteLength;bin=cat(bin,raw);imgBV={buffer:0,byteOffset:imgOff,byteLength:raw.byteLength};matPBR={baseColorTexture:{index:0},metallicFactor:0.02,roughnessFactor:0.65};}
+  // Embed atlas as JPEG
+  const uri=atlasCanvas.toDataURL('image/jpeg',.93);const b64=uri.split(',')[1];const raw=pad4(Uint8Array.from(atob(b64),c=>c.charCodeAt(0)).buffer);
+  const imgOff=bin.byteLength;bin=cat(bin,raw);const imgBV={buffer:0,byteOffset:imgOff,byteLength:raw.byteLength};
   bin=pad4(bin);const vc=posArr.length/3,ic=idxArr.length;
-  const bv=[{buffer:0,byteOffset:idxOff,byteLength:idxArr.buffer.byteLength,target:34963},{buffer:0,byteOffset:posOff,byteLength:posLen,byteStride:12,target:34962},{buffer:0,byteOffset:nrmOff,byteLength:nrmLen,byteStride:12,target:34962},{buffer:0,byteOffset:uvOff,byteLength:uvLen,byteStride:8,target:34962},...(imgBV?[imgBV]:[])];
+  const bv=[{buffer:0,byteOffset:idxOff,byteLength:idxArr.buffer.byteLength,target:34963},{buffer:0,byteOffset:posOff,byteLength:posLen,byteStride:12,target:34962},{buffer:0,byteOffset:nrmOff,byteLength:nrmLen,byteStride:12,target:34962},{buffer:0,byteOffset:uvOff,byteLength:uvLen,byteStride:8,target:34962},imgBV];
   const ac=[{bufferView:0,componentType:5125,count:ic,type:'SCALAR'},{bufferView:1,componentType:5126,count:vc,type:'VEC3',min:minP,max:maxP},{bufferView:2,componentType:5126,count:vc,type:'VEC3'},{bufferView:3,componentType:5126,count:vc,type:'VEC2'}];
-  const json={asset:{version:'2.0',generator:'SCAN3D v5'},scene:0,scenes:[{name:'Scene',nodes:[0]}],nodes:[{name:'ScannedObject',mesh:0}],meshes:[{name:'ScannedObject',primitives:[{attributes:{POSITION:1,NORMAL:2,TEXCOORD_0:3},indices:0,material:0,mode:4}]}],materials:[{name:'Scanned',pbrMetallicRoughness:matPBR,doubleSided:true}],bufferViews:bv,accessors:ac,buffers:[{byteLength:bin.byteLength}],...(imgBV?{images:[{bufferView:4,mimeType:'image/jpeg'}],textures:[{sampler:0,source:0}],samplers:[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}]}:{})};
+  const json={asset:{version:'2.0',generator:'SCAN3D v6'},scene:0,scenes:[{name:'Scene',nodes:[0]}],nodes:[{name:'ScannedObject',mesh:0}],meshes:[{name:'ScannedObject',primitives:[{attributes:{POSITION:1,NORMAL:2,TEXCOORD_0:3},indices:0,material:0,mode:4}]}],materials:[{name:'Scanned',pbrMetallicRoughness:{baseColorTexture:{index:0},metallicFactor:0.02,roughnessFactor:0.65},doubleSided:true}],bufferViews:bv,accessors:ac,buffers:[{byteLength:bin.byteLength}],images:[{bufferView:4,mimeType:'image/jpeg'}],textures:[{sampler:0,source:0}],samplers:[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}]};
   const jb=new TextEncoder().encode(JSON.stringify(json));const jp=new Uint8Array(Math.ceil(jb.length/4)*4).fill(32);jp.set(jb);
   const total=12+8+jp.length+8+bin.byteLength;const glb=new Uint8Array(total);const dv=new DataView(glb.buffer);
   dv.setUint32(0,0x46546C67,true);dv.setUint32(4,2,true);dv.setUint32(8,total,true);dv.setUint32(12,jp.length,true);dv.setUint32(16,0x4E4F534A,true);glb.set(jp,20);
@@ -1190,35 +907,43 @@ function buildGLB(){
 
 /* ════════════════════════════════════════════════════════════════════
    THREE.JS VIEWER
+   Key change: neutral white lighting so photo colours show accurately
 ════════════════════════════════════════════════════════════════════ */
 function showViewer(){
   const pv=$('panelViewer');pv.style.display='block';pv.scrollIntoView({behavior:'smooth'});
   $('vstat').innerHTML=[`<div class="vsl">${meshData.stats.vCount.toLocaleString()} verts</div>`,`<div class="vsl">${meshData.stats.fCount.toLocaleString()} faces</div>`,`<div class="vsl">${frames.length} photos</div>`,`<div class="vsl">${meshRes}³ TSDF</div>`].join('');
-  $('btnDlGLB').onclick=()=>{const b=buildGLB();if(!b){toast('GLB failed','err');return;}const bl=new Blob([b],{type:'model/gltf-binary'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v5.glb';a.click();toast('GLB downloaded — open in Blender, Sketchfab, or AR Quick Look');};
-  $('btnDlOBJ').onclick=()=>{const bl=new Blob([buildOBJ()],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v5.obj';a.click();toast('OBJ downloaded');};
-  $('btnDlTex').onclick=()=>{if(!atlasCanvas)return;atlasCanvas.toBlob(bl=>{const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v5_texture.png';a.click();toast('Texture atlas downloaded');});};
+  $('btnDlGLB').onclick=()=>{const b=buildGLB();if(!b){toast('GLB failed','err');return;}const bl=new Blob([b],{type:'model/gltf-binary'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v6.glb';a.click();toast('GLB downloaded — open in Blender, Sketchfab, or AR Quick Look');};
+  $('btnDlOBJ').onclick=()=>{const bl=new Blob([buildOBJ()],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v6.obj';a.click();toast('OBJ downloaded');};
+  $('btnDlTex').onclick=()=>{if(!atlasCanvas)return;atlasCanvas.toBlob(bl=>{const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='scan3d_v6_texture.png';a.click();toast('Photo texture atlas downloaded');});};
   initThree();
 }
 
 function initThree(){
   const wrap=$('threeCanvas').parentElement;const W=wrap.clientWidth,H=wrap.clientHeight;
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x050709);scene.fog=new THREE.FogExp2(0x050709,.07);
+  const scene=new THREE.Scene();scene.background=new THREE.Color(0x060810);scene.fog=new THREE.FogExp2(0x060810,.07);
   const grid=new THREE.GridHelper(10,32,0x192030,0x0f1520);grid.position.y=-1.42;scene.add(grid);
   const floorG=new THREE.PlaneGeometry(16,16);
-  const floorM=new THREE.MeshStandardMaterial({color:0x08090d,metalness:.95,roughness:.12,transparent:true,opacity:.5});
+  const floorM=new THREE.MeshStandardMaterial({color:0x0a0c12,metalness:.9,roughness:.15,transparent:true,opacity:.5});
   const floorMesh=new THREE.Mesh(floorG,floorM);floorMesh.rotation.x=-Math.PI/2;floorMesh.position.y=-1.44;floorMesh.receiveShadow=true;scene.add(floorMesh);
   const cam=new THREE.PerspectiveCamera(46,W/H,.01,300);cam.position.set(0,.4,3.8);
   const renderer=new THREE.WebGLRenderer({canvas:$('threeCanvas'),antialias:true});
   renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
-  scene.add(new THREE.HemisphereLight(0x223355,0x080810,.7));
-  const key=new THREE.DirectionalLight(0xffffff,1.6);key.position.set(2.5,4,2);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.bias=-0.0005;scene.add(key);
-  const fill=new THREE.DirectionalLight(0x8899bb,.65);fill.position.set(-3,1,-2);scene.add(fill);
-  const rim=new THREE.DirectionalLight(0xffffff,.3);rim.position.set(0,-3,-4);scene.add(rim);
-  const acc3pl=new THREE.PointLight(0x00e5b5,.55,8);acc3pl.position.set(-1.5,2,1);scene.add(acc3pl);
-  const acc4pl=new THREE.PointLight(0x7b2fff,.35,7);acc4pl.position.set(2,-1,2);scene.add(acc4pl);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1; // lower exposure so photo colours aren't blown
 
+  /* NEUTRAL WHITE LIGHTING — critical for accurate photo texture display.
+     Coloured lights tint the photo texture and make the object look wrong.
+     Use near-white hemisphere + white directional only. */
+  scene.add(new THREE.HemisphereLight(0xffffff,0x404050,.65)); // neutral sky + ground
+  const key=new THREE.DirectionalLight(0xffffff,1.4); // pure white key
+  key.position.set(2,4,2);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.bias=-0.0005;scene.add(key);
+  const fill=new THREE.DirectionalLight(0xeeeeff,.55);fill.position.set(-3,1,-2);scene.add(fill); // very slight cool fill
+  const rim=new THREE.DirectionalLight(0xffffff,.25);rim.position.set(0,-3,-4);scene.add(rim);
+  // Small accent for neon UI consistency, kept dim
+  const neonPl=new THREE.PointLight(0x00e5b5,.3,8);neonPl.position.set(-2,2,1);scene.add(neonPl);
+  const purplePl=new THREE.PointLight(0x7b2fff,.2,7);purplePl.position.set(2,-1,2);scene.add(purplePl);
+
+  /* Build geometry */
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(meshData.verts),3));
   geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(meshData.normals),3));
@@ -1229,31 +954,43 @@ function initThree(){
   const size=new THREE.Vector3();geo.boundingBox.getSize(size);
   const sc=2.4/Math.max(size.x,size.y,size.z);
 
+  /* Photo texture from real scan frames */
   const atlasTex=new THREE.CanvasTexture(atlasCanvas);
-  atlasTex.anisotropy=renderer.capabilities.getMaxAnisotropy();atlasTex.needsUpdate=true;
-  let normTex=null;if(normalCanvas){normTex=new THREE.CanvasTexture(normalCanvas);normTex.anisotropy=atlasTex.anisotropy;}
+  atlasTex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  atlasTex.needsUpdate=true;
+  let normTex=null;
+  if(normalCanvas){normTex=new THREE.CanvasTexture(normalCanvas);normTex.anisotropy=atlasTex.anisotropy;}
 
-  const mat=new THREE.MeshStandardMaterial({map:atlasTex,normalMap:normTex||undefined,normalScale:new THREE.Vector2(.45,.45),metalness:.03,roughness:.58,side:THREE.DoubleSide,envMapIntensity:.22});
-  const wireMat=new THREE.MeshBasicMaterial({color:0x00e5b5,wireframe:true,transparent:true,opacity:.42});
+  /* PBR material — low metalness/roughness so photo texture dominates */
+  const mat=new THREE.MeshStandardMaterial({
+    map:atlasTex,
+    normalMap:normTex||undefined,
+    normalScale:new THREE.Vector2(.4,.4),
+    metalness:.02,       // nearly non-metallic so photo colours show
+    roughness:.65,       // somewhat rough to avoid specular washing out photo
+    side:THREE.DoubleSide,
+    envMapIntensity:.1   // minimal env so photo colours aren't tinted
+  });
+  const wireMat=new THREE.MeshBasicMaterial({color:0x00e5b5,wireframe:true,transparent:true,opacity:.4});
   const normMatV=new THREE.MeshNormalMaterial({side:THREE.DoubleSide});
-  const flatMat=new THREE.MeshLambertMaterial({map:atlasTex,side:THREE.DoubleSide});
 
   const mesh=new THREE.Mesh(geo,mat);
-  mesh.position.sub(centre.multiplyScalar(sc));mesh.scale.setScalar(sc);mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);
+  mesh.position.sub(centre.multiplyScalar(sc));mesh.scale.setScalar(sc);
+  mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);
 
+  /* Neon edge overlay */
   function buildEdgeGeo(g){const pos=g.attributes.position.array,idx=g.index?g.index.array:null;const es=new Set(),lv=[];const ae=(a,b)=>{const k=a<b?`${a}_${b}`:`${b}_${a}`;if(es.has(k))return;es.add(k);lv.push(pos[a*3],pos[a*3+1],pos[a*3+2],pos[b*3],pos[b*3+1],pos[b*3+2]);};const fc=idx?idx.length/3:pos.length/9;for(let f=0;f<fc;f++){const a=idx?idx[f*3]:f*3,b=idx?idx[f*3+1]:f*3+1,c=idx?idx[f*3+2]:f*3+2;ae(a,b);ae(b,c);ae(c,a);}const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lv),3));return g2;}
   const eg=buildEdgeGeo(geo);
   function mkLine(color,op,sc2,ord){const m=new THREE.LineBasicMaterial({color,transparent:true,opacity:op,depthTest:false,depthWrite:false});const l=new THREE.LineSegments(eg,m);l.position.copy(mesh.position);l.scale.copy(mesh.scale).multiplyScalar(sc2);l.renderOrder=ord;scene.add(l);return m;}
   const lm1=mkLine(0x00ff88,1.0,1.000,999);const lm2=mkLine(0x00e5b5,.5,1.015,998);const lm3=mkLine(0x7b2fff,.17,1.035,997);
   const allLines=scene.children.filter(c=>c instanceof THREE.LineSegments);
 
-  let wf=false,tx=true,ne=true,ro=true,nm=false,fl=false;
+  let wf=false,tx=true,ne=true,ro=true,nm=false;
   $('vtbTX').onclick=()=>{tx=!tx;mat.map=tx?atlasTex:null;mat.needsUpdate=true;$('vtbTX').classList.toggle('on',tx);};
   $('vtbNE').onclick=()=>{ne=!ne;allLines.forEach(l=>l.visible=ne);$('vtbNE').classList.toggle('on',ne);};
-  $('vtbWF').onclick=()=>{wf=!wf;nm=false;fl=false;mesh.material=wf?wireMat:mat;$('vtbWF').classList.toggle('on',wf);$('vtbNM').classList.toggle('on',false);$('vtbFL').classList.toggle('on',false);};
+  $('vtbWF').onclick=()=>{wf=!wf;nm=false;mesh.material=wf?wireMat:mat;$('vtbWF').classList.toggle('on',wf);$('vtbNM').classList.toggle('on',false);};
   $('vtbRO').onclick=()=>{ro=!ro;$('vtbRO').classList.toggle('on',ro);};
-  $('vtbNM').onclick=()=>{nm=!nm;wf=false;fl=false;mesh.material=nm?normMatV:mat;$('vtbNM').classList.toggle('on',nm);$('vtbWF').classList.toggle('on',false);$('vtbFL').classList.toggle('on',false);};
-  $('vtbFL').onclick=()=>{fl=!fl;wf=false;nm=false;mesh.material=fl?flatMat:mat;$('vtbFL').classList.toggle('on',fl);$('vtbWF').classList.toggle('on',false);$('vtbNM').classList.toggle('on',false);};
+  $('vtbNM').onclick=()=>{nm=!nm;wf=false;mesh.material=nm?normMatV:mat;$('vtbNM').classList.toggle('on',nm);$('vtbWF').classList.toggle('on',false);};
 
   let dn=false,rd=false,lx=0,ly=0,rX=0,rY=0,pX=0,pY=0,zm=3.8,lastPD=0;
   const cv2=$('threeCanvas');
@@ -1267,7 +1004,14 @@ function initThree(){
   window.addEventListener('resize',()=>{const w=wrap.clientWidth,h=wrap.clientHeight;cam.aspect=w/h;cam.updateProjectionMatrix();renderer.setSize(w,h);});
 
   let aa=0;
-  (function anim(){requestAnimationFrame(anim);if(ro)aa+=.20;const ry=(rY+aa)*Math.PI/180,rx=rX*Math.PI/180;cam.position.set(Math.sin(ry)*Math.cos(rx)*zm+pX,Math.sin(rx)*zm+pY,Math.cos(ry)*Math.cos(rx)*zm);cam.lookAt(pX,pY,0);if(ne){const t=Date.now()*.0018;lm1.opacity=.85+Math.sin(t)*.15;lm2.opacity=.38+Math.sin(t+1)*.12;lm3.opacity=.13+Math.sin(t+2)*.06;acc3pl.intensity=.55+Math.sin(t*.7)*.28;acc4pl.intensity=.35+Math.sin(t+2)*.18;}renderer.render(scene,cam);})();
+  (function anim(){
+    requestAnimationFrame(anim);if(ro)aa+=.20;
+    const ry=(rY+aa)*Math.PI/180,rx=rX*Math.PI/180;
+    cam.position.set(Math.sin(ry)*Math.cos(rx)*zm+pX,Math.sin(rx)*zm+pY,Math.cos(ry)*Math.cos(rx)*zm);
+    cam.lookAt(pX,pY,0);
+    if(ne){const t=Date.now()*.0018;lm1.opacity=.85+Math.sin(t)*.15;lm2.opacity=.38+Math.sin(t+1)*.12;lm3.opacity=.13+Math.sin(t+2)*.06;neonPl.intensity=.3+Math.sin(t*.7)*.15;purplePl.intensity=.2+Math.sin(t+2)*.1;}
+    renderer.render(scene,cam);
+  })();
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1278,7 +1022,7 @@ function doReset(){
   $('frameStrip').innerHTML='';$('capProg').classList.remove('show');$('capBar').style.width='0%';
   $('panelProcess').style.display='none';$('panelViewer').style.display='none';
   $('depthSec').classList.remove('show');$('depthStrip').innerHTML='';
-  $('procBar').style.width='0%';$('terminal').innerHTML='<div class="td">$ SCAN3D v5 — Max Quality Reconstruction Engine</div>';
+  $('procBar').style.width='0%';$('terminal').innerHTML='<div class="td">$ SCAN3D v6 — Real Photogrammetry Engine</div>';
   $('btnStartScan').disabled=!stream;$('btnReset').style.display='none';
   $('slFrames').disabled=$('slInterval').disabled=$('slRes').disabled=$('slSmooth').disabled=false;
   $('btnStopCam').style.display=stream?'inline-flex':'none';
