@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CARE — Create / Edit Project</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Modak&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="nav.css">
+  <link rel="stylesheet" href="font.css">
+  <link rel="stylesheet" href="create.css">
+
+  <script defer src="nav.js"></script>
+  <script defer src="storage.js"></script>
+  <script defer src="create.js"></script>
+</head>
+
+<body>
+<nav>
+  <ul class="sidebar">
+    <li onclick="hideSidebar()">
+      <a href="#">
+        <button class="close-button">&times;</button>
+      </a>
+    </li>
+
+    <li><a href="index.html">Home</a></li>
+    <li><a href="create.html">Create</a></li>
+
+    <li class="clock-mobile">
+      <span id="live-clock-mobile"></span>
+    </li>
+  </ul>
+
+  <ul class="main-menu">
+    <li class="logo">
+      <span class="modak-regular">CARE</span>
+    </li>
+
+    <li class="hideOnMobile"><a href="index.html">Home</a></li>
+    <li class="hideOnMobile"><a href="create.html">Create</a></li>
+
+    <!-- Clock -->
+    <li class="clock hideOnMobile">
+      <span id="live-clock"></span>
+    </li>
+
+    <!-- Theme Toggle -->
+    <li class="theme-toggle" onclick="toggleTheme()">
+      <h1 id="theme-icon">☀️</h1>
+    </li>
+
+    <!-- Mobile Menu -->
+    <li class="menu-button" onclick="showSidebar()">
+      <a href="#">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"/>
+        </svg>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<main id="create-view">
+
+  <!-- Shown only if no project is selected (e.g. user typed the URL directly) -->
+  <div id="no-project-message" style="display:none;">
+    <p>No project selected.</p>
+    <a href="index.html" class="back-link">← Back to Dashboard</a>
+  </div>
+
+  <div id="project-editor" style="display:none;">
+
+    <div class="save-indicator" id="save-indicator">All changes saved</div>
+
+    <!-- ============== SECTION 1: PROJECT INFORMATION ============== -->
+    <section class="care-section" id="section-project-info">
+      <h2 class="section-title">Project Information</h2>
+
+      <div class="section-body project-info-body">
+        <div class="cover-upload">
+          <div class="cover-preview" id="cover-preview">
+            <img id="cover-preview-img" alt="Project cover preview" style="display:none;">
+            <span id="cover-preview-placeholder">No image uploaded</span>
+          </div>
+          <label class="upload-btn" for="cover-image-input">Upload Cover Image</label>
+          <input type="file" id="cover-image-input" accept="image/*" hidden>
+        </div>
+
+        <div class="project-name-field">
+          <label for="project-name-input">Project Name</label>
+          <input type="text" id="project-name-input" placeholder="Untitled Project" maxlength="80">
+          <p class="field-hint">Changes save automatically.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== SECTION 2: CAMERA CONNECTIONS ============== -->
+    <section class="care-section" id="section-cameras">
+      <h2 class="section-title">Camera Connections</h2>
+
+      <div class="section-body camera-grid">
+
+        <!-- Camera 1 -->
+        <div class="camera-card" data-camera="1">
+          <h3>Camera 1</h3>
+
+          <div class="camera-preview">
+            <video class="camera-video" playsinline autoplay muted></video>
+            <img class="camera-stream-img" alt="Camera 1 stream" style="display:none;">
+            <div class="camera-placeholder">No feed</div>
+          </div>
+
+          <div class="camera-controls">
+            <select class="camera-type-select">
+              <option value="webcam">Webcam (USB / built-in)</option>
+              <option value="ip">IP Camera (stream URL)</option>
+            </select>
+
+            <input type="text" class="camera-url-input" placeholder="rtsp:// or http:// stream URL" style="display:none;">
+
+            <button type="button" class="camera-connect-btn">Connect</button>
+          </div>
+
+          <p class="camera-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Not connected</span>
+          </p>
+        </div>
+
+        <!-- Camera 2 -->
+        <div class="camera-card" data-camera="2">
+          <h3>Camera 2</h3>
+
+          <div class="camera-preview">
+            <video class="camera-video" playsinline autoplay muted></video>
+            <img class="camera-stream-img" alt="Camera 2 stream" style="display:none;">
+            <div class="camera-placeholder">No feed</div>
+          </div>
+
+          <div class="camera-controls">
+            <select class="camera-type-select">
+              <option value="webcam">Webcam (USB / built-in)</option>
+              <option value="ip">IP Camera (stream URL)</option>
+            </select>
+
+            <input type="text" class="camera-url-input" placeholder="rtsp:// or http:// stream URL" style="display:none;">
+
+            <button type="button" class="camera-connect-btn">Connect</button>
+          </div>
+
+          <p class="camera-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Not connected</span>
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============== SECTION 3: TEMPERATURE & HUMIDITY ============== -->
+    <section class="care-section" id="section-climate">
+      <h2 class="section-title">Temperature &amp; Humidity</h2>
+
+      <div class="section-body climate-grid">
+        <div class="climate-card">
+          <span class="climate-label">Temperature</span>
+          <span class="climate-value" id="temperature-value">--</span>
+        </div>
+
+        <div class="climate-card">
+          <span class="climate-label">Humidity</span>
+          <span class="climate-value" id="humidity-value">--</span>
+        </div>
+
+        <div class="climate-card">
+          <span class="climate-label">Status</span>
+          <span class="climate-value climate-status" id="sensor-status-value">Simulated</span>
+        </div>
+      </div>
+
+      <p class="field-hint climate-hint">
+        Showing simulated readings. This panel is wired to accept live data
+        from an ESP32 / DHT22 sensor over MQTT, WebSocket, or HTTP — see
+        <code>js/create.js</code> (<code>CareSensors.receiveReading</code>) for
+        the integration point.
+      </p>
+    </section>
+
+    <!-- ============== SECTION 4: ARTIFACT INFORMATION ============== -->
+    <section class="care-section" id="section-artifact">
+      <h2 class="section-title">Artifact Information</h2>
+
+      <div class="section-body artifact-grid">
+        <div class="field full-width">
+          <label for="artifact-description">Description</label>
+          <textarea id="artifact-description" rows="3" placeholder="Brief description of the artifact"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="artifact-period">Historical Period</label>
+          <input type="text" id="artifact-period" placeholder="e.g. Ming Dynasty, 15th century">
+        </div>
+
+        <div class="field">
+          <label for="artifact-material">Material</label>
+          <input type="text" id="artifact-material" placeholder="e.g. Porcelain, stoneware">
+        </div>
+
+        <div class="field">
+          <label for="artifact-location">Storage Location</label>
+          <input type="text" id="artifact-location" placeholder="e.g. Shelf A3, Vault 2">
+        </div>
+
+        <div class="field">
+          <label for="artifact-condition">Condition</label>
+          <select id="artifact-condition">
+            <option value="">Select condition...</option>
+            <option value="Excellent">Excellent</option>
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+            <option value="Fragmentary">Fragmentary</option>
+          </select>
+        </div>
+
+        <div class="field full-width">
+          <label for="artifact-notes">Notes</label>
+          <textarea id="artifact-notes" rows="3" placeholder="Additional notes"></textarea>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,228 @@
+:root {
+  --background: #f5f5f5;
+  --grid: #eaeaff;
+  --purple: #b469ff;
+  --pink: #ff66bc;
+  --orange: #fc6b44;
+  --yellow: #ffea29;
+  --green: #03d66c;
+  --vibrant-blue: #6397ff;
+  --medium-blue: #78A4CB; 
+  --light-blue: #9fc2fd;
+  --text: #1a2376;
+}
+
+.dark-theme {
+  --background: #0f1427;
+  --grid: #252e50;
+  --purple: #b469ff;
+  --pink: #ff66bc;
+  --orange: #fc6b44;
+  --yellow: #ffea29;
+  --green: #03d66c;
+  --vibrant-blue: #4891ff;
+  --medium-blue: #1A1953;
+  --light-blue: #1b3864;
+  --text: #f5f5f5;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  font-family: "Inter", sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  padding-top: 76px;
+}
+
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: var(--medium-blue);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: background 0.4s ease, transform 0.35s ease, opacity 0.35s ease;
+}
+
+nav.nav-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+nav ul.main-menu {
+  width: 100%;
+  list-style: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+nav a {
+  height: 100%;
+  padding: 0 20px;
+  text-decoration: none;
+  font-size: 22px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  color: var(--text);
+  transition: opacity 0.2s ease;
+}
+
+nav a:hover {
+  opacity: 0.8;
+}
+
+.logo {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo img {
+  height: 55px;
+  width: auto;
+}
+
+.logo .logo-dark {
+  display: none;
+}
+
+.dark-theme .logo .logo-light {
+  display: none;
+}
+
+.dark-theme .logo .logo-dark {
+  display: block;
+}
+
+nav .main-menu .logo span {
+  font-family: "Modak", system-ui;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 36px;
+  color: var(--text);
+}
+
+.theme-toggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  margin-left: 10px;
+}
+
+.theme-toggle img {
+  width: 35px;
+  height: 35px;
+}
+
+@keyframes fullSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.theme-toggle.flip img {
+  animation: fullSpin 0.4s ease-in-out;
+}
+
+.menu-button {
+  display: none;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.menu-button svg {
+  width: 30px;
+  height: 30px;
+  stroke: white;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 250px;
+  z-index: 999;
+  background-color: var(--medium-blue);
+  box-shadow: -10px 0 20px rgba(0, 0, 0, 0.15);
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 20px;
+  list-style: none;
+}
+
+.sidebar li {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.sidebar a {
+  width: 100%;
+  font-size: 24px;
+}
+
+.close-button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 45px;
+  color: #ffffff;
+}
+
+@media (max-width: 800px) {
+  nav.nav-hidden {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .hideOnMobile {
+    display: none;
+  }
+
+  .menu-button {
+    display: block;
+  }
+}
+
+@media (max-width: 400px) {
+  .sidebar {
+    width: 100%;
+  }
+}
+
+.clock {
+    margin-left: auto;      /* Pushes the clock to the right */
+    font-size: 18px;
+    font-weight: bold;
+    color: white;           /* Change if using a light navbar */
+    display: flex;
+    align-items: center;
+    padding-right: 20px;
+}
+
+.clock-mobile {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Home-page dashboard styles now live in home.css */

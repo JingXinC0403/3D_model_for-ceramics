@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CARE — Home</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Modak&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="nav.css">
+  <link rel="stylesheet" href="font.css">
+  <link rel="stylesheet" href="home.css">
+
+  <script defer src="nav.js"></script>
+  <script defer src="storage.js"></script>
+  <script defer src="home.js"></script>
+</head>
+
+<body>
+
+<nav>
+  <ul class="sidebar">
+    <li onclick="hideSidebar()">
+      <a href="#">
+        <button class="close-button">&times;</button>
+      </a>
+    </li>
+
+    <li><a href="index.html">Home</a></li>
+    <li><a href="create.html">Create</a></li>
+
+    <li class="clock-mobile">
+      <span id="live-clock-mobile"></span>
+    </li>
+  </ul>
+
+  <ul class="main-menu">
+    <li class="logo">
+      <span class="modak-regular">CARE</span>
+    </li>
+
+    <li class="hideOnMobile"><a href="index.html">Home</a></li>
+    <li class="hideOnMobile"><a href="create.html">Create</a></li>
+
+    <!-- Clock -->
+    <li class="clock hideOnMobile">
+      <span id="live-clock"></span>
+    </li>
+
+    <!-- Theme Toggle -->
+    <li class="theme-toggle" onclick="toggleTheme()">
+      <h1 id="theme-icon">☀️</h1>
+    </li>
+
+    <!-- Mobile Menu -->
+    <li class="menu-button" onclick="showSidebar()">
+      <a href="#">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"/>
+        </svg>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<!-- ================= HOME PAGE / PROJECT DASHBOARD ================= -->
+
+<main id="home-view" class="page-view active-view">
+
+  <div class="home-header">
+    <h1 class="home-title modak-regular">CARE</h1>
+    <p class="home-subtitle">Ceramic Artifact Reserve and Enclosure</p>
+    <p class="home-tagline">Monitor, protect and manage your artifact projects from one place.</p>
+  </div>
+
+  <h2 class="section-heading">Projects</h2>
+
+  <p id="empty-state">No projects yet. Click the "Create Project" card to add your first one.</p>
+
+  <div id="project-container">
+
+    <!-- Project cards are inserted here automatically by home.js -->
+
+    <!-- Create New Project Card (always stays last) -->
+    <a href="create.html" id="add-link" class="project-card add-project-card">
+      <div class="add-icon">+</div>
+      <div class="add-text">
+        <span class="add-title">Create Project</span>
+        <span class="add-subtitle">Add a new artifact</span>
+      </div>
+    </a>
+  </div>
+
+</main>
+
+</body>
+</html>

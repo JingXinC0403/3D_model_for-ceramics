@@ -1,0 +1,428 @@
+/* ============================================================
+   create.css
+   ------------------------------------------------------------
+   Styles for the project editor (create.html).
+   Uses the same CSS variables defined in nav.css.
+   ============================================================ */
+
+#create-view {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px clamp(16px, 4vw, 48px) 80px;
+}
+
+#no-project-message {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text);
+}
+
+#no-project-message .back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--vibrant-blue);
+  font-weight: 600;
+}
+
+.save-indicator {
+  position: sticky;
+  top: 8px;
+  z-index: 10;
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--grid);
+  color: var(--text);
+  font-size: 13px;
+  opacity: 0.85;
+  transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+.save-indicator.saving {
+  background: var(--yellow);
+  color: #1a2376;
+}
+
+/* -------------------- Section shell -------------------- */
+
+.care-section {
+  background: var(--grid);
+  border-radius: 16px;
+  padding: 24px clamp(16px, 3vw, 32px);
+  margin-bottom: 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.section-title {
+  font-family: "Modak", system-ui;
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+  margin-top: 6px;
+}
+
+/* -------------------- Section 1: Project Info -------------------- */
+
+.project-info-body {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.cover-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cover-preview {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  background: var(--light-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--vibrant-blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.upload-btn:hover {
+  opacity: 0.85;
+}
+
+.project-name-field {
+  flex: 1;
+  min-width: 220px;
+}
+
+.project-name-field label,
+.field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.project-name-field input,
+.field input,
+.field select,
+.field textarea,
+.camera-url-input,
+.camera-type-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: var(--background);
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.project-name-field input:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.camera-url-input:focus,
+.camera-type-select:focus {
+  outline: 2px solid var(--vibrant-blue);
+  outline-offset: 1px;
+}
+
+/* -------------------- Section 2: Cameras -------------------- */
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.camera-card {
+  background: var(--background);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.camera-card h3 {
+  font-size: 17px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.camera-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #10131f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.camera-preview video,
+.camera-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-placeholder {
+  color: #aab3d6;
+  font-size: 13px;
+}
+
+.camera-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.camera-connect-btn {
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--vibrant-blue);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.camera-connect-btn:hover {
+  opacity: 0.85;
+}
+
+.camera-connect-btn.connected {
+  background: var(--green);
+  color: #08331c;
+}
+
+.camera-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #999;
+  display: inline-block;
+}
+
+.camera-status.is-connected .status-dot {
+  background: var(--green);
+}
+
+.camera-status.is-error .status-dot {
+  background: var(--orange);
+}
+
+/* -------------------- Section 3: Climate -------------------- */
+
+.climate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.climate-card {
+  background: var(--background);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+}
+
+.climate-label {
+  font-size: 13px;
+  opacity: 0.7;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.climate-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.climate-status {
+  font-size: 18px;
+  color: var(--vibrant-blue);
+}
+
+.climate-hint {
+  margin-top: 16px;
+}
+
+.climate-hint code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* -------------------- Section 4: Artifact Info -------------------- */
+
+.artifact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.field.full-width {
+  grid-column: 1 / -1;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+@media (max-width: 480px) {
+  .project-info-body {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* -------------------- Validation -------------------- */
+
+.input-error {
+  outline: 2px solid var(--orange) !important;
+}
+
+.error-hint {
+  color: var(--orange);
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+/* -------------------- Footer (submit / back / delete) -------------------- */
+
+.create-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.create-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-link-btn {
+  color: var(--text);
+  opacity: 0.75;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 15px;
+  transition: opacity 0.15s ease;
+}
+
+.back-link-btn:hover {
+  opacity: 1;
+}
+
+.create-submit-btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--vibrant-blue), var(--purple));
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.create-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.delete-project-btn {
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.delete-project-btn:hover {
+  background: var(--orange);
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .create-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .create-footer-right {
+    flex-direction: column-reverse;
+  }
+
+  .create-submit-btn,
+  .delete-project-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

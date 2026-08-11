@@ -1,0 +1,278 @@
+/* ============================================================
+   home.css
+   ------------------------------------------------------------
+   Styles for the Home / Project Dashboard (index.html).
+   Uses the shared CSS variables defined in nav.css.
+   ============================================================ */
+
+#home-view {
+  padding: 32px clamp(16px, 4vw, 48px) 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* -------------------- Header -------------------- */
+
+.home-header {
+  margin-bottom: 36px;
+  padding: 40px clamp(20px, 5vw, 56px);
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--vibrant-blue), var(--purple) 55%, var(--pink));
+  position: relative;
+  overflow: hidden;
+}
+
+.home-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.25), transparent 55%);
+  pointer-events: none;
+}
+
+.home-title {
+  font-size: clamp(40px, 7vw, 64px);
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.home-subtitle {
+  color: #fff;
+  font-size: clamp(15px, 2vw, 18px);
+  font-weight: 700;
+  opacity: 0.95;
+  margin-top: 6px;
+}
+
+.home-tagline {
+  color: #fff;
+  font-size: 15px;
+  opacity: 0.85;
+  margin-top: 10px;
+  max-width: 420px;
+}
+
+.section-heading {
+  font-family: "Modak", system-ui;
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+/* -------------------- Grid -------------------- */
+
+#project-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* -------------------- Project card -------------------- */
+
+.project-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 4 / 5;
+  display: block;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+}
+
+.project-card-media {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--light-blue);
+}
+
+.project-card-media.no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-initial {
+  font-family: "Modak", system-ui;
+  font-size: 72px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.project-card-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 42%, rgba(0, 0, 0, 0) 68%);
+}
+
+.project-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 2;
+}
+
+.project-card:hover .project-actions,
+.project-card:focus-within .project-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: scale(1.08);
+}
+
+.project-card-info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px 18px 18px;
+  color: #fff;
+  z-index: 1;
+}
+
+.project-card-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.project-card-meta {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+
+.project-card-stats {
+  display: flex;
+  gap: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.project-card-open {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  display: inline-block;
+}
+
+.project-card:hover .project-card-open,
+.project-card:focus-within .project-card-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* -------------------- Add-project card -------------------- */
+
+.add-project-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  border: 2px dashed var(--vibrant-blue);
+  background: rgba(99, 151, 255, 0.06);
+  box-shadow: none;
+}
+
+.add-project-card:hover {
+  background: rgba(99, 151, 255, 0.14);
+  border-color: var(--purple);
+}
+
+.add-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--vibrant-blue);
+  color: var(--vibrant-blue);
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s ease, background 0.22s ease;
+}
+
+.add-project-card:hover .add-icon {
+  transform: rotate(90deg) scale(1.08);
+  background: var(--vibrant-blue);
+  color: #fff;
+}
+
+.add-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.add-title {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.add-subtitle {
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.65;
+}
+
+/* -------------------- Empty state -------------------- */
+
+#empty-state {
+  display: none;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text);
+  opacity: 0.7;
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  #project-container {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .home-header {
+    padding: 28px 20px;
+  }
+}
