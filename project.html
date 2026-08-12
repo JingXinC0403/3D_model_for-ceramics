@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>CARE — Project</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Modak&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="nav.css">
+  <link rel="stylesheet" href="font.css">
+  <link rel="stylesheet" href="project.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+
+  <script defer src="nav.js"></script>
+  <script defer src="auth.js"></script>
+  <script defer src="storage.js"></script>
+  <script defer src="project.js"></script>
+</head>
+
+<body>
+
+<!-- ================= NAVIGATION ================= -->
+
+<nav>
+
+  <!-- Mobile Sidebar -->
+  <ul class="sidebar">
+
+    <li onclick="hideSidebar()">
+      <a href="#">
+        <button class="close-button">&times;</button>
+      </a>
+    </li>
+
+    <li>
+      <a href="index.html">Home</a>
+    </li>
+
+    <li>
+      <a href="create.html">Create</a>
+    </li>
+
+    <li class="clock-mobile">
+      <span id="live-clock-mobile"></span>
+    </li>
+
+  </ul>
+
+
+  <!-- Desktop Navigation -->
+  <ul class="main-menu">
+
+    <li class="hideOnMobile">
+      <a href="index.html">Home</a>
+    </li>
+
+    <li class="hideOnMobile">
+      <a href="create.html">Create</a>
+    </li>
+
+
+    <li class="logo hideOnMobile">
+      <a href="index.html">C.A.R.E</a>
+    </li>
+
+
+    <li class="clock hideOnMobile">
+      <span id="live-clock"></span>
+    </li>
+
+
+    <li
+      class="theme-toggle"
+      onclick="toggleTheme()"
+    >
+      <span id="theme-icon">☀️</span>
+    </li>
+
+
+    <li
+      class="menu-button"
+      onclick="showSidebar()"
+    >
+      <a href="#">
+
+        <svg viewBox="0 0 24 24">
+
+          <path
+            d="M4 6h16M4 12h16M4 18h16"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            fill="none"
+          />
+
+        </svg>
+
+      </a>
+    </li>
+
+  </ul>
+
+</nav>
+
+
+<!-- ================= PROJECT PAGE ================= -->
+
+<main id="project-page">
+
+  <!-- Back -->
+  <a
+    href="index.html"
+    class="back-button"
+  >
+    ← Back to Dashboard
+  </a>
+
+
+  <!-- Project Header -->
+  <section class="project-header">
+
+    <div class="project-heading">
+
+      <p class="eyebrow">
+        C.A.R.E PROJECT
+      </p>
+
+      <h1 id="project-title">
+        Loading...
+      </h1>
+
+      <p id="project-description">
+        Loading project information...
+      </p>
+
+    </div>
+
+
+    <a
+      id="edit-project-btn"
+      class="edit-project-btn"
+      href="#"
+    >
+      ✎ Edit Project
+    </a>
+
+  </section>
+
+
+
+  <!-- ================= CAMERAS ================= -->
+
+  <section class="section">
+
+    <div class="section-heading">
+
+      <div>
+        <p class="eyebrow">
+          MONITORING
+        </p>
+
+        <h2>
+          Camera Feeds
+        </h2>
+      </div>
+
+      <span class="monitor-status">
+        ● MONITORING
+      </span>
+
+    </div>
+
+
+    <div class="camera-grid">
+
+
+      <!-- CAMERA 1 -->
+
+      <article class="monitor-card camera-card">
+
+        <div class="card-title">
+
+          <h3>
+            Camera 1
+          </h3>
+
+          <span
+            id="camera-1-status"
+            class="camera-status"
+          >
+            Offline
+          </span>
+
+        </div>
+
+
+        <div class="camera-display">
+
+          <video
+            id="camera-1-video"
+            autoplay
+            muted
+            playsinline
+          ></video>
+
+          <img
+            id="camera-1-img"
+            class="camera-stream-img"
+            alt="Camera 1"
+          >
+
+          <div
+            id="camera-1-placeholder"
+            class="camera-placeholder"
+          >
+            📷
+            <span>
+              Camera 1 not connected
+            </span>
+          </div>
+
+        </div>
+
+      </article>
+
+
+
+      <!-- CAMERA 2 -->
+
+      <article class="monitor-card camera-card">
+
+        <div class="card-title">
+
+          <h3>
+            Camera 2
+          </h3>
+
+          <span
+            id="camera-2-status"
+            class="camera-status"
+          >
+            Offline
+          </span>
+
+        </div>
+
+
+        <div class="camera-display">
+
+          <video
+            id="camera-2-video"
+            autoplay
+            muted
+            playsinline
+          ></video>
+
+          <img
+            id="camera-2-img"
+            class="camera-stream-img"
+            alt="Camera 2"
+          >
+
+          <div
+            id="camera-2-placeholder"
+            class="camera-placeholder"
+          >
+            📷
+            <span>
+              Camera 2 not connected
+            </span>
+          </div>
+
+        </div>
+
+      </article>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ================= SENSOR DATA ================= -->
+
+  <section class="section">
+
+    <div class="section-heading">
+
+      <div>
+
+        <p class="eyebrow">
+          ENVIRONMENT
+        </p>
+
+        <h2>
+          Temperature & Humidity
+        </h2>
+
+      </div>
+
+      <span
+        id="sensor-status"
+        class="sensor-status"
+      >
+        ● Disconnected
+      </span>
+
+    </div>
+
+
+    <div class="sensor-grid">
+
+
+      <!-- TEMPERATURE -->
+
+      <article class="monitor-card sensor-card">
+
+        <div class="sensor-icon">
+          🌡️
+        </div>
+
+        <div>
+
+          <p>
+            Temperature
+          </p>
+
+          <strong id="temperature-value">
+            --
+          </strong>
+
+          <span>
+            °C
+          </span>
+
+        </div>
+
+      </article>
+
+
+
+      <!-- HUMIDITY -->
+
+      <article class="monitor-card sensor-card">
+
+        <div class="sensor-icon">
+          💧
+        </div>
+
+        <div>
+
+          <p>
+            Humidity
+          </p>
+
+          <strong id="humidity-value">
+            --
+          </strong>
+
+          <span>
+            %
+          </span>
+
+        </div>
+
+      </article>
+
+    </div>
+
+
+    <p
+      id="sensor-last-updated"
+      class="last-updated"
+    >
+      No sensor reading yet.
+    </p>
+
+  </section>
+
+
+
+  <!-- ================= PROJECT INFORMATION ================= -->
+
+  <section class="section">
+
+    <div class="section-heading">
+
+      <div>
+
+        <p class="eyebrow">
+          ARTIFACT
+        </p>
+
+        <h2>
+          Project Information
+        </h2>
+
+      </div>
+
+    </div>
+
+
+    <div class="information-card">
+
+
+      <div class="description-area">
+
+        <h3>
+          Description
+        </h3>
+
+        <p id="artifact-description">
+          No description provided.
+        </p>
+
+      </div>
+
+
+      <div class="artifact-details">
+
+
+        <div class="detail">
+
+          <span>
+            Historical Period
+          </span>
+
+          <strong id="artifact-period">
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="detail">
+
+          <span>
+            Material
+          </span>
+
+          <strong id="artifact-material">
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="detail">
+
+          <span>
+            Storage Location
+          </span>
+
+          <strong id="artifact-location">
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="detail">
+
+          <span>
+            Condition
+          </span>
+
+          <strong id="artifact-condition">
+            —
+          </strong>
+
+        </div>
+
+
+      </div>
+
+
+      <div class="notes-area">
+
+        <h3>
+          Notes
+        </h3>
+
+        <p id="artifact-notes">
+          No additional notes.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+</body>
+</html>

@@ -1,3 +1,4 @@
+
 (function () {
   const navEl = document.querySelector("nav");
   if (!navEl) return;
@@ -145,3 +146,18 @@ function updateClock() {
 
 updateClock();
 setInterval(updateClock, 1000);
+
+
+// -------------------- Active navigation link --------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+  const currentPage = window.location.pathname.split("/").pop() || "index.html";
+
+  document.querySelectorAll("nav a[href]").forEach(link => {
+    const linkPage = link.getAttribute("href").split("/").pop();
+
+    if (linkPage === currentPage) {
+      link.classList.add("active");
+    }
+  });
+});

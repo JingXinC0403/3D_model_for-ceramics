@@ -9,7 +9,7 @@
   const noProjectMessage = document.getElementById("no-project-message");
   const editorEl = document.getElementById("project-editor");
   const saveIndicator = document.getElementById("save-indicator");
-
+ 
   const coverInput = document.getElementById("cover-image-input");
   const coverPreviewImg = document.getElementById("cover-preview-img");
   const coverPreviewPlaceholder = document.getElementById("cover-preview-placeholder");
@@ -40,11 +40,15 @@
   }
 
   // ---------- Init ----------
-  function init() {
+  async function init() {
+    const user = await CareAuth.requireSession();
+    if (!user) return; // requireSession already redirected to login.html
+    CareAuth.injectNavAuthLinks(user);
+
     const id = getParam("id");
 
     if (id) {
-      const existing = CareStorage.getById(id);
+      const existing = await CareStorage.getById(id);
       if (!existing) {
         showNoProject();
         return;
@@ -128,13 +132,20 @@
       deleteBtn.type = "button";
       deleteBtn.className = "delete-project-btn";
       deleteBtn.textContent = "Delete Project";
-      deleteBtn.addEventListener("click", () => {
+      deleteBtn.addEventListener("click", async () => {
         const confirmed = window.confirm(
           `Are you sure you want to delete "${project.name || "this project"}"?`
         );
         if (!confirmed) return;
-        CareStorage.remove(project.id);
-        window.location.href = "index.html";
+        deleteBtn.disabled = true;
+        try {
+          await CareStorage.remove(project.id);
+          window.location.href = "index.html";
+        } catch (err) {
+          console.error("Failed to delete project", err);
+          deleteBtn.disabled = false;
+          window.alert("Could not delete this project. Please try again.");
+        }
       });
       rightGroup.appendChild(deleteBtn);
     }
@@ -151,7 +162,7 @@
     editorEl.appendChild(footer);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const name = nameInput.value.trim();
     if (!name) {
       flashError(nameInput, "Please enter a project name before saving.");
@@ -160,9 +171,28 @@
 
     project.name = name;
 
-    const { record } = CareStorage.upsert(project);
-    project = record;
-    window.location.href = "index.html";
+    const submitBtn = editorEl.querySelector(".create-submit-btn");
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Saving…";
+    }
+
+    try {
+      const { record } = await CareStorage.upsert(project);
+      project = record;
+      window.location.href = "index.html";
+    } catch (err) {
+      console.error("Failed to save project", err);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isEditing ? "Save Changes →" : "Create Project →";
+      }
+      window.alert(
+        err && err.message
+          ? `Could not save this project: ${err.message}`
+          : "Could not save this project. Please try again."
+      );
+    }
   }
 
   function flashError(inputEl, message) {
@@ -187,16 +217,23 @@
     saveIndicator.classList.add("saving");
 
     clearTimeout(autosaveTimer);
-    autosaveTimer = setTimeout(() => {
+    autosaveTimer = setTimeout(async () => {
       // Only persist a draft automatically once a project already has
       // a name — avoids littering storage with untitled drafts.
       if (nameInput.value.trim()) {
         project.name = nameInput.value.trim();
-        const { record, isNew } = CareStorage.upsert(project);
-        project = record;
-        if (isNew) isEditing = true;
+        try {
+          const { record, isNew } = await CareStorage.upsert(project);
+          project = record;
+          if (isNew) isEditing = true;
+          saveIndicator.textContent = "All changes saved";
+        } catch (err) {
+          console.error("Autosave failed", err);
+          saveIndicator.textContent = "Couldn't save — check your connection";
+        }
+      } else {
+        saveIndicator.textContent = "All changes saved";
       }
-      saveIndicator.textContent = "All changes saved";
       saveIndicator.classList.remove("saving");
     }, 800);
   }

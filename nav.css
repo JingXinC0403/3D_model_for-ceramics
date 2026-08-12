@@ -62,9 +62,10 @@ nav ul.main-menu {
   width: 100%;
   list-style: none;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   padding: 10px 20px;
+  position: relative;
 }
 
 nav a {
@@ -83,8 +84,12 @@ nav a:hover {
   opacity: 0.8;
 }
 
+
+
 .logo {
-  margin-right: auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -226,3 +231,20 @@ nav .main-menu .logo span {
 }
 
 /* Home-page dashboard styles now live in home.css */
+/* Active page indicator */
+
+nav .main-menu > li > a {
+  position: relative;
+}
+
+nav .main-menu > li > a.active::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: -8px;
+  height: 4px;
+  background: #ffffff;
+  border-radius: 4px;
+  display: block;
+}

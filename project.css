@@ -1,0 +1,450 @@
+/* =====================================================
+   CARE PROJECT MONITOR
+===================================================== */
+
+#project-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 110px 40px 60px;
+}
+
+
+/* =====================================================
+   BACK BUTTON
+===================================================== */
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+
+  margin-bottom: 30px;
+
+  color: var(--text);
+  text-decoration: none;
+
+  font-weight: 700;
+
+  transition: transform 0.2s ease;
+}
+
+.back-button:hover {
+  transform: translateX(-5px);
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.project-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 30px;
+
+  margin-bottom: 60px;
+}
+
+.project-heading {
+  max-width: 800px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+
+  opacity: 0.55;
+}
+
+.project-header h1 {
+  margin: 0 0 12px;
+
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  line-height: 0.95;
+}
+
+#project-description {
+  margin: 0;
+
+  font-size: 1.15rem;
+  opacity: 0.7;
+
+  line-height: 1.6;
+}
+
+
+/* =====================================================
+   EDIT BUTTON
+===================================================== */
+
+.edit-project-btn {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px 24px;
+
+  border-radius: 14px;
+
+  background: var(--purple);
+  color: white;
+
+  text-decoration: none;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.edit-project-btn:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 12px 25px rgba(0, 0, 0, 0.18);
+}
+
+
+/* =====================================================
+   SECTIONS
+===================================================== */
+
+.section {
+  margin-bottom: 55px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  margin: 0;
+
+  font-size: 2rem;
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.monitor-status,
+.sensor-status {
+  font-size: 0.85rem;
+  font-weight: 700;
+
+  opacity: 0.7;
+}
+
+
+/* =====================================================
+   CAMERA GRID
+===================================================== */
+
+.camera-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 22px;
+}
+
+
+/* =====================================================
+   CARDS
+===================================================== */
+
+.monitor-card,
+.information-card {
+  background: var(--background);
+
+  border: 1px solid rgba(128, 128, 128, 0.2);
+
+  border-radius: 24px;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.08);
+
+  overflow: hidden;
+}
+
+
+/* =====================================================
+   CAMERA
+===================================================== */
+
+.camera-card {
+  padding: 18px;
+}
+
+.card-title {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
+.card-title h3 {
+  margin: 0;
+
+  font-size: 1.2rem;
+}
+
+.camera-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  opacity: 0.55;
+}
+
+.camera-display {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--purple),
+      var(--pink)
+    );
+}
+
+.camera-display video,
+.camera-display img {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  display: none;
+}
+
+.camera-placeholder {
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-direction: column;
+
+  gap: 10px;
+
+  color: white;
+
+  font-size: 2rem;
+
+  text-align: center;
+}
+
+.camera-placeholder span {
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  opacity: 0.8;
+}
+
+
+/* =====================================================
+   SENSOR CARDS
+===================================================== */
+
+.sensor-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 22px;
+}
+
+.sensor-card {
+  display: flex;
+
+  align-items: center;
+
+  gap: 22px;
+
+  padding: 28px;
+}
+
+.sensor-icon {
+  width: 65px;
+  height: 65px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background: var(--grid);
+
+  font-size: 2rem;
+}
+
+.sensor-card p {
+  margin: 0 0 3px;
+
+  opacity: 0.6;
+
+  font-weight: 700;
+}
+
+.sensor-card strong {
+  font-size: 2.5rem;
+}
+
+.sensor-card span {
+  font-weight: 700;
+}
+
+.last-updated {
+  margin: 12px 5px 0;
+
+  font-size: 0.8rem;
+
+  opacity: 0.5;
+}
+
+
+/* =====================================================
+   INFORMATION
+===================================================== */
+
+.information-card {
+  padding: 30px;
+}
+
+.description-area h3,
+.notes-area h3 {
+  margin-top: 0;
+}
+
+.description-area p,
+.notes-area p {
+  line-height: 1.7;
+
+  opacity: 0.75;
+}
+
+.artifact-details {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 15px;
+
+  margin: 30px 0;
+}
+
+.detail {
+  padding: 18px;
+
+  border-radius: 15px;
+
+  background: var(--grid);
+}
+
+.detail span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  font-size: 0.8rem;
+
+  opacity: 0.55;
+}
+
+.detail strong {
+  display: block;
+
+  word-break: break-word;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 850px) {
+
+  #project-page {
+    padding:
+      100px
+      20px
+      40px;
+  }
+
+  .project-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .camera-grid,
+  .sensor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .artifact-details {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+@media (max-width: 500px) {
+
+  .project-header h1 {
+    font-size: 2.8rem;
+  }
+
+  .artifact-details {
+    grid-template-columns: 1fr;
+  }
+
+  .sensor-card {
+    padding: 20px;
+  }
+
+  .sensor-card strong {
+    font-size: 2rem;
+  }
+
+}
