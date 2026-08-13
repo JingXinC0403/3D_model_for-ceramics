@@ -14,12 +14,13 @@
    ============================================================ */
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyDKENANx2rV7imPNsp5_tYRE5evsRzk4nM",
+  authDomain: "care-8ae9e.firebaseapp.com",
+  projectId: "care-8ae9e",
+  storageBucket: "care-8ae9e.firebasestorage.app",
+  messagingSenderId: "285081077754",
+  appId: "1:285081077754:web:18de91105b6f9ef3e84643",
+  measurementId: "G-0ZZQGT17MD"
 };
 
 firebase.initializeApp(firebaseConfig);
