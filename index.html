@@ -3,109 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CARE — Home</title>
+  <title>CARE — Dashboard</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Modak&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="nav.css">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="home.css">
 
-  <!-- Firebase (compat build — plain <script> globals) -->
   <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
   <script defer src="firebase-config.js"></script>
   <script defer src="auth.js"></script>
   <script defer src="auth-guard.js"></script>
-
-  <script defer src="nav.js"></script>
   <script defer src="storage.js"></script>
   <script defer src="home.js"></script>
 </head>
 
 <body>
-
-<nav>
-  <ul class="sidebar">
-    <li onclick="hideSidebar()">
-      <a href="#">
-        <button class="close-button">&times;</button>
-      </a>
-    </li>
-
-    <li><a href="index.html">Home</a></li>
-    <li><a href="create.html">Create</a></li>
-
-    <li class="clock-mobile">
-      <span id="live-clock-mobile"></span>
-    </li>
-  </ul>
-
-  <ul class="main-menu">
-    <li class="logo">
-      <span class="modak-regular">C.A.R.E.</span>
-    </li>
-
-    <li class="hideOnMobile"><a href="index.html">Home</a></li>
-    <li class="hideOnMobile"><a href="create.html">Create</a></li>
-
-    <!-- Clock -->
-    <li class="clock hideOnMobile">
-      <span id="live-clock"></span>
-    </li>
-
-    <!-- Theme Toggle -->
-    <li class="theme-toggle" onclick="toggleTheme()">
-      <h1 id="theme-icon">☀️</h1>
-    </li>
-
-    <!-- Mobile Menu -->
-    <li class="menu-button" onclick="showSidebar()">
-      <a href="#">
-        <svg viewBox="0 0 24 24">
-          <path d="M4 6h16M4 12h16M4 18h16"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                fill="none"/>
-        </svg>
-      </a>
-    </li>
-  </ul>
-</nav>
-
-<!-- ================= HOME PAGE / PROJECT DASHBOARD ================= -->
-
-<main id="home-view" class="page-view active-view">
-
-  <div class="home-header">
-    <h1 class="home-title modak-regular">C.A.R.E.</h1>
-    <p class="home-subtitle">Ceramic Artifact Reserve and Enclosure</p>
-    <p class="home-tagline">Monitor, protect and manage your artifact projects with one click.</p>
-  </div>
-
-  <h2 class="section-heading">Artefacts</h2>
-
-  <p id="empty-state">No artefacts yet. Click the "Create Artefact" card to add your first one.</p>
-
-  <div id="project-container">
-
-    <!-- Project cards are inserted here automatically by home.js -->
-
-    <!-- Create New Project Card (always stays last) -->
-    <a href="create.html" id="add-link" class="project-card add-project-card">
-      <div class="add-icon">+</div>
-      <div class="add-text">
-        <span class="add-title">Create Artefact</span>
-        <span class="add-subtitle">Add a new artifact</span>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">◉</div>
+        <div>
+          <strong>C.A.R.E.</strong>
+          <span>Artifact Reserve</span>
+        </div>
       </div>
-    </a>
-  </div>
 
-</main>
- 
+      <nav class="side-nav">
+        <a class="active" href="index.html"><span>⌂</span> Dashboard</a>
+        <a href="create.html"><span>＋</span> Create Artefact</a>
+        <a href="#recent"><span>▣</span> Artefacts</a>
+      </nav>
+
+      <div class="side-section-label">GENERAL</div>
+      <nav class="side-nav">
+        <a href="#sensors"><span>◌</span> Sensors</a>
+        <a href="#activity"><span>◷</span> Activity</a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="mini-help">Protecting history,<br>one artefact at a time.</div>
+        <button class="logout-side" onclick="CareAuth.logOut()">Log out</button>
+      </div>
+    </aside>
+
+    <main class="dashboard">
+      <header class="topbar">
+        <div class="search-box">
+          <span>⌕</span>
+          <input id="dashboard-search" type="search" placeholder="Search artefacts...">
+        </div>
+        <div class="top-actions">
+          <span class="sync-pill"><i></i> Live sync</span>
+          <span id="dashboard-user" class="user-name">Loading...</span>
+        </div>
+      </header>
+
+      <section class="welcome-row">
+        <div>
+          <p class="eyebrow">C.A.R.E. DASHBOARD</p>
+          <h1>Good to see you.</h1>
+          <p>Monitor your artefacts, sensors and preservation status from one place.</p>
+        </div>
+        <a class="primary-btn" href="create.html">＋ Add Artefact</a>
+      </section>
+
+      <section class="stat-grid">
+        <article class="stat-card">
+          <div class="stat-icon blue">▦</div>
+          <div><span>Total Artefacts</span><strong id="stat-total">0</strong><small>Stored in CARE</small></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-icon green">●</div>
+          <div><span>Live Projects</span><strong id="stat-live">0</strong><small>Currently monitored</small></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-icon purple">◉</div>
+          <div><span>Connected Cameras</span><strong id="stat-cameras">0</strong><small>Across all artefacts</small></div>
+        </article>
+        <article class="stat-card warning-card">
+          <div class="stat-icon orange">!</div>
+          <div><span>Needs Attention</span><strong id="stat-attention">0</strong><small>Check preservation status</small></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel recent-panel" id="recent">
+          <div class="panel-heading">
+            <div><h2>Recent Artefacts</h2><p>Your latest records</p></div>
+            <a href="create.html">＋ New</a>
+          </div>
+          <div id="recent-list" class="recent-list"></div>
+          <div id="recent-empty" class="empty-panel">No artefacts yet. Create your first record.</div>
+        </article>
+
+        <article class="panel progress-panel">
+          <div class="panel-heading"><div><h2>Collection Progress</h2><p>Current CARE archive</p></div></div>
+          <div class="progress-ring"><span id="progress-number">0%</span></div>
+          <div class="progress-legend">
+            <div><span class="dot green-dot"></span> Monitored <b id="progress-live">0</b></div>
+            <div><span class="dot grey-dot"></span> Other <b id="progress-other">0</b></div>
+          </div>
+        </article>
+
+        <article class="panel sensors-panel" id="sensors">
+          <div class="panel-heading"><div><h2>Sensor Overview</h2><p>Live environmental readings</p></div></div>
+          <div id="sensor-list" class="sensor-list"></div>
+          <div id="sensor-empty" class="empty-panel">No sensor data available yet.</div>
+        </article>
+
+        <article class="panel activity-panel" id="activity">
+          <div class="panel-heading"><div><h2>Quick Actions</h2><p>Common CARE tasks</p></div></div>
+          <a class="action-row" href="create.html"><span class="action-icon">＋</span><div><b>Create an artefact</b><small>Add a new museum record</small></div><span>›</span></a>
+          <a class="action-row" href="#recent"><span class="action-icon">▣</span><div><b>Review recent records</b><small>Open your latest artefacts</small></div><span>›</span></a>
+          <div class="shared-note"><span>☁</span><div><b>Cloud synced</b><small>Changes are saved to Firebase and appear on other logged-in devices.</small></div></div>
+        </article>
+      </section>
+    </main>
+  </div>
 </body>
 </html>
