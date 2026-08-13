@@ -1,399 +1,100 @@
 /* ============================================================
    storage.js
    ------------------------------------------------------------
-   CARE project storage using Supabase.
-   Projects belong to the currently logged-in user.
+   Shared data layer for CARE projects, backed by Firestore so
+   every signed-in user sees the same artefacts (this replaces
+   the old localStorage version, which was per-browser only).
+
+   Same method names as before (getAll, getById, upsert, remove,
+   blankProject), but they now return Promises — call sites use
+   await. Also adds subscribe(), used by home.js to keep the
+   dashboard live in real time as other users add/edit/delete.
    ============================================================ */
 
 const CareStorage = (function () {
-
-  function generateId() {
-
-    if (
-      window.crypto &&
-      typeof window.crypto.randomUUID === "function"
-    ) {
-      return window.crypto.randomUUID();
-    }
-
-    return (
-      "care-" +
-      Date.now().toString(36) +
-      "-" +
-      Math.random().toString(36).slice(2, 9)
-    );
-  }
-
+  const COLLECTION = "artefacts";
 
   function blankProject() {
-
     return {
       id: null,
-
       name: "",
-
       coverImage: "",
-
       cameras: {
-        1: {
-          type: "webcam",
-          url: "",
-          connected: false
-        },
-
-        2: {
-          type: "webcam",
-          url: "",
-          connected: false
-        }
+        1: { type: "webcam", url: "", connected: false },
+        2: { type: "webcam", url: "", connected: false },
       },
-
       climate: {
         temperature: null,
         humidity: null,
-        status: "Simulated"
+        status: "Simulated",
       },
-
       artifact: {
         description: "",
         period: "",
         material: "",
         location: "",
         condition: "",
-        notes: ""
+        notes: "",
       },
-
       createdAt: null,
-      updatedAt: null
+      updatedAt: null,
     };
   }
-
-
-  // ============================================================
-  // CURRENT USER
-  // ============================================================
-
-  async function getCurrentUser() {
-
-    const {
-      data,
-      error
-    } = await supabaseClient.auth.getUser();
-
-
-    if (error) {
-      console.error(
-        "CareStorage: unable to get user",
-        error
-      );
-
-      return null;
-    }
-
-
-    return data.user || null;
-  }
-
-
-  // ============================================================
-  // GET ALL PROJECTS
-  // ============================================================
 
   async function getAll() {
-
-    const user =
-      await getCurrentUser();
-
-
-    if (!user) {
-      return [];
-    }
-
-
-    const {
-      data,
-      error
-    } = await supabaseClient
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order(
-        "updated_at",
-        {
-          ascending: false
-        }
-      );
-
-
-    if (error) {
-
-      console.error(
-        "CareStorage: failed to load projects",
-        error
-      );
-
-      return [];
-    }
-
-
-    return data.map(
-      convertFromDatabase
-    );
+    const snap = await db.collection(COLLECTION).get();
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
-
-
-  // ============================================================
-  // GET PROJECT BY ID
-  // ============================================================
 
   async function getById(id) {
+    if (!id) return null;
+    const doc = await db.collection(COLLECTION).doc(id).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
+  }
 
-    const user =
-      await getCurrentUser();
+  async function upsert(projectData) {
+    const timestamp = new Date().toISOString();
+    const user = auth.currentUser;
+    const isNew = !projectData.id;
 
+    const record = {
+      ...blankProject(),
+      ...projectData,
+      createdAt: projectData.createdAt || timestamp,
+      updatedAt: timestamp,
+      updatedBy: (user && user.email) || null,
+      ...(isNew ? { createdBy: (user && user.email) || null } : {}),
+    };
+    delete record.id; // id is the doc key, not a field
 
-    if (!user) {
-      return null;
-    }
+    const ref = projectData.id
+      ? db.collection(COLLECTION).doc(projectData.id)
+      : db.collection(COLLECTION).doc();
 
+    await ref.set(record, { merge: true });
+    return { record: { id: ref.id, ...record }, isNew };
+  }
 
-    const {
-      data,
-      error
-    } = await supabaseClient
-      .from("projects")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .maybeSingle();
+  async function remove(id) {
+    if (!id) return;
+    await db.collection(COLLECTION).doc(id).delete();
+  }
 
-
-    if (error) {
-
-      console.error(
-        "CareStorage: failed to get project",
-        error
-      );
-
-      return null;
-    }
-
-
-    if (!data) {
-      return null;
-    }
-
-
-    return convertFromDatabase(
-      data
+  // Live updates: fires callback immediately with the current list,
+  // then again every time any signed-in user adds/edits/deletes an
+  // artefact — this is what makes "everyone sees the same info" true
+  // in real time rather than only on page refresh.
+  // Returns an unsubscribe function.
+  function subscribe(callback) {
+    return db.collection(COLLECTION).onSnapshot(
+      (snap) => {
+        callback(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      },
+      (err) => {
+        console.error("CareStorage.subscribe error:", err);
+      }
     );
   }
 
-
-  // ============================================================
-  // SAVE PROJECT
-  // ============================================================
-
-  async function upsert(projectData) {
-
-    const user =
-      await getCurrentUser();
-
-
-    if (!user) {
-
-      throw new Error(
-        "You must be logged in to save a project."
-      );
-    }
-
-
-    const existing =
-      projectData.id
-        ? await getById(projectData.id)
-        : null;
-
-
-    const now =
-      new Date().toISOString();
-
-
-    const project =
-      {
-        ...blankProject(),
-        ...projectData,
-
-        id:
-          projectData.id ||
-          generateId(),
-
-        createdAt:
-          existing?.createdAt ||
-          projectData.createdAt ||
-          now,
-
-        updatedAt:
-          now
-      };
-
-
-    const databaseRecord = {
-
-      id:
-        project.id,
-
-      user_id:
-        user.id,
-
-      name:
-        project.name,
-
-      cover_image:
-        project.coverImage,
-
-      cameras:
-        project.cameras,
-
-      climate:
-        project.climate,
-
-      artifact:
-        project.artifact,
-
-      created_at:
-        project.createdAt,
-
-      updated_at:
-        project.updatedAt
-    };
-
-
-    const {
-      data,
-      error
-    } = await supabaseClient
-      .from("projects")
-      .upsert(
-        databaseRecord,
-        {
-          onConflict: "id"
-        }
-      )
-      .select()
-      .single();
-
-
-    if (error) {
-
-      console.error(
-        "CareStorage: failed to save project",
-        error
-      );
-
-      throw error;
-    }
-
-
-    return {
-      record:
-        convertFromDatabase(data),
-
-      isNew:
-        !existing
-    };
-  }
-
-
-  // ============================================================
-  // DELETE
-  // ============================================================
-
-  async function remove(id) {
-
-    const user =
-      await getCurrentUser();
-
-
-    if (!user) {
-      return false;
-    }
-
-
-    const {
-      error
-    } = await supabaseClient
-      .from("projects")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
-
-
-    if (error) {
-
-      console.error(
-        "CareStorage: failed to delete project",
-        error
-      );
-
-      return false;
-    }
-
-
-    return true;
-  }
-
-
-  // ============================================================
-  // DATABASE → CARE FORMAT
-  // ============================================================
-
-  function convertFromDatabase(row) {
-
-    return {
-
-      id:
-        row.id,
-
-      name:
-        row.name || "",
-
-      coverImage:
-        row.cover_image || "",
-
-      cameras:
-        row.cameras || blankProject().cameras,
-
-      climate:
-        row.climate || blankProject().climate,
-
-      artifact:
-        row.artifact || blankProject().artifact,
-
-      createdAt:
-        row.created_at,
-
-      updatedAt:
-        row.updated_at
-    };
-  }
-
-
-  return {
-
-    generateId,
-
-    getCurrentUser,
-
-    getAll,
-
-    getById,
-
-    blankProject,
-
-    upsert,
-
-    remove
-
-  };
-
+  return { getAll, getById, blankProject, upsert, remove, subscribe };
 })();

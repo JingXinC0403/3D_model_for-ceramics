@@ -12,11 +12,16 @@
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="home.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
+
+  <!-- Firebase (compat build — plain <script> globals) -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script defer src="firebase-config.js"></script>
+  <script defer src="auth.js"></script>
+  <script defer src="auth-guard.js"></script>
 
   <script defer src="nav.js"></script>
-  <script defer src="auth.js"></script>
   <script defer src="storage.js"></script>
   <script defer src="home.js"></script>
 </head>
@@ -79,12 +84,12 @@
   <div class="home-header">
     <h1 class="home-title modak-regular">C.A.R.E.</h1>
     <p class="home-subtitle">Ceramic Artifact Reserve and Enclosure</p>
-    <p class="home-tagline">Monitor, protect and manage your artifact projects from one place.</p>
+    <p class="home-tagline">Monitor, protect and manage your artifact projects with one click.</p>
   </div>
 
-  <h2 class="section-heading">Projects</h2>
+  <h2 class="section-heading">Artefacts</h2>
 
-  <p id="empty-state">No projects yet. Click the "Create Project" card to add your first one.</p>
+  <p id="empty-state">No artefacts yet. Click the "Create Artefact" card to add your first one.</p>
 
   <div id="project-container">
 
@@ -94,12 +99,13 @@
     <a href="create.html" id="add-link" class="project-card add-project-card">
       <div class="add-icon">+</div>
       <div class="add-text">
-        <span class="add-title">Create Project</span>
+        <span class="add-title">Create Artefact</span>
         <span class="add-subtitle">Add a new artifact</span>
       </div>
     </a>
   </div>
 
 </main>
+ 
 </body>
 </html>

@@ -503,10 +503,11 @@
     }
 
 
-    (async () => {
-      await CareStorage.remove(project.id);
-      render();
-    })();
+    // The live subscribe() listener re-renders automatically once
+    // the delete lands — no need to call render() here.
+    CareStorage.remove(
+      project.id
+    );
 
   }
 
@@ -515,24 +516,23 @@
   // RENDER
   // ============================================================
 
-  async function render() {
+  function render(projects) {
 
-    const projects =
-      (await CareStorage.getAll())
-        .sort(
-          (a, b) => {
+    const sorted =
+      projects.slice().sort(
+        (a, b) => {
 
-            return (
-              new Date(
-                b.updatedAt || 0
-              ) -
-              new Date(
-                a.updatedAt || 0
-              )
-            );
+          return (
+            new Date(
+              b.updatedAt || 0
+            ) -
+            new Date(
+              a.updatedAt || 0
+            )
+          );
 
-          }
-        );
+        }
+      );
 
 
     // Remove existing cards
@@ -549,14 +549,14 @@
     // Empty state
 
     emptyState.style.display =
-      projects.length === 0
+      sorted.length === 0
         ? "block"
         : "none";
 
 
     // Create cards
 
-    projects.forEach(
+    sorted.forEach(
       (project) => {
 
         const card =
@@ -580,19 +580,15 @@
   // START
   // ============================================================
 
+  // Subscribes to the shared "artefacts" collection — the dashboard
+  // re-renders automatically whenever any signed-in user adds, edits,
+  // or deletes an artefact, so everyone stays in sync live.
   document.addEventListener(
     "DOMContentLoaded",
-    async () => {
-
-      const user =
-        await CareAuth.requireSession();
-
-      if (!user) return; // requireSession already redirected to login.html
-
-      CareAuth.injectNavAuthLinks(user);
-
-      render();
-
+    () => {
+      auth.onAuthStateChanged((user) => {
+        if (user) CareStorage.subscribe(render);
+      });
     }
   );
 

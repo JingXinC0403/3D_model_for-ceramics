@@ -41,10 +41,6 @@
 
   // ---------- Init ----------
   async function init() {
-    const user = await CareAuth.requireSession();
-    if (!user) return; // requireSession already redirected to login.html
-    CareAuth.injectNavAuthLinks(user);
-
     const id = getParam("id");
 
     if (id) {
@@ -137,15 +133,8 @@
           `Are you sure you want to delete "${project.name || "this project"}"?`
         );
         if (!confirmed) return;
-        deleteBtn.disabled = true;
-        try {
-          await CareStorage.remove(project.id);
-          window.location.href = "index.html";
-        } catch (err) {
-          console.error("Failed to delete project", err);
-          deleteBtn.disabled = false;
-          window.alert("Could not delete this project. Please try again.");
-        }
+        await CareStorage.remove(project.id);
+        window.location.href = "index.html";
       });
       rightGroup.appendChild(deleteBtn);
     }
@@ -171,28 +160,9 @@
 
     project.name = name;
 
-    const submitBtn = editorEl.querySelector(".create-submit-btn");
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Saving…";
-    }
-
-    try {
-      const { record } = await CareStorage.upsert(project);
-      project = record;
-      window.location.href = "index.html";
-    } catch (err) {
-      console.error("Failed to save project", err);
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = isEditing ? "Save Changes →" : "Create Project →";
-      }
-      window.alert(
-        err && err.message
-          ? `Could not save this project: ${err.message}`
-          : "Could not save this project. Please try again."
-      );
-    }
+    const { record } = await CareStorage.upsert(project);
+    project = record;
+    window.location.href = "index.html";
   }
 
   function flashError(inputEl, message) {
@@ -222,18 +192,11 @@
       // a name — avoids littering storage with untitled drafts.
       if (nameInput.value.trim()) {
         project.name = nameInput.value.trim();
-        try {
-          const { record, isNew } = await CareStorage.upsert(project);
-          project = record;
-          if (isNew) isEditing = true;
-          saveIndicator.textContent = "All changes saved";
-        } catch (err) {
-          console.error("Autosave failed", err);
-          saveIndicator.textContent = "Couldn't save — check your connection";
-        }
-      } else {
-        saveIndicator.textContent = "All changes saved";
+        const { record, isNew } = await CareStorage.upsert(project);
+        project = record;
+        if (isNew) isEditing = true;
       }
+      saveIndicator.textContent = "All changes saved";
       saveIndicator.classList.remove("saving");
     }, 800);
   }
@@ -453,5 +416,9 @@
     if (simulationTimer) clearInterval(simulationTimer);
   });
 
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    auth.onAuthStateChanged((user) => {
+      if (user) init();
+    });
+  });
 })();

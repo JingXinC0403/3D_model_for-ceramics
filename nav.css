@@ -80,6 +80,30 @@ nav a {
   transition: opacity 0.2s ease;
 }
 
+nav a {
+  position: relative;
+}
+
+/* Smooth underline */
+nav .main-menu > li.hideOnMobile > a::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 10px;
+  background: var(--text);
+
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+
+/* Show underline on the current page */
+nav .main-menu > li.hideOnMobile > a.active::after {
+  transform: scaleX(1);
+}
 nav a:hover {
   opacity: 0.8;
 }
@@ -247,4 +271,52 @@ nav .main-menu > li > a.active::after {
   background: #ffffff;
   border-radius: 4px;
   display: block;
+}
+
+/* -------------------- Account chip (injected by auth-guard.js) -------------------- */
+
+.account-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.account-email {
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.85;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  font-family: "Atkinson Hyperlegible", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.sidebar .account-chip {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 15px 0 0;
+  padding: 15px 0 0;
+  border-left: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
 }

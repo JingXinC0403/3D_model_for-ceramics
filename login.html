@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CARE — Log In</title>
+  <title>CARE — Log in</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,39 +11,69 @@
 
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="font.css">
-  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="login.css">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
-  <script defer src="auth.js"></script>
+  <!-- Firebase (compat build — plain <script> globals, no bundler needed) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
 </head>
 
-<body>
+<body class="login-body">
 
-<main class="auth-view">
-  <div class="auth-card">
-    <h1 class="auth-title modak-regular">C.A.R.E.</h1>
-    <p class="auth-subtitle">Log in to your artifact projects.</p>
+<main id="login-view">
 
-    <form id="login-form">
-      <div class="auth-field">
-        <label for="login-email">Email</label>
-        <input type="email" id="login-email" autocomplete="email" required>
-      </div>
+  <div class="login-card">
 
-      <div class="auth-field">
-        <label for="login-password">Password</label>
-        <input type="password" id="login-password" autocomplete="current-password" required>
-      </div>
+    <div class="login-brand">
+      <span class="modak-regular">C.A.R.E.</span>
+      <p>Ceramic Artifact Reserve and Enclosure</p>
+    </div>
 
-      <button type="submit" class="auth-submit-btn" id="login-submit-btn">Log In →</button>
+    <div class="login-tabs">
+      <button type="button" class="login-tab active" data-tab="login">Log in</button>
+      <button type="button" class="login-tab" data-tab="signup">Sign up</button>
+    </div>
+
+    <p id="login-blurb" class="login-blurb">
+      Log in to see your museum's artefacts — everyone on your account sees the same live data.
+    </p>
+
+    <!-- ---------------- LOG IN FORM ---------------- -->
+    <form id="login-form" class="auth-form active-form">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" autocomplete="email" required placeholder="you@museum.org">
+
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••">
+
+      <p class="form-error" id="login-error"></p>
+
+      <button type="submit" class="auth-submit-btn">Log in →</button>
     </form>
 
-    <p class="auth-message" id="login-message"></p>
+    <!-- ---------------- SIGN UP FORM ---------------- -->
+    <form id="signup-form" class="auth-form">
+      <label for="signup-name">Name</label>
+      <input id="signup-name" type="text" autocomplete="name" required placeholder="Jane Curator">
 
-    <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
+      <label for="signup-email">Email</label>
+      <input id="signup-email" type="email" autocomplete="email" required placeholder="you@museum.org">
+
+      <label for="signup-password">Password</label>
+      <input id="signup-password" type="password" autocomplete="new-password" required placeholder="At least 6 characters" minlength="6">
+
+      <p class="form-error" id="signup-error"></p>
+
+      <button type="submit" class="auth-submit-btn">Create account →</button>
+    </form>
+
   </div>
+
 </main>
 
+<script src="login.js"></script>
 </body>
 </html>

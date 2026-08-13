@@ -13,11 +13,15 @@
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="create.css">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
+  <!-- Firebase (compat build — plain <script> globals) -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script defer src="firebase-config.js"></script>
+  <script defer src="auth.js"></script>
+  <script defer src="auth-guard.js"></script>
 
   <script defer src="nav.js"></script>
-  <script defer src="auth.js"></script>
   <script defer src="storage.js"></script>
   <script defer src="create.js"></script>
 </head>
@@ -41,7 +45,7 @@
 
   <ul class="main-menu">
     <li class="logo">
-      <span class="modak-regular">CARE</span>
+      <span class="modak-regular">C.A.R.E.</span>
     </li>
 
     <li class="hideOnMobile"><a href="index.html">Home</a></li>

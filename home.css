@@ -65,9 +65,9 @@
 
 #project-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 260px);
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
 }
 /* -------------------- Project card -------------------- */
 
@@ -80,8 +80,8 @@
   justify-content: center;
   gap: 10px;
 
-  width: 260px;
-  height: 260px;
+  width: 100%;
+  aspect-ratio: 4 / 5;
 
   text-decoration: none;
   border: 2px dashed var(--vibrant-blue);
@@ -94,13 +94,14 @@
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
-  width: 260px;
-  height: 260px;
+
+  width: 100%;
+  aspect-ratio: 4 / 5;
+
   display: block;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
-
 .add-project-card:hover {
   background: rgba(99, 151, 255, 0.14);
   border-color: var(--purple);

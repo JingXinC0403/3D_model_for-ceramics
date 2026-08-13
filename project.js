@@ -2,16 +2,11 @@
    CARE PROJECT PAGE
 ===================================================== */
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-  const user =
-    await CareAuth.requireSession();
-
-  if (!user) return; // requireSession already redirected to login.html
-
-  CareAuth.injectNavAuthLinks(user);
-
-  loadProject();
+  auth.onAuthStateChanged((user) => {
+    if (user) loadProject();
+  });
 
 });
 
