@@ -97,9 +97,12 @@
       if (dashboardUserEl && auth.currentUser) {
         dashboardUserEl.textContent = auth.currentUser.displayName || auth.currentUser.email || "Account";
       }
+
+      if (window.CareBoot) window.CareBoot.ready();
     } catch (error) {
       console.error("CARE create page failed to initialise:", error);
       showNoProject("We couldn't load this artefact. Please refresh and try again.");
+      if (window.CareBoot) window.CareBoot.ready();
     }
   }
 

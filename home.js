@@ -139,8 +139,15 @@
         // Load once immediately so the dashboard does not wait for a
         // realtime event. The listener below then keeps it updated.
         render(await CareStorage.getAll());
+        if (window.CareBoot) window.CareBoot.ready();
       } catch (error) {
         console.error("Could not load CARE artefacts:", error);
+        if (window.CareBoot) {
+          window.CareBoot.showFatal(
+            "Signed in, but couldn't load your artefacts from Firestore.",
+            (error && error.message) || String(error)
+          );
+        }
       }
 
       unsubscribe = CareStorage.subscribe(

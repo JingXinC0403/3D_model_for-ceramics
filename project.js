@@ -41,13 +41,34 @@ async function loadProject() {
       "No project was selected."
     );
 
+    if (window.CareBoot) window.CareBoot.ready();
+
     return;
 
   }
 
 
-  const project =
-    await CareStorage.getById(projectId);
+  let project;
+
+  try {
+
+    project =
+      await CareStorage.getById(projectId);
+
+  } catch (error) {
+
+    console.error("Could not load project:", error);
+
+    if (window.CareBoot) {
+      window.CareBoot.showFatal(
+        "Signed in, but couldn't load this artefact from Firestore.",
+        (error && error.message) || String(error)
+      );
+    }
+
+    return;
+
+  }
 
 
   if (!project) {
@@ -56,12 +77,16 @@ async function loadProject() {
       "Project could not be found."
     );
 
+    if (window.CareBoot) window.CareBoot.ready();
+
     return;
 
   }
 
 
   displayProject(project);
+
+  if (window.CareBoot) window.CareBoot.ready();
 
 }
 
