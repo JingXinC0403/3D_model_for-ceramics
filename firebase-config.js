@@ -38,13 +38,14 @@ const db = firebase.firestore();
    and write):
 
    rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /artefacts/{docId} {
-         allow read, write: if request.auth != null;
-       }
-     }
-   }
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /artefacts/{artefactId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
 
    This allows any signed-in user to read and write any artefact —
    matching "everyone sees the same info" from the brief. If you
