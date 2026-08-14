@@ -20,7 +20,7 @@
   }
 
   function formatDate(value) {
-    if (!value) return "No update time";
+    if (!value) return "Just created";
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return "Recently updated";
     return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
@@ -49,24 +49,33 @@
     const empty = $("recent-empty");
     list.innerHTML = "";
 
-    const sorted = [...projects].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)).slice(0, 6);
+    const sorted = [...projects]
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+      .slice(0, 12);
+
     empty.style.display = sorted.length ? "none" : "block";
 
     sorted.forEach(project => {
       const item = document.createElement("div");
       item.className = "recent-item";
       item.dataset.name = String(project.name || "").toLowerCase();
+      item.title = "Open artefact";
       item.innerHTML = `
         <div class="artifact-thumb"></div>
         <div>
           <b></b>
-          <small>${formatDate(project.updatedAt)} · ${project.artifact?.material || "No material"}</small>
+          <small>${formatDate(project.updatedAt || project.createdAt)} · ${project.artifact?.material || "No material"}</small>
         </div>
         <span class="recent-status">${isLive(project) ? "LIVE" : "SAVED"}</span>
       `;
+
       const thumb = item.querySelector(".artifact-thumb");
-      if (project.coverImage) thumb.style.backgroundImage = `url("${project.coverImage}")`;
-      else thumb.textContent = (project.name || "?").trim().charAt(0).toUpperCase();
+      if (project.coverImage) {
+        thumb.style.backgroundImage = `url("${String(project.coverImage).replace(/"/g, '%22')}")`;
+      } else {
+        thumb.textContent = (project.name || "?").trim().charAt(0).toUpperCase();
+      }
+
       item.querySelector("b").textContent = project.name || "Untitled Artefact";
       item.addEventListener("click", () => {
         window.location.href = `project.html?id=${encodeURIComponent(project.id)}`;
@@ -86,7 +95,7 @@
     rows.forEach(project => {
       const temp = project.climate?.temperature;
       const humidity = project.climate?.humidity;
-      const hasReading = temp !== null && temp !== undefined || humidity !== null && humidity !== undefined;
+      const hasReading = (temp !== null && temp !== undefined) || (humidity !== null && humidity !== undefined);
       const row = document.createElement("div");
       row.className = "sensor-row";
       row.innerHTML = `
@@ -108,6 +117,7 @@
 
   function setupSearch() {
     const input = $("dashboard-search");
+    if (!input) return;
     input.addEventListener("input", () => {
       const q = input.value.trim().toLowerCase();
       document.querySelectorAll(".recent-item").forEach(item => {
@@ -118,11 +128,27 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     setupSearch();
-    auth.onAuthStateChanged(user => {
+
+    auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       $("dashboard-user").textContent = user.displayName || user.email || "Account";
+
       if (unsubscribe) unsubscribe();
-      unsubscribe = CareStorage.subscribe(render);
+
+      try {
+        // Load once immediately so the dashboard does not wait for a
+        // realtime event. The listener below then keeps it updated.
+        render(await CareStorage.getAll());
+      } catch (error) {
+        console.error("Could not load CARE artefacts:", error);
+      }
+
+      unsubscribe = CareStorage.subscribe(
+        render,
+        (error) => {
+          console.error("Dashboard realtime sync failed:", error);
+        }
+      );
     });
   });
 })();

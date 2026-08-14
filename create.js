@@ -207,16 +207,43 @@
       return;
     }
 
+    // Read every visible field one last time before saving. This means the
+    // Create button is a guaranteed full save, even if an input event has
+    // not finished its autosave yet.
     project.name = name;
-    setSaveState("Saving...", "saving");
+    project.artifact = project.artifact || {};
+    Object.entries(fieldIds).forEach(([key, elId]) => {
+      const el = document.getElementById(elId);
+      if (el) project.artifact[key] = el.value;
+    });
+
+    document.querySelectorAll(".camera-card").forEach((card) => {
+      const num = card.dataset.camera;
+      if (!project.cameras[num]) project.cameras[num] = {};
+      const type = card.querySelector(".camera-type-select");
+      const device = card.querySelector(".camera-device-select");
+      const url = card.querySelector(".camera-url-input");
+      if (type) project.cameras[num].type = type.value;
+      if (device) project.cameras[num].deviceId = device.value;
+      if (url) project.cameras[num].url = url.value.trim();
+    });
+
+    setSaveState("Saving to cloud...", "saving");
 
     try {
       const { record } = await CareStorage.upsert(project);
       project = record;
+      setSaveState("Saved ✓", "");
+
+      // Firestore's realtime listener on index.html will receive this
+      // document and render it on the dashboard. Only navigate after the
+      // write has successfully completed.
       window.location.href = "index.html";
     } catch (error) {
       console.error("Save failed:", error);
-      setSaveState("Save failed — try again", "error");
+      const reason = error && error.message ? error.message : "Unknown error";
+      setSaveState("Save failed", "error");
+      alert(`The artefact could not be saved.\n\n${reason}\n\nCheck that Firebase Firestore is enabled and its rules allow signed-in users to write to the artefacts collection.`);
     }
   }
 

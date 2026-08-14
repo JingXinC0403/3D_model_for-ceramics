@@ -1,14 +1,10 @@
 /* ============================================================
    storage.js
    ------------------------------------------------------------
-   Shared data layer for CARE projects, backed by Firestore so
-   every signed-in user sees the same artefacts (this replaces
-   the old localStorage version, which was per-browser only).
-
-   Same method names as before (getAll, getById, upsert, remove,
-   blankProject), but they now return Promises — call sites use
-   await. Also adds subscribe(), used by home.js to keep the
-   dashboard live in real time as other users add/edit/delete.
+   Single source of truth for CARE artefacts.
+   Artefacts are saved to Firebase Firestore and the dashboard
+   listens to the same collection, so a newly-created artefact
+   appears on the dashboard immediately.
    ============================================================ */
 
 const CareStorage = (function () {
@@ -20,8 +16,8 @@ const CareStorage = (function () {
       name: "",
       coverImage: "",
       cameras: {
-        1: { type: "webcam", url: "", connected: false },
-        2: { type: "webcam", url: "", connected: false },
+        1: { type: "webcam", url: "", deviceId: "", connected: false },
+        2: { type: "webcam", url: "", deviceId: "", connected: false },
       },
       climate: {
         temperature: null,
@@ -38,7 +34,24 @@ const CareStorage = (function () {
       },
       createdAt: null,
       updatedAt: null,
+      createdBy: null,
+      createdByUid: null,
+      updatedBy: null,
+      updatedByUid: null,
     };
+  }
+
+  // Firestore rejects undefined values. Clean them out before every write.
+  function clean(value) {
+    if (Array.isArray(value)) return value.map(clean);
+    if (value && typeof value === "object") {
+      const result = {};
+      Object.entries(value).forEach(([key, item]) => {
+        if (item !== undefined) result[key] = clean(item);
+      });
+      return result;
+    }
+    return value;
   }
 
   async function getAll() {
@@ -53,26 +66,54 @@ const CareStorage = (function () {
   }
 
   async function upsert(projectData) {
+    if (!auth.currentUser) {
+      throw new Error("You must be signed in before saving an artefact.");
+    }
+
     const timestamp = new Date().toISOString();
     const user = auth.currentUser;
     const isNew = !projectData.id;
 
-    const record = {
+    const record = clean({
       ...blankProject(),
       ...projectData,
+      // Always keep nested objects complete, even for older records.
+      cameras: {
+        ...blankProject().cameras,
+        ...(projectData.cameras || {}),
+      },
+      climate: {
+        ...blankProject().climate,
+        ...(projectData.climate || {}),
+      },
+      artifact: {
+        ...blankProject().artifact,
+        ...(projectData.artifact || {}),
+      },
       createdAt: projectData.createdAt || timestamp,
       updatedAt: timestamp,
-      updatedBy: (user && user.email) || null,
-      ...(isNew ? { createdBy: (user && user.email) || null } : {}),
-    };
-    delete record.id; // id is the doc key, not a field
+      updatedBy: user.email || null,
+      updatedByUid: user.uid || null,
+      ...(isNew
+        ? {
+            createdBy: user.email || null,
+            createdByUid: user.uid || null,
+          }
+        : {}),
+    });
+
+    delete record.id;
 
     const ref = projectData.id
       ? db.collection(COLLECTION).doc(projectData.id)
       : db.collection(COLLECTION).doc();
 
     await ref.set(record, { merge: true });
-    return { record: { id: ref.id, ...record }, isNew };
+
+    return {
+      record: { id: ref.id, ...record },
+      isNew,
+    };
   }
 
   async function remove(id) {
@@ -80,21 +121,28 @@ const CareStorage = (function () {
     await db.collection(COLLECTION).doc(id).delete();
   }
 
-  // Live updates: fires callback immediately with the current list,
-  // then again every time any signed-in user adds/edits/deletes an
-  // artefact — this is what makes "everyone sees the same info" true
-  // in real time rather than only on page refresh.
-  // Returns an unsubscribe function.
-  function subscribe(callback) {
+  function subscribe(callback, onError) {
     return db.collection(COLLECTION).onSnapshot(
       (snap) => {
-        callback(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        const projects = snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(projects);
       },
-      (err) => {
-        console.error("CareStorage.subscribe error:", err);
+      (error) => {
+        console.error("CARE dashboard sync failed:", error);
+        if (typeof onError === "function") onError(error);
       }
     );
   }
 
-  return { getAll, getById, blankProject, upsert, remove, subscribe };
+  return {
+    getAll,
+    getById,
+    blankProject,
+    upsert,
+    remove,
+    subscribe,
+  };
 })();
