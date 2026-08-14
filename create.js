@@ -600,6 +600,13 @@
     renderClimate();
     scheduleAutosave();
   }
+   document.getElementById("createArtefactBtn")
+.addEventListener("click", createArtefact);
+   async function createArtefact() {
+    console.log("Button clicked");
+
+    // your Firebase addDoc code here
+}
 
   window.addEventListener("beforeunload", () => {
     Object.values(activeStreams).forEach((s) => s && s.getTracks().forEach((t) => t.stop()));
