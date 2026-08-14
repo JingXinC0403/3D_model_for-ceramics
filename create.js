@@ -18,6 +18,10 @@
   const tempValueEl = document.getElementById("temperature-value");
   const humidityValueEl = document.getElementById("humidity-value");
   const statusValueEl = document.getElementById("sensor-status-value");
+  const dashboardUserEl = document.getElementById("dashboard-user");
+  const editorTitleEl = document.getElementById("editor-title");
+  const pageModeEl = document.getElementById("page-mode");
+  const footerEl = document.getElementById("create-footer");
 
   const fieldIds = {
     description: "artifact-description",
@@ -43,34 +47,67 @@
   async function init() {
     const id = getParam("id");
 
-    if (id) {
-      const existing = await CareStorage.getById(id);
-      if (!existing) {
-        showNoProject();
-        return;
+    try {
+      if (id) {
+        const existing = await CareStorage.getById(id);
+        if (!existing) {
+          showNoProject();
+          return;
+        }
+        project = JSON.parse(JSON.stringify(existing));
+        isEditing = true;
+      } else {
+        project = CareStorage.blankProject();
+        isEditing = false;
       }
-      project = JSON.parse(JSON.stringify(existing));
-      isEditing = true;
-    } else {
-      project = CareStorage.blankProject();
-      isEditing = false;
+
+      // Keep older Firestore records compatible with the current editor.
+      project.cameras = {
+        ...CareStorage.blankProject().cameras,
+        ...(project.cameras || {}),
+      };
+      project.climate = {
+        ...CareStorage.blankProject().climate,
+        ...(project.climate || {}),
+      };
+      project.artifact = {
+        ...CareStorage.blankProject().artifact,
+        ...(project.artifact || {}),
+      };
+
+      editorEl.style.display = "block";
+      noProjectMessage.style.display = "none";
+
+      if (editorTitleEl) {
+        editorTitleEl.textContent = isEditing ? "Edit your artefact." : "Create a new artefact.";
+      }
+      if (pageModeEl) {
+        pageModeEl.textContent = isEditing ? "Edit Artefact" : "Create Artefact";
+      }
+
+      populateForm();
+      setupFooter();
+      setupCoverUpload();
+      setupCameraCards();
+      refreshCameraDevices();
+      setupArtifactFields();
+      setupClimate();
+      window.CareSensors = { receiveReading };
+
+      if (dashboardUserEl && auth.currentUser) {
+        dashboardUserEl.textContent = auth.currentUser.displayName || auth.currentUser.email || "Account";
+      }
+    } catch (error) {
+      console.error("CARE create page failed to initialise:", error);
+      showNoProject("We couldn't load this artefact. Please refresh and try again.");
     }
-
-    editorEl.style.display = "block";
-    noProjectMessage.style.display = "none";
-
-    populateForm();
-    setupFooter();
-    setupCoverUpload();
-    setupCameraCards();
-    setupArtifactFields();
-    setupClimate();
-    window.CareSensors = { receiveReading };
   }
 
-  function showNoProject() {
+  function showNoProject(message) {
     editorEl.style.display = "none";
     noProjectMessage.style.display = "block";
+    const text = noProjectMessage.querySelector("p");
+    if (text && message) text.textContent = message;
   }
 
   // ---------- Populate ----------
@@ -103,17 +140,22 @@
       const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
       if (!card) return;
       const typeSelect = card.querySelector(".camera-type-select");
+      const deviceSelect = card.querySelector(".camera-device-select");
       const urlInput = card.querySelector(".camera-url-input");
       typeSelect.value = camState.type || "webcam";
       urlInput.value = camState.url || "";
       urlInput.style.display = typeSelect.value === "ip" ? "block" : "none";
+      if (deviceSelect) {
+        deviceSelect.style.display = typeSelect.value === "webcam" ? "block" : "none";
+        deviceSelect.value = camState.deviceId || "";
+      }
     });
   }
 
   // ---------- Footer (submit / back / delete) ----------
   function setupFooter() {
-    const footer = document.createElement("div");
-    footer.className = "create-footer";
+    if (!footerEl) return;
+    footerEl.innerHTML = "";
 
     const backLink = document.createElement("a");
     backLink.href = "index.html";
@@ -127,14 +169,22 @@
       const deleteBtn = document.createElement("button");
       deleteBtn.type = "button";
       deleteBtn.className = "delete-project-btn";
-      deleteBtn.textContent = "Delete Project";
+      deleteBtn.textContent = "Delete Artefact";
       deleteBtn.addEventListener("click", async () => {
         const confirmed = window.confirm(
-          `Are you sure you want to delete "${project.name || "this project"}"?`
+          `Are you sure you want to delete "${project.name || "this artefact"}"?`
         );
         if (!confirmed) return;
-        await CareStorage.remove(project.id);
-        window.location.href = "index.html";
+
+        deleteBtn.disabled = true;
+        try {
+          await CareStorage.remove(project.id);
+          window.location.href = "index.html";
+        } catch (error) {
+          console.error("Delete failed:", error);
+          deleteBtn.disabled = false;
+          setSaveState("Could not delete", "error");
+        }
       });
       rightGroup.appendChild(deleteBtn);
     }
@@ -142,27 +192,32 @@
     const submitBtn = document.createElement("button");
     submitBtn.type = "button";
     submitBtn.className = "create-submit-btn";
-    submitBtn.textContent = isEditing ? "Save Changes →" : "Create Project →";
+    submitBtn.textContent = isEditing ? "Save Changes →" : "Create Artefact →";
     submitBtn.addEventListener("click", handleSubmit);
     rightGroup.appendChild(submitBtn);
 
-    footer.appendChild(backLink);
-    footer.appendChild(rightGroup);
-    editorEl.appendChild(footer);
+    footerEl.appendChild(backLink);
+    footerEl.appendChild(rightGroup);
   }
 
   async function handleSubmit() {
     const name = nameInput.value.trim();
     if (!name) {
-      flashError(nameInput, "Please enter a project name before saving.");
+      flashError(nameInput, "Please enter an artefact name before saving.");
       return;
     }
 
     project.name = name;
+    setSaveState("Saving...", "saving");
 
-    const { record } = await CareStorage.upsert(project);
-    project = record;
-    window.location.href = "index.html";
+    try {
+      const { record } = await CareStorage.upsert(project);
+      project = record;
+      window.location.href = "index.html";
+    } catch (error) {
+      console.error("Save failed:", error);
+      setSaveState("Save failed — try again", "error");
+    }
   }
 
   function flashError(inputEl, message) {
@@ -182,22 +237,43 @@
 
   // ---------- Autosave indicator ----------
   let autosaveTimer = null;
+  let saveInProgress = false;
+
+  function setSaveState(text, state = "") {
+    if (!saveIndicator) return;
+    saveIndicator.textContent = text;
+    saveIndicator.classList.toggle("saving", state === "saving");
+    saveIndicator.classList.toggle("error", state === "error");
+  }
+
   function scheduleAutosave() {
-    saveIndicator.textContent = "Saving...";
-    saveIndicator.classList.add("saving");
+    setSaveState("Saving...", "saving");
 
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(async () => {
-      // Only persist a draft automatically once a project already has
-      // a name — avoids littering storage with untitled drafts.
-      if (nameInput.value.trim()) {
-        project.name = nameInput.value.trim();
+      if (!nameInput.value.trim() || saveInProgress) {
+        if (!nameInput.value.trim()) setSaveState("All changes saved");
+        return;
+      }
+
+      saveInProgress = true;
+      project.name = nameInput.value.trim();
+
+      try {
         const { record, isNew } = await CareStorage.upsert(project);
         project = record;
-        if (isNew) isEditing = true;
+        if (isNew) {
+          isEditing = true;
+          if (editorTitleEl) editorTitleEl.textContent = "Edit your artefact.";
+          if (pageModeEl) pageModeEl.textContent = "Edit Artefact";
+        }
+        setSaveState("All changes saved");
+      } catch (error) {
+        console.error("Autosave failed:", error);
+        setSaveState("Couldn't save changes", "error");
+      } finally {
+        saveInProgress = false;
       }
-      saveIndicator.textContent = "All changes saved";
-      saveIndicator.classList.remove("saving");
     }, 800);
   }
 
@@ -239,6 +315,7 @@
     document.querySelectorAll(".camera-card").forEach((card) => {
       const num = card.dataset.camera;
       const typeSelect = card.querySelector(".camera-type-select");
+      const deviceSelect = card.querySelector(".camera-device-select");
       const urlInput = card.querySelector(".camera-url-input");
       const connectBtn = card.querySelector(".camera-connect-btn");
       const video = card.querySelector(".camera-video");
@@ -249,10 +326,19 @@
 
       typeSelect.addEventListener("change", () => {
         urlInput.style.display = typeSelect.value === "ip" ? "block" : "none";
-        resetCameraView(num, { video, img, placeholder, statusWrap, statusText });
+        if (deviceSelect) deviceSelect.style.display = typeSelect.value === "webcam" ? "block" : "none";
+        resetCameraView(num, { video, img, placeholder, statusWrap, statusText, connectBtn });
         project.cameras[num].type = typeSelect.value;
         scheduleAutosave();
       });
+
+      if (deviceSelect) {
+        deviceSelect.addEventListener("change", () => {
+          project.cameras[num].deviceId = deviceSelect.value;
+          resetCameraView(num, { video, img, placeholder, statusWrap, statusText, connectBtn });
+          scheduleAutosave();
+        });
+      }
 
       urlInput.addEventListener("input", () => {
         project.cameras[num].url = urlInput.value;
@@ -261,7 +347,10 @@
 
       connectBtn.addEventListener("click", () => {
         if (typeSelect.value === "webcam") {
-          connectWebcam(num, { video, img, placeholder, statusWrap, statusText, connectBtn });
+          connectWebcam(num, {
+            video, img, placeholder, statusWrap, statusText, connectBtn,
+            deviceId: deviceSelect ? deviceSelect.value : ""
+          });
         } else {
           connectIpCamera(num, urlInput.value.trim(), { video, img, placeholder, statusWrap, statusText, connectBtn });
         }
@@ -270,6 +359,12 @@
   }
 
   function resetCameraView(num, refs) {
+    project.cameras[num] = project.cameras[num] || {
+      type: "webcam",
+      url: "",
+      connected: false,
+    };
+
     if (activeStreams[num]) {
       activeStreams[num].getTracks().forEach((t) => t.stop());
       activeStreams[num] = null;
@@ -282,14 +377,63 @@
     refs.placeholder.textContent = "No feed";
     refs.statusWrap.classList.remove("is-connected", "is-error");
     refs.statusText.textContent = "Not connected";
+    if (refs.connectBtn) {
+      refs.connectBtn.classList.remove("connected");
+      refs.connectBtn.textContent = "Connect Camera";
+    }
+    const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
+    const label = card && card.querySelector(".camera-status-label");
+    if (label) label.textContent = "Not connected";
     project.cameras[num].connected = false;
+  }
+
+  async function refreshCameraDevices() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === "videoinput");
+
+      document.querySelectorAll(".camera-device-select").forEach((select) => {
+        const card = select.closest(".camera-card");
+        const num = card ? card.dataset.camera : "";
+        const saved = num && project.cameras[num] ? project.cameras[num].deviceId || "" : "";
+        const current = select.value || saved;
+        select.innerHTML = "";
+
+        if (!cameras.length) {
+          const option = document.createElement("option");
+          option.value = "";
+          option.textContent = "Default camera";
+          select.appendChild(option);
+          return;
+        }
+
+        cameras.forEach((device, index) => {
+          const option = document.createElement("option");
+          option.value = device.deviceId;
+          option.textContent = device.label || `Camera ${index + 1}`;
+          select.appendChild(option);
+        });
+
+        if (cameras.some(device => device.deviceId === current)) {
+          select.value = current;
+        }
+      });
+    } catch (error) {
+      console.warn("Could not enumerate cameras:", error);
+    }
   }
 
   async function connectWebcam(num, refs) {
     refs.statusText.textContent = "Connecting…";
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const videoConstraint = refs.deviceId
+        ? { deviceId: { exact: refs.deviceId } }
+        : true;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint });
       activeStreams[num] = stream;
+      project.cameras[num].deviceId = refs.deviceId || "";
       refs.video.srcObject = stream;
       refs.video.style.display = "block";
       refs.img.style.display = "none";
@@ -299,8 +443,12 @@
       refs.statusText.textContent = "Connected (webcam)";
       refs.connectBtn.classList.add("connected");
       refs.connectBtn.textContent = "Reconnect";
+      const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
+      const label = card && card.querySelector(".camera-status-label");
+      if (label) label.textContent = "Connected";
       project.cameras[num].connected = true;
       scheduleAutosave();
+      refreshCameraDevices();
     } catch (err) {
       refs.statusWrap.classList.add("is-error");
       refs.statusWrap.classList.remove("is-connected");
@@ -312,6 +460,9 @@
       }
       refs.statusText.textContent = message;
       refs.placeholder.textContent = message;
+      const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
+      const label = card && card.querySelector(".camera-status-label");
+      if (label) label.textContent = "Connection failed";
       project.cameras[num].connected = false;
     }
   }
@@ -330,6 +481,9 @@
       refs.statusWrap.classList.add("is-error");
       refs.statusWrap.classList.remove("is-connected");
       refs.statusText.textContent = "RTSP can't play directly in a browser.";
+      const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
+      const label = card && card.querySelector(".camera-status-label");
+      if (label) label.textContent = "Unsupported stream";
       refs.placeholder.style.display = "block";
       refs.placeholder.textContent =
         "RTSP streams aren't supported by browsers directly. Use a relay/transcoder (e.g. an RTSP-to-HLS or MJPEG bridge) and enter that URL instead.";
@@ -349,6 +503,9 @@
       refs.statusWrap.classList.remove("is-error");
       refs.statusText.textContent = "Connected (stream)";
       refs.connectBtn.classList.add("connected");
+      const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
+      const label = card && card.querySelector(".camera-status-label");
+      if (label) label.textContent = "Connected";
       project.cameras[num].connected = true;
       scheduleAutosave();
     };
@@ -356,6 +513,9 @@
       refs.statusWrap.classList.add("is-error");
       refs.statusWrap.classList.remove("is-connected");
       refs.statusText.textContent = "Couldn't load stream from that URL.";
+      const card = document.querySelector(`.camera-card[data-camera="${num}"]`);
+      const label = card && card.querySelector(".camera-status-label");
+      if (label) label.textContent = "Connection failed";
       refs.placeholder.style.display = "block";
       refs.placeholder.textContent = "Couldn't load stream — check the URL, CORS, or that it's a browser-playable format (e.g. MJPEG).";
       refs.img.style.display = "none";

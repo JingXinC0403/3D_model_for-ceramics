@@ -3,252 +3,272 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CARE — Create / Edit Project</title>
+  <title>CARE — Create Artefact</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Modak&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="nav.css">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="create.css">
 
-  <!-- Firebase (compat build — plain <script> globals) -->
   <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
   <script defer src="firebase-config.js"></script>
   <script defer src="auth.js"></script>
   <script defer src="auth-guard.js"></script>
-
-  <script defer src="nav.js"></script>
   <script defer src="storage.js"></script>
   <script defer src="create.js"></script>
 </head>
 
 <body>
-<nav>
-  <ul class="sidebar">
-    <li onclick="hideSidebar()">
-      <a href="#">
-        <button class="close-button">&times;</button>
-      </a>
-    </li>
-
-    <li><a href="index.html">Home</a></li>
-    <li><a href="create.html">Create</a></li>
-
-    <li class="clock-mobile">
-      <span id="live-clock-mobile"></span>
-    </li>
-  </ul>
-
-  <ul class="main-menu">
-    <li class="logo">
-      <span class="modak-regular">C.A.R.E.</span>
-    </li>
-
-    <li class="hideOnMobile"><a href="index.html">Home</a></li>
-    <li class="hideOnMobile"><a href="create.html">Create</a></li>
-
-    <!-- Clock -->
-    <li class="clock hideOnMobile">
-      <span id="live-clock"></span>
-    </li>
-
-    <!-- Theme Toggle -->
-    <li class="theme-toggle" onclick="toggleTheme()">
-      <h1 id="theme-icon">☀️</h1>
-    </li>
-
-    <!-- Mobile Menu -->
-    <li class="menu-button" onclick="showSidebar()">
-      <a href="#">
-        <svg viewBox="0 0 24 24">
-          <path d="M4 6h16M4 12h16M4 18h16"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                fill="none"/>
-        </svg>
-      </a>
-    </li>
-  </ul>
-</nav>
-
-<main id="create-view">
-
-  <!-- Shown only if no project is selected (e.g. user typed the URL directly) -->
-  <div id="no-project-message" style="display:none;">
-    <p>No project selected.</p>
-    <a href="index.html" class="back-link">← Back to Dashboard</a>
-  </div>
-
-  <div id="project-editor" style="display:none;">
-
-    <div class="save-indicator" id="save-indicator">All changes saved</div>
-
-    <!-- ============== SECTION 1: PROJECT INFORMATION ============== -->
-    <section class="care-section" id="section-project-info">
-      <h2 class="section-title">Project Information</h2>
-
-      <div class="section-body project-info-body">
-        <div class="cover-upload">
-          <div class="cover-preview" id="cover-preview">
-            <img id="cover-preview-img" alt="Project cover preview" style="display:none;">
-            <span id="cover-preview-placeholder">No image uploaded</span>
-          </div>
-          <label class="upload-btn" for="cover-image-input">Upload Cover Image</label>
-          <input type="file" id="cover-image-input" accept="image/*" hidden>
-        </div>
-
-        <div class="project-name-field">
-          <label for="project-name-input">Project Name</label>
-          <input type="text" id="project-name-input" placeholder="Untitled Project" maxlength="80">
-          <p class="field-hint">Changes save automatically.</p>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">◉</div>
+        <div>
+          <strong>C.A.R.E.</strong>
+          <span>Artifact Reserve</span>
         </div>
       </div>
-    </section>
 
-    <!-- ============== SECTION 2: CAMERA CONNECTIONS ============== -->
-    <section class="care-section" id="section-cameras">
-      <h2 class="section-title">Camera Connections</h2>
+      <nav class="side-nav">
+        <a href="index.html"><span>⌂</span> Dashboard</a>
+        <a class="active" href="create.html"><span>＋</span> Create Artefact</a>
+        <a href="index.html#recent"><span>▣</span> Artefacts</a>
+      </nav>
 
-      <div class="section-body camera-grid">
+      <div class="side-section-label">GENERAL</div>
+      <nav class="side-nav">
+        <a href="index.html#sensors"><span>◌</span> Sensors</a>
+        <a href="index.html#activity"><span>◷</span> Activity</a>
+      </nav>
 
-        <!-- Camera 1 -->
-        <div class="camera-card" data-camera="1">
-          <h3>Camera 1</h3>
+      <div class="sidebar-bottom">
+        <div class="mini-help">Protecting history,<br>one artefact at a time.</div>
+        <button class="logout-side" type="button" onclick="CareAuth.logOut()">Log out</button>
+      </div>
+    </aside>
 
-          <div class="camera-preview">
-            <video class="camera-video" playsinline autoplay muted></video>
-            <img class="camera-stream-img" alt="Camera 1 stream" style="display:none;">
-            <div class="camera-placeholder">No feed</div>
+    <main class="create-dashboard">
+      <header class="topbar">
+        <div class="breadcrumb">
+          <a href="index.html">Dashboard</a>
+          <span>›</span>
+          <strong id="page-mode">Create Artefact</strong>
+        </div>
+        <div class="top-actions">
+          <span class="sync-pill"><i></i> Live sync</span>
+          <span id="dashboard-user" class="user-name">Loading...</span>
+        </div>
+      </header>
+
+      <div id="no-project-message" class="empty-state" style="display:none;">
+        <div class="empty-icon">▣</div>
+        <h1>Artefact not found</h1>
+        <p>The artefact you're trying to edit doesn't exist or was removed.</p>
+        <a href="index.html" class="primary-btn">← Back to Dashboard</a>
+      </div>
+
+      <div id="project-editor" style="display:none;">
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">C.A.R.E. COLLECTION</p>
+            <h1 id="editor-title">Create a new artefact.</h1>
+            <p>Add the details, monitoring devices and preservation information for this record.</p>
+          </div>
+          <div class="save-indicator" id="save-indicator">All changes saved</div>
+        </section>
+
+        <section class="panel editor-panel" id="section-project-info">
+          <div class="panel-heading">
+            <div>
+              <h2>Project Information</h2>
+              <p>Give your artefact a name and a cover image.</p>
+            </div>
           </div>
 
-          <div class="camera-controls">
-            <select class="camera-type-select">
-              <option value="webcam">Webcam (USB / built-in)</option>
-              <option value="ip">IP Camera (stream URL)</option>
-            </select>
+          <div class="project-info-body">
+            <div class="cover-upload">
+              <div class="cover-preview" id="cover-preview">
+                <img id="cover-preview-img" alt="Project cover preview" style="display:none;">
+                <span id="cover-preview-placeholder">No image uploaded</span>
+              </div>
+              <label class="upload-btn" for="cover-image-input">＋ Upload Cover Image</label>
+              <input type="file" id="cover-image-input" accept="image/*" hidden>
+            </div>
 
-            <input type="text" class="camera-url-input" placeholder="rtsp:// or http:// stream URL" style="display:none;">
+            <div class="project-name-field">
+              <label for="project-name-input">Artefact Name</label>
+              <input type="text" id="project-name-input" placeholder="e.g. Ming Dynasty Vase" maxlength="80">
+              <p class="field-hint">Changes are saved automatically once a name is entered.</p>
+            </div>
+          </div>
+        </section>
 
-            <button type="button" class="camera-connect-btn">Connect</button>
+        <section class="panel editor-panel" id="section-cameras">
+          <div class="panel-heading">
+            <div>
+              <h2>Camera Connections</h2>
+              <p>Connect up to two cameras to monitor the artefact.</p>
+            </div>
+            <span class="section-badge">2 CAMERA SLOTS</span>
           </div>
 
-          <p class="camera-status">
-            <span class="status-dot"></span>
-            <span class="status-text">Not connected</span>
+          <div class="camera-grid">
+            <div class="camera-card" data-camera="1">
+              <div class="card-title">
+                <h3>Camera 1</h3>
+                <span class="camera-status-label">Not connected</span>
+              </div>
+
+              <div class="camera-preview">
+                <video class="camera-video" playsinline autoplay muted></video>
+                <img class="camera-stream-img" alt="Camera 1 stream" style="display:none;">
+                <div class="camera-placeholder">📷<span>No feed</span></div>
+              </div>
+
+              <div class="camera-controls">
+                <select class="camera-type-select">
+                  <option value="webcam">Webcam (USB / built-in)</option>
+                  <option value="ip">IP Camera (stream URL)</option>
+                </select>
+                <select class="camera-device-select" aria-label="Select camera device">
+                  <option value="">Default camera</option>
+                </select>
+                <input type="text" class="camera-url-input" placeholder="http:// browser-compatible stream URL" style="display:none;">
+                <button type="button" class="camera-connect-btn">Connect Camera</button>
+              </div>
+
+              <p class="camera-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Not connected</span>
+              </p>
+            </div>
+
+            <div class="camera-card" data-camera="2">
+              <div class="card-title">
+                <h3>Camera 2</h3>
+                <span class="camera-status-label">Not connected</span>
+              </div>
+
+              <div class="camera-preview">
+                <video class="camera-video" playsinline autoplay muted></video>
+                <img class="camera-stream-img" alt="Camera 2 stream" style="display:none;">
+                <div class="camera-placeholder">📷<span>No feed</span></div>
+              </div>
+
+              <div class="camera-controls">
+                <select class="camera-type-select">
+                  <option value="webcam">Webcam (USB / built-in)</option>
+                  <option value="ip">IP Camera (stream URL)</option>
+                </select>
+                <select class="camera-device-select" aria-label="Select camera device">
+                  <option value="">Default camera</option>
+                </select>
+                <input type="text" class="camera-url-input" placeholder="http:// browser-compatible stream URL" style="display:none;">
+                <button type="button" class="camera-connect-btn">Connect Camera</button>
+              </div>
+
+              <p class="camera-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Not connected</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel editor-panel" id="section-climate">
+          <div class="panel-heading">
+            <div>
+              <h2>Temperature &amp; Humidity</h2>
+              <p>Monitor the storage environment.</p>
+            </div>
+            <span class="section-badge">SENSOR</span>
+          </div>
+
+          <div class="climate-grid">
+            <div class="climate-card">
+              <div class="climate-icon blue">°C</div>
+              <div>
+                <span class="climate-label">Temperature</span>
+                <strong id="temperature-value">--</strong>
+              </div>
+            </div>
+            <div class="climate-card">
+              <div class="climate-icon green">%</div>
+              <div>
+                <span class="climate-label">Humidity</span>
+                <strong id="humidity-value">--</strong>
+              </div>
+            </div>
+            <div class="climate-card">
+              <div class="climate-icon purple">●</div>
+              <div>
+                <span class="climate-label">Status</span>
+                <strong class="climate-status" id="sensor-status-value">Simulated</strong>
+              </div>
+            </div>
+          </div>
+
+          <p class="field-hint climate-hint">
+            Simulated readings are shown until live sensor data is received.
+            The page exposes <code>CareSensors.receiveReading({ temperature, humidity })</code>
+            for ESP32 / DHT22 integration.
           </p>
-        </div>
+        </section>
 
-        <!-- Camera 2 -->
-        <div class="camera-card" data-camera="2">
-          <h3>Camera 2</h3>
-
-          <div class="camera-preview">
-            <video class="camera-video" playsinline autoplay muted></video>
-            <img class="camera-stream-img" alt="Camera 2 stream" style="display:none;">
-            <div class="camera-placeholder">No feed</div>
+        <section class="panel editor-panel" id="section-artifact">
+          <div class="panel-heading">
+            <div>
+              <h2>Artefact Information</h2>
+              <p>Record the historical and preservation details.</p>
+            </div>
           </div>
 
-          <div class="camera-controls">
-            <select class="camera-type-select">
-              <option value="webcam">Webcam (USB / built-in)</option>
-              <option value="ip">IP Camera (stream URL)</option>
-            </select>
+          <div class="artifact-grid">
+            <div class="field full-width">
+              <label for="artifact-description">Description</label>
+              <textarea id="artifact-description" rows="4" placeholder="Brief description of the artefact"></textarea>
+            </div>
 
-            <input type="text" class="camera-url-input" placeholder="rtsp:// or http:// stream URL" style="display:none;">
+            <div class="field">
+              <label for="artifact-period">Historical Period</label>
+              <input type="text" id="artifact-period" placeholder="e.g. Ming Dynasty, 15th century">
+            </div>
 
-            <button type="button" class="camera-connect-btn">Connect</button>
+            <div class="field">
+              <label for="artifact-material">Material</label>
+              <input type="text" id="artifact-material" placeholder="e.g. Porcelain, stoneware">
+            </div>
+
+            <div class="field">
+              <label for="artifact-location">Storage Location</label>
+              <input type="text" id="artifact-location" placeholder="e.g. Shelf A3, Vault 2">
+            </div>
+
+            <div class="field">
+              <label for="artifact-condition">Condition</label>
+              <select id="artifact-condition">
+                <option value="">Select condition...</option>
+                <option value="Excellent">Excellent</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor</option>
+                <option value="Fragmentary">Fragmentary</option>
+              </select>
+            </div>
+
+            <div class="field full-width">
+              <label for="artifact-notes">Notes</label>
+              <textarea id="artifact-notes" rows="4" placeholder="Additional notes"></textarea>
+            </div>
           </div>
+        </section>
 
-          <p class="camera-status">
-            <span class="status-dot"></span>
-            <span class="status-text">Not connected</span>
-          </p>
-        </div>
-
+        <div id="create-footer" class="create-footer"></div>
       </div>
-    </section>
-
-    <!-- ============== SECTION 3: TEMPERATURE & HUMIDITY ============== -->
-    <section class="care-section" id="section-climate">
-      <h2 class="section-title">Temperature &amp; Humidity</h2>
-
-      <div class="section-body climate-grid">
-        <div class="climate-card">
-          <span class="climate-label">Temperature</span>
-          <span class="climate-value" id="temperature-value">--</span>
-        </div>
-
-        <div class="climate-card">
-          <span class="climate-label">Humidity</span>
-          <span class="climate-value" id="humidity-value">--</span>
-        </div>
-
-        <div class="climate-card">
-          <span class="climate-label">Status</span>
-          <span class="climate-value climate-status" id="sensor-status-value">Simulated</span>
-        </div>
-      </div>
-
-      <p class="field-hint climate-hint">
-        Showing simulated readings. This panel is wired to accept live data
-        from an ESP32 / DHT22 sensor over MQTT, WebSocket, or HTTP — see
-        <code>js/create.js</code> (<code>CareSensors.receiveReading</code>) for
-        the integration point.
-      </p>
-    </section>
-
-    <!-- ============== SECTION 4: ARTIFACT INFORMATION ============== -->
-    <section class="care-section" id="section-artifact">
-      <h2 class="section-title">Artifact Information</h2>
-
-      <div class="section-body artifact-grid">
-        <div class="field full-width">
-          <label for="artifact-description">Description</label>
-          <textarea id="artifact-description" rows="3" placeholder="Brief description of the artifact"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="artifact-period">Historical Period</label>
-          <input type="text" id="artifact-period" placeholder="e.g. Ming Dynasty, 15th century">
-        </div>
-
-        <div class="field">
-          <label for="artifact-material">Material</label>
-          <input type="text" id="artifact-material" placeholder="e.g. Porcelain, stoneware">
-        </div>
-
-        <div class="field">
-          <label for="artifact-location">Storage Location</label>
-          <input type="text" id="artifact-location" placeholder="e.g. Shelf A3, Vault 2">
-        </div>
-
-        <div class="field">
-          <label for="artifact-condition">Condition</label>
-          <select id="artifact-condition">
-            <option value="">Select condition...</option>
-            <option value="Excellent">Excellent</option>
-            <option value="Good">Good</option>
-            <option value="Fair">Fair</option>
-            <option value="Poor">Poor</option>
-            <option value="Fragmentary">Fragmentary</option>
-          </select>
-        </div>
-
-        <div class="field full-width">
-          <label for="artifact-notes">Notes</label>
-          <textarea id="artifact-notes" rows="3" placeholder="Additional notes"></textarea>
-        </div>
-      </div>
-    </section>
-
+    </main>
   </div>
-
-</main>
-
 </body>
 </html>
