@@ -37,16 +37,16 @@ const db = firebase.firestore();
    sharing the site publicly, "test mode" allows anyone to read
    and write):
 
-   rules_version = '2';
+   rrules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /artefacts/{artefactId} {
+
+    match /{document=**} {
       allow read, write: if request.auth != null;
     }
   }
 }
-
    This allows any signed-in user to read and write any artefact —
    matching "everyone sees the same info" from the brief. If you
    later want each artefact locked to its creator, change the write
