@@ -24,7 +24,7 @@
    ============================================================ */
 
 (function () {
-  var TIMEOUT_MS = 9000;
+  var TIMEOUT_MS = 15000;
   var dismissed = false;
   var overlay = null;
   var fatalReasons = [];
