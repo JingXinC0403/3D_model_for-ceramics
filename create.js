@@ -620,16 +620,32 @@
     if (simulationTimer) clearInterval(simulationTimer);
   });
 
-  document.addEventListener("DOMContentLoaded", () => {
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) return;
-      try {
-        await init();
-      } catch (error) {
-        console.error("CARE Create page startup failed:", error);
-        showNoProject("We couldn't load the Create page. Please refresh and try again.");
-        if (window.CareBoot) window.CareBoot.ready();
+ document.addEventListener("DOMContentLoaded", () => {
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      // auth-guard.js will redirect to login.html.
+      // Don't leave the loading screen stuck while waiting.
+      if (window.CareBoot) {
+        window.CareBoot.ready();
       }
+      return;
+    }
+
+    try {
+      await init();
+    } catch (error) {
+      console.error("CARE Create page startup failed:", error);
+
+      showNoProject(
+        "We couldn't load the Create page. Please refresh and try again."
+      );
+
+      if (window.CareBoot) {
+        window.CareBoot.ready();
+      }
+    }
+  });
+});
     });
   });
 })();
