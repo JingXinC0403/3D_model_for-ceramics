@@ -210,11 +210,12 @@
       return;
     }
 
-    // Read every visible field one last time before saving. This means the
-    // Create button is a guaranteed full save, even if an input event has
-    // not finished its autosave yet.
+    // Always collect the current visible values immediately before the
+    // Create/Save button writes to Firestore. This prevents a pending
+    // autosave from causing the button to save an incomplete record.
     project.name = name;
     project.artifact = project.artifact || {};
+
     Object.entries(fieldIds).forEach(([key, elId]) => {
       const el = document.getElementById(elId);
       if (el) project.artifact[key] = el.value;
@@ -222,31 +223,44 @@
 
     document.querySelectorAll(".camera-card").forEach((card) => {
       const num = card.dataset.camera;
-      if (!project.cameras[num]) project.cameras[num] = {};
+      project.cameras = project.cameras || {};
+      project.cameras[num] = project.cameras[num] || {};
+
       const type = card.querySelector(".camera-type-select");
       const device = card.querySelector(".camera-device-select");
       const url = card.querySelector(".camera-url-input");
+
       if (type) project.cameras[num].type = type.value;
       if (device) project.cameras[num].deviceId = device.value;
       if (url) project.cameras[num].url = url.value.trim();
     });
 
+    // Prevent double-clicks while Firestore is writing.
+    const submitBtn = document.querySelector(".create-submit-btn");
+    if (submitBtn) submitBtn.disabled = true;
     setSaveState("Saving to cloud...", "saving");
 
     try {
-      const { record } = await CareStorage.upsert(project);
-      project = record;
+      if (!auth.currentUser) {
+        throw new Error("You are not signed in. Please log in again and try creating the artefact.");
+      }
+
+      const result = await CareStorage.upsert(project);
+      project = result.record;
+      isEditing = false;
       setSaveState("Saved ✓", "");
 
-      // Firestore's realtime listener on index.html will receive this
-      // document and render it on the dashboard. Only navigate after the
-      // write has successfully completed.
+      // Only leave the page after Firestore confirms the write succeeded.
       window.location.href = "index.html";
     } catch (error) {
-      console.error("Save failed:", error);
+      console.error("CARE Create/Save failed:", error);
       const reason = error && error.message ? error.message : "Unknown error";
       setSaveState("Save failed", "error");
-      alert(`The artefact could not be saved.\n\n${reason}\n\nCheck that Firebase Firestore is enabled and its rules allow signed-in users to write to the artefacts collection.`);
+      if (submitBtn) submitBtn.disabled = false;
+      alert(
+        `The artefact could not be saved.\n\n${reason}\n\n` +
+        "Make sure you are logged in, Firestore is enabled, and its rules allow signed-in users to write to the artefacts collection."
+      );
     }
   }
 
@@ -600,13 +614,6 @@
     renderClimate();
     scheduleAutosave();
   }
-   document.getElementById("createArtefactBtn")
-.addEventListener("click", createArtefact);
-   async function createArtefact() {
-    console.log("Button clicked");
-
-    // your Firebase addDoc code here
-}
 
   window.addEventListener("beforeunload", () => {
     Object.values(activeStreams).forEach((s) => s && s.getTracks().forEach((t) => t.stop()));
@@ -614,8 +621,15 @@
   });
 
   document.addEventListener("DOMContentLoaded", () => {
-    auth.onAuthStateChanged((user) => {
-      if (user) init();
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      try {
+        await init();
+      } catch (error) {
+        console.error("CARE Create page startup failed:", error);
+        showNoProject("We couldn't load the Create page. Please refresh and try again.");
+        if (window.CareBoot) window.CareBoot.ready();
+      }
     });
   });
 })();
