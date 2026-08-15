@@ -117,15 +117,14 @@
         return;
       }
 
-      // Runtime error referencing Firebase globals almost always means
-      // firebase-config.js never ran (see block above).
-      var msg = (e.message || "") + "";
-      if (/firebase|auth|db|CareStorage|CareAuth/i.test(msg)) {
-        fatalReasons.push(msg);
-        showFatal(
-          "The app couldn't finish starting up, likely because Firebase didn't load or initialise correctly.",
-          fatalReasons.join("\n")
-        );
+     var msg = (e.message || "Unknown JavaScript error") + "";
+
+      fatalReasons.push(msg);
+
+      showFatal(
+        "The app couldn't finish starting because a script encountered an error.",
+        fatalReasons.join("\n")
+      );
       }
     },
     true
