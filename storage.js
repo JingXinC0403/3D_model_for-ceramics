@@ -54,6 +54,35 @@ const CareStorage = (function () {
     return value;
   }
 
+  // Helper to shrink Base64 cover images to keep Firestore documents under 1MB
+  function resizeBase64Image(base64Str, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+    if (!base64Str || !base64Str.startsWith("data:image")) return Promise.resolve(base64Str);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => resolve(base64Str);
+    });
+  }
+
   async function getAll() {
     const snap = await db.collection(COLLECTION).get();
     return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -66,13 +95,22 @@ const CareStorage = (function () {
   }
 
   async function upsert(projectData) {
-    if (!auth.currentUser) {
+    if (!auth || !auth.currentUser) {
       throw new Error("You must be signed in before saving an artefact.");
     }
 
     const timestamp = new Date().toISOString();
     const user = auth.currentUser;
     const isNew = !projectData.id;
+
+    // Compress cover image to ensure payload stays well within Firestore's 1MB limit
+    if (projectData.coverImage) {
+      try {
+        projectData.coverImage = await resizeBase64Image(projectData.coverImage);
+      } catch (e) {
+        console.warn("Cover image compression skipped:", e);
+      }
+    }
 
     const record = clean({
       ...blankProject(),
