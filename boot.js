@@ -99,7 +99,7 @@
     }
   }
 
-  // Catch script-load failures (e.g. Firebase CDN blocked) and runtime
+// Catch script-load failures (e.g. Firebase CDN blocked) and runtime
   // errors that happen before the page marks itself ready.
   window.addEventListener(
     "error",
@@ -117,7 +117,7 @@
         return;
       }
 
-     var msg = (e.message || "Unknown JavaScript error") + "";
+      var msg = (e.message || "Unknown JavaScript error") + "";
 
       fatalReasons.push(msg);
 
@@ -125,11 +125,9 @@
         "The app couldn't finish starting because a script encountered an error.",
         fatalReasons.join("\n")
       );
-      }
     },
     true
   );
-
   var timer = setTimeout(function () {
     if (dismissed) return;
     showFatal(
