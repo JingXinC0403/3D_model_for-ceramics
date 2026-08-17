@@ -1,624 +1,289 @@
-/* =====================================================
-   CARE PROJECT PAGE
-===================================================== */
+/* ============================================================
+   project.js
+   ------------------------------------------------------------
+   Powers the View Project page (project.html).
+   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const user = await CareAuth.currentUser();
-  if (user) loadProject();
-});
+(function () {
 
+  // ---------- Elements ----------
 
-/* =====================================================
-   GET PROJECT ID
-===================================================== */
+  const noProjectMessage = document.getElementById("no-project-message");
+  const viewEl = document.getElementById("project-view");
+  const dashboardUserEl = document.getElementById("dashboard-user");
+  const breadcrumbTitleEl = document.getElementById("breadcrumb-title");
 
-function getProjectId() {
-
-  const params =
-    new URLSearchParams(window.location.search);
-
-  return params.get("id");
-
-}
-
-
-/* =====================================================
-   LOAD PROJECT
-===================================================== */
-
-async function loadProject() {
-
-  const projectId =
-    getProjectId();
-
-
-  if (!projectId) {
-
-    showError(
-      "No project was selected."
-    );
-
-    if (window.CareBoot) window.CareBoot.ready();
-
-    return;
-
+  function getProjectId() {
+    return new URLSearchParams(window.location.search).get("id");
   }
 
+  // ---------- Init ----------
 
-  let project;
+  document.addEventListener("DOMContentLoaded", async () => {
+    const user = await CareAuth.currentUser();
+    if (!user) return;
 
-  try {
-
-    project =
-      await CareStorage.getById(projectId);
-
-  } catch (error) {
-
-    console.error("Could not load project:", error);
-
-    if (window.CareBoot) {
-      window.CareBoot.showFatal(
-        "Signed in, but couldn't load this artefact from Google Sheets.",
-        (error && error.message) || String(error)
-      );
+    if (dashboardUserEl) {
+      dashboardUserEl.textContent = user.name || user.email || "Account";
     }
 
-    return;
+    loadProject();
+  });
 
-  }
+  async function loadProject() {
+    const projectId = getProjectId();
 
+    if (!projectId) {
+      showNoProject("Artefact not found", "No artefact was selected.");
+      if (window.CareBoot) window.CareBoot.ready();
+      return;
+    }
 
-  if (!project) {
+    let project;
 
-    showError(
-      "Project could not be found."
-    );
+    try {
+      project = await CareStorage.getById(projectId);
+    } catch (error) {
+      console.error("Could not load project:", error);
+      if (window.CareBoot) {
+        window.CareBoot.showFatal(
+          "Signed in, but couldn't load this artefact from Google Sheets.",
+          (error && error.message) || String(error)
+        );
+      }
+      return;
+    }
 
+    if (!project) {
+      showNoProject("Artefact not found", "This artefact doesn't exist or was removed.");
+      if (window.CareBoot) window.CareBoot.ready();
+      return;
+    }
+
+    displayProject(project);
     if (window.CareBoot) window.CareBoot.ready();
-
-    return;
-
   }
 
+  function showNoProject(heading, message) {
+    if (viewEl) viewEl.style.display = "none";
+    if (noProjectMessage) {
+      noProjectMessage.style.display = "block";
+      const headingEl = document.getElementById("empty-state-heading");
+      const textEl = document.getElementById("empty-state-text");
+      if (headingEl && heading) headingEl.textContent = heading;
+      if (textEl && message) textEl.textContent = message;
+    }
+  }
 
-  displayProject(project);
+  // ---------- Display ----------
 
-  if (window.CareBoot) window.CareBoot.ready();
+  function displayProject(project) {
+    if (viewEl) viewEl.style.display = "block";
+    if (noProjectMessage) noProjectMessage.style.display = "none";
 
-}
+    /* ---------- TITLE ---------- */
 
+    document.title = `CARE — ${project.name || "Project"}`;
 
-/* =====================================================
-   DISPLAY PROJECT
-===================================================== */
+    document.getElementById("project-title").textContent = project.name || "Untitled Project";
 
-function displayProject(project) {
+    if (breadcrumbTitleEl) {
+      breadcrumbTitleEl.textContent = project.name || "Artefact";
+    }
 
-  /* ---------- TITLE ---------- */
+    /* ---------- EDIT BUTTON ---------- */
 
-  document.title =
-    `CARE — ${project.name || "Project"}`;
+    document.getElementById("edit-project-btn").href =
+      `create.html?id=${encodeURIComponent(project.id)}`;
 
+    /* ---------- DESCRIPTION ---------- */
 
-  document.getElementById(
-    "project-title"
-  ).textContent =
-    project.name || "Untitled Project";
+    const artifact = project.artifact || {};
 
+    document.getElementById("project-description").textContent =
+      artifact.description || "No project description provided.";
 
-  /* ---------- EDIT BUTTON ---------- */
+    document.getElementById("artifact-description").textContent =
+      artifact.description || "No description provided.";
 
-  document.getElementById(
-    "edit-project-btn"
-  ).href =
-    `create.html?id=${encodeURIComponent(project.id)}`;
+    /* ---------- ARTIFACT ---------- */
 
+    document.getElementById("artifact-period").textContent = artifact.period || "—";
+    document.getElementById("artifact-material").textContent = artifact.material || "—";
+    document.getElementById("artifact-location").textContent = artifact.location || "—";
+    document.getElementById("artifact-condition").textContent = artifact.condition || "—";
+    document.getElementById("artifact-notes").textContent = artifact.notes || "No additional notes.";
 
-  /* ---------- DESCRIPTION ---------- */
+    /* ---------- CLIMATE ---------- */
 
-  const artifact =
-    project.artifact || {};
+    displayClimate(project);
 
+    /* ---------- CAMERAS ---------- */
 
-  document.getElementById(
-    "project-description"
-  ).textContent =
-    artifact.description ||
-    "No project description provided.";
+    displayCameras(project);
+  }
 
+  // ---------- Temperature / humidity ----------
 
-  document.getElementById(
-    "artifact-description"
-  ).textContent =
-    artifact.description ||
-    "No description provided.";
+  function displayClimate(project) {
+    const climate = project.climate || {};
 
-
-  /* ---------- ARTIFACT ---------- */
-
-  document.getElementById(
-    "artifact-period"
-  ).textContent =
-    artifact.period || "—";
-
-
-  document.getElementById(
-    "artifact-material"
-  ).textContent =
-    artifact.material || "—";
-
-
-  document.getElementById(
-    "artifact-location"
-  ).textContent =
-    artifact.location || "—";
-
-
-  document.getElementById(
-    "artifact-condition"
-  ).textContent =
-    artifact.condition || "—";
-
-
-  document.getElementById(
-    "artifact-notes"
-  ).textContent =
-    artifact.notes ||
-    "No additional notes.";
-
-
-  /* ---------- CLIMATE ---------- */
-
-  displayClimate(
-    project
-  );
-
-
-  /* ---------- CAMERAS ---------- */
-
-  displayCameras(
-    project
-  );
-
-}
-
-
-/* =====================================================
-   TEMPERATURE / HUMIDITY
-===================================================== */
-
-function displayClimate(project) {
-
-  const climate =
-    project.climate || {};
-
-
-  const temperature =
-    document.getElementById(
-      "temperature-value"
-    );
-
-  const humidity =
-    document.getElementById(
-      "humidity-value"
-    );
-
-  const status =
-    document.getElementById(
-      "sensor-status"
-    );
-
-
-  if (
-    climate.temperature !== null &&
-    climate.temperature !== undefined
-  ) {
+    const temperature = document.getElementById("temperature-value");
+    const humidity = document.getElementById("humidity-value");
+    const status = document.getElementById("sensor-status");
+    const lastUpdated = document.getElementById("sensor-last-updated");
 
     temperature.textContent =
-      Number(climate.temperature)
-        .toFixed(1);
-
-  } else {
-
-    temperature.textContent =
-      "--";
-
-  }
-
-
-  if (
-    climate.humidity !== null &&
-    climate.humidity !== undefined
-  ) {
+      climate.temperature !== null && climate.temperature !== undefined
+        ? `${Number(climate.temperature).toFixed(1)}°C`
+        : "--";
 
     humidity.textContent =
-      Number(climate.humidity)
-        .toFixed(1);
+      climate.humidity !== null && climate.humidity !== undefined
+        ? `${Number(climate.humidity).toFixed(1)}%`
+        : "--";
 
-  } else {
+    if (climate.status === "Live" || climate.status === "Connected") {
+      status.textContent = "Live";
+    } else {
+      status.textContent = "Disconnected";
+    }
 
-    humidity.textContent =
-      "--";
-
+    if (climate.lastUpdated) {
+      const date = new Date(climate.lastUpdated);
+      lastUpdated.textContent = `Last updated: ${date.toLocaleString()}`;
+    } else {
+      lastUpdated.textContent = "No live sensor reading yet.";
+    }
   }
 
+  // ---------- Cameras ----------
 
-  if (
-    climate.status === "Live" ||
-    climate.status === "Connected"
-  ) {
-
-    status.textContent =
-      "● LIVE";
-
-    status.classList.add("is-live");
-
-  } else {
-
-    status.textContent =
-      "● Disconnected";
-
-    status.classList.remove("is-live");
-
+  function displayCameras(project) {
+    const cameras = project.cameras || {};
+    setupCamera(1, cameras[1]);
+    setupCamera(2, cameras[2]);
   }
 
+  function setupCamera(number, camera) {
+    if (!camera) {
+      setCameraOffline(number);
+      return;
+    }
 
-  const lastUpdated =
-    document.getElementById(
-      "sensor-last-updated"
-    );
+    if (camera.type === "webcam" && camera.connected) {
+      startWebcam(number);
+      return;
+    }
 
+    if (camera.type === "ip" && camera.url) {
+      showIPCamera(number, camera.url);
+      return;
+    }
 
-  if (climate.lastUpdated) {
-
-    const date =
-      new Date(
-        climate.lastUpdated
-      );
-
-    lastUpdated.textContent =
-      `Last updated: ${date.toLocaleString()}`;
-
-  } else {
-
-    lastUpdated.textContent =
-      "No live sensor reading yet.";
-
+    setCameraOffline(number);
   }
 
-}
-
-
-/* =====================================================
-   CAMERAS
-===================================================== */
-
-function displayCameras(project) {
-
-  const cameras =
-    project.cameras || {};
-
-
-  setupCamera(
-    1,
-    cameras[1]
-  );
-
-  setupCamera(
-    2,
-    cameras[2]
-  );
-
-}
-
-
-function setupCamera(
-  number,
-  camera
-) {
-
-  if (!camera) {
-
-    setCameraOffline(
-      number
-    );
-
-    return;
-
+  function cameraElements(number) {
+    return {
+      video: document.getElementById(`camera-${number}-video`),
+      image: document.getElementById(`camera-${number}-img`),
+      placeholder: document.getElementById(`camera-${number}-placeholder`),
+      statusRow: document.getElementById(`camera-${number}-status-row`),
+      statusText: document.getElementById(`camera-${number}-status-text`),
+      statusLabel: document.getElementById(`camera-${number}-status-label`),
+    };
   }
 
-
-  /*
-   * WEBCAM
-   */
-
-  if (
-    camera.type === "webcam" &&
-    camera.connected
-  ) {
-
-    startWebcam(
-      number
-    );
-
-    return;
-
+  function setCameraLive(number, label) {
+    const el = cameraElements(number);
+    if (el.statusRow) {
+      el.statusRow.classList.add("is-connected");
+      el.statusRow.classList.remove("is-error");
+    }
+    if (el.statusText) el.statusText.textContent = label;
+    if (el.statusLabel) el.statusLabel.textContent = label;
   }
 
-
-  /*
-   * IP CAMERA
-   */
-
-  if (
-    camera.type === "ip" &&
-    camera.url
-  ) {
-
-    showIPCamera(
-      number,
-      camera.url
-    );
-
-    return;
-
+  function setCameraError(number, label) {
+    const el = cameraElements(number);
+    if (el.statusRow) {
+      el.statusRow.classList.add("is-error");
+      el.statusRow.classList.remove("is-connected");
+    }
+    if (el.statusText) el.statusText.textContent = label;
+    if (el.statusLabel) el.statusLabel.textContent = label;
   }
 
+  // ---------- Webcam ----------
 
-  setCameraOffline(
-    number
-  );
+  async function startWebcam(number) {
+    const { video, placeholder } = cameraElements(number);
+    if (!video) return;
 
-}
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
 
+      video.srcObject = stream;
+      video.style.display = "block";
+      placeholder.style.display = "none";
 
-/* =====================================================
-   WEBCAM
-===================================================== */
-
-async function startWebcam(
-  number
-) {
-
-  const video =
-    document.getElementById(
-      `camera-${number}-video`
-    );
-
-  const placeholder =
-    document.getElementById(
-      `camera-${number}-placeholder`
-    );
-
-  const status =
-    document.getElementById(
-      `camera-${number}-status`
-    );
-
-
-  if (!video) return;
-
-
-  try {
-
-    const stream =
-      await navigator.mediaDevices
-        .getUserMedia({
-
-          video: true,
-
-          audio: false
-
-        });
-
-
-    video.srcObject =
-      stream;
-
-    video.style.display =
-      "block";
-
-    placeholder.style.display =
-      "none";
-
-    status.textContent =
-      "● LIVE";
-
-    status.classList.add("is-live");
-
-
-  } catch (error) {
-
-    console.error(
-      "Camera error:",
-      error
-    );
-
-    setCameraOffline(
-      number,
-      "Camera permission denied"
-    );
-
+      setCameraLive(number, "Live");
+    } catch (error) {
+      console.error("Camera error:", error);
+      setCameraOffline(number, "Camera permission denied");
+    }
   }
 
-}
+  // ---------- IP camera ----------
 
+  function showIPCamera(number, url) {
+    const { image, placeholder } = cameraElements(number);
 
-/* =====================================================
-   IP CAMERA
-===================================================== */
+    /*
+     * This works for browser-compatible MJPEG / HTTP camera streams.
+     * RTSP generally cannot be displayed directly by a normal browser.
+     */
 
-function showIPCamera(
-  number,
-  url
-) {
+    image.src = url;
 
-  const image =
-    document.getElementById(
-      `camera-${number}-img`
-    );
+    image.onload = () => {
+      image.style.display = "block";
+      placeholder.style.display = "none";
+      setCameraLive(number, "Live");
+    };
 
-  const placeholder =
-    document.getElementById(
-      `camera-${number}-placeholder`
-    );
-
-  const status =
-    document.getElementById(
-      `camera-${number}-status`
-    );
-
-
-  /*
-   * This works for browser-compatible
-   * MJPEG / HTTP camera streams.
-   *
-   * RTSP generally cannot be displayed
-   * directly by a normal browser.
-   */
-
-  image.src =
-    url;
-
-
-  image.onload = () => {
-
-    image.style.display =
-      "block";
-
-    placeholder.style.display =
-      "none";
-
-    status.textContent =
-      "● LIVE";
-
-    status.classList.add("is-live");
-
-  };
-
-
-  image.onerror = () => {
-
-    image.style.display =
-      "none";
-
-    placeholder.style.display =
-      "flex";
-
-    status.textContent =
-      "Offline";
-
-    status.classList.remove("is-live");
-
-  };
-
-}
-
-
-/* =====================================================
-   OFFLINE CAMERA
-===================================================== */
-
-function setCameraOffline(
-  number,
-  message = "Camera not connected"
-) {
-
-  const video =
-    document.getElementById(
-      `camera-${number}-video`
-    );
-
-  const image =
-    document.getElementById(
-      `camera-${number}-img`
-    );
-
-  const placeholder =
-    document.getElementById(
-      `camera-${number}-placeholder`
-    );
-
-  const status =
-    document.getElementById(
-      `camera-${number}-status`
-    );
-
-
-  if (video) {
-
-    video.style.display =
-      "none";
-
-    video.srcObject =
-      null;
-
+    image.onerror = () => {
+      image.style.display = "none";
+      placeholder.style.display = "flex";
+      setCameraError(number, "Offline");
+    };
   }
 
+  // ---------- Offline ----------
 
-  if (image) {
+  function setCameraOffline(number, message = "Not connected") {
+    const { video, image, placeholder, statusRow, statusText, statusLabel } = cameraElements(number);
 
-    image.style.display =
-      "none";
+    if (video) {
+      video.style.display = "none";
+      video.srcObject = null;
+    }
 
+    if (image) image.style.display = "none";
+
+    if (placeholder) {
+      placeholder.style.display = "flex";
+      const span = placeholder.querySelector("span");
+      if (span) span.textContent = `Camera ${number} not connected`;
+    }
+
+    if (statusRow) {
+      statusRow.classList.remove("is-connected", "is-error");
+    }
+
+    if (statusText) statusText.textContent = message;
+    if (statusLabel) statusLabel.textContent = message;
   }
 
-
-  if (placeholder) {
-
-    placeholder.style.display =
-      "flex";
-
-    placeholder.querySelector(
-      "span"
-    ).textContent =
-      message;
-
-  }
-
-
-  if (status) {
-
-    status.textContent =
-      "Offline";
-
-    status.classList.remove("is-live");
-
-  }
-
-}
-
-
-/* =====================================================
-   ERROR
-===================================================== */
-
-function showError(
-  message
-) {
-
-  document.getElementById(
-    "project-page"
-  ).innerHTML = `
-
-    <div style="
-      text-align:center;
-      padding:120px 20px;
-    ">
-
-      <h1>
-        ${message}
-      </h1>
-
-      <a
-        href="index.html"
-        class="back-button"
-      >
-        ← Back to Dashboard
-      </a>
-
-    </div>
-
-  `;
-
-}
+})();

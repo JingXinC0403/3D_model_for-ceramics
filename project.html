@@ -8,13 +8,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Modak&display=swap"
-    rel="stylesheet"
-  >
-
-  <link rel="stylesheet" href="nav.css">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="project.css">
 
@@ -24,486 +18,211 @@
   <script defer src="sheets-config.js"></script>
   <script defer src="auth.js"></script>
   <script defer src="auth-guard.js"></script>
-
-  <script defer src="nav.js"></script>
   <script defer src="storage.js"></script>
   <script defer src="project.js"></script>
 </head>
 
 <body>
-
-<!-- ================= NAVIGATION ================= -->
-
-<nav>
-
-  <!-- Mobile Sidebar -->
-  <ul class="sidebar">
-
-    <li onclick="hideSidebar()">
-      <a href="#">
-        <button class="close-button">&times;</button>
-      </a>
-    </li>
-
-    <li>
-      <a href="index.html">Home</a>
-    </li>
-
-    <li>
-      <a href="create.html">Create</a>
-    </li>
-
-    <li class="clock-mobile">
-      <span id="live-clock-mobile"></span>
-    </li>
-
-  </ul>
-
-
-  <!-- Desktop Navigation -->
-  <ul class="main-menu">
-
-    <li class="hideOnMobile">
-      <a href="index.html">Home</a>
-    </li>
-
-    <li class="hideOnMobile">
-      <a href="create.html">Create</a>
-    </li>
-
-
-    <li class="logo hideOnMobile">
-      <a href="index.html">C.A.R.E</a>
-    </li>
-
-
-    <li class="clock hideOnMobile">
-      <span id="live-clock"></span>
-    </li>
-
-
-    <li
-      class="theme-toggle"
-      onclick="toggleTheme()"
-    >
-      <span id="theme-icon">☀️</span>
-    </li>
-
-
-    <li
-      class="menu-button"
-      onclick="showSidebar()"
-    >
-      <a href="#">
-
-        <svg viewBox="0 0 24 24">
-
-          <path
-            d="M4 6h16M4 12h16M4 18h16"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            fill="none"
-          />
-
-        </svg>
-
-      </a>
-    </li>
-
-  </ul>
-
-</nav>
-
-
-<!-- ================= PROJECT PAGE ================= -->
-
-<main id="project-page">
-
-  <!-- Back -->
-  <a
-    href="index.html"
-    class="back-button"
-  >
-    ← Back to Dashboard
-  </a>
-
-
-  <!-- Project Header -->
-  <section class="project-header">
-
-    <div class="project-heading">
-
-      <p class="eyebrow">
-        C.A.R.E PROJECT
-      </p>
-
-      <h1 id="project-title">
-        Loading...
-      </h1>
-
-      <p id="project-description">
-        Loading project information...
-      </p>
-
-    </div>
-
-
-    <a
-      id="edit-project-btn"
-      class="edit-project-btn"
-      href="#"
-    >
-      ✎ Edit Project
-    </a>
-
-  </section>
-
-
-
-  <!-- ================= CAMERAS ================= -->
-
-  <section class="section">
-
-    <div class="section-heading">
-
-      <div>
-        <p class="eyebrow">
-          MONITORING
-        </p>
-
-        <h2>
-          Camera Feeds
-        </h2>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">◉</div>
+        <div>
+          <strong>C.A.R.E.</strong>
+          <span>Artifact Reserve</span>
+        </div>
       </div>
 
-      <span class="monitor-status">
-        ● MONITORING
-      </span>
+      <nav class="side-nav">
+        <a href="index.html"><span>⌂</span> Dashboard</a>
+        <a href="create.html"><span>＋</span> Create Artefact</a>
+        <a class="active" href="index.html#recent"><span>▣</span> Artefacts</a>
+      </nav>
 
-    </div>
+      <div class="side-section-label">GENERAL</div>
+      <nav class="side-nav">
+        <a href="index.html#sensors"><span>◌</span> Sensors</a>
+        <a href="index.html#activity"><span>◷</span> Activity</a>
+      </nav>
 
+      <div class="sidebar-bottom">
+        <div class="mini-help">Protecting history,<br>one artefact at a time.</div>
+        <button class="logout-side" type="button" onclick="CareAuth.logOut()">Log out</button>
+      </div>
+    </aside>
 
-    <div class="camera-grid">
-
-
-      <!-- CAMERA 1 -->
-
-      <article class="monitor-card camera-card">
-
-        <div class="card-title">
-
-          <h3>
-            Camera 1
-          </h3>
-
-          <span
-            id="camera-1-status"
-            class="camera-status"
-          >
-            Offline
-          </span>
-
+    <main class="project-dashboard">
+      <header class="topbar">
+        <div class="breadcrumb">
+          <a href="index.html">Dashboard</a>
+          <span>›</span>
+          <strong id="breadcrumb-title">Artefact</strong>
         </div>
+        <div class="top-actions">
+          <span class="sync-pill"><i></i> Live sync</span>
+          <span id="dashboard-user" class="user-name">Loading...</span>
+        </div>
+      </header>
+
+      <div id="no-project-message" class="empty-state" style="display:none;">
+        <div class="empty-icon">▣</div>
+        <h1 id="empty-state-heading">Artefact not found</h1>
+        <p id="empty-state-text">The artefact you're looking for doesn't exist or was removed.</p>
+        <a href="index.html" class="primary-btn">← Back to Dashboard</a>
+      </div>
+
+      <div id="project-view" style="display:none;">
+
+        <!-- ================= HEADER ================= -->
+
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">C.A.R.E. COLLECTION</p>
+            <h1 id="project-title">Loading...</h1>
+            <p id="project-description">Loading project information...</p>
+          </div>
+          <a id="edit-project-btn" class="primary-btn" href="#">✎ Edit Artefact</a>
+        </section>
 
 
-        <div class="camera-display">
+        <!-- ================= CAMERAS ================= -->
 
-          <video
-            id="camera-1-video"
-            autoplay
-            muted
-            playsinline
-          ></video>
-
-          <img
-            id="camera-1-img"
-            class="camera-stream-img"
-            alt="Camera 1"
-          >
-
-          <div
-            id="camera-1-placeholder"
-            class="camera-placeholder"
-          >
-            📷
-            <span>
-              Camera 1 not connected
-            </span>
+        <section class="panel editor-panel" id="section-cameras">
+          <div class="panel-heading">
+            <div>
+              <h2>Camera Connections</h2>
+              <p>Live monitoring feeds for this artefact.</p>
+            </div>
+            <span class="section-badge">2 CAMERA SLOTS</span>
           </div>
 
-        </div>
+          <div class="camera-grid">
 
-      </article>
+            <div class="camera-card" data-camera="1">
+              <div class="card-title">
+                <h3>Camera 1</h3>
+                <span class="camera-status-label" id="camera-1-status-label">Not connected</span>
+              </div>
+
+              <div class="camera-preview">
+                <video id="camera-1-video" class="camera-video" playsinline autoplay muted></video>
+                <img id="camera-1-img" class="camera-stream-img" alt="Camera 1 stream" style="display:none;">
+                <div id="camera-1-placeholder" class="camera-placeholder">📷<span>Camera 1 not connected</span></div>
+              </div>
+
+              <p class="camera-status" id="camera-1-status-row">
+                <span class="status-dot"></span>
+                <span class="status-text" id="camera-1-status-text">Not connected</span>
+              </p>
+            </div>
+
+            <div class="camera-card" data-camera="2">
+              <div class="card-title">
+                <h3>Camera 2</h3>
+                <span class="camera-status-label" id="camera-2-status-label">Not connected</span>
+              </div>
+
+              <div class="camera-preview">
+                <video id="camera-2-video" class="camera-video" playsinline autoplay muted></video>
+                <img id="camera-2-img" class="camera-stream-img" alt="Camera 2 stream" style="display:none;">
+                <div id="camera-2-placeholder" class="camera-placeholder">📷<span>Camera 2 not connected</span></div>
+              </div>
+
+              <p class="camera-status" id="camera-2-status-row">
+                <span class="status-dot"></span>
+                <span class="status-text" id="camera-2-status-text">Not connected</span>
+              </p>
+            </div>
+
+          </div>
+        </section>
 
 
+        <!-- ================= CLIMATE ================= -->
 
-      <!-- CAMERA 2 -->
-
-      <article class="monitor-card camera-card">
-
-        <div class="card-title">
-
-          <h3>
-            Camera 2
-          </h3>
-
-          <span
-            id="camera-2-status"
-            class="camera-status"
-          >
-            Offline
-          </span>
-
-        </div>
-
-
-        <div class="camera-display">
-
-          <video
-            id="camera-2-video"
-            autoplay
-            muted
-            playsinline
-          ></video>
-
-          <img
-            id="camera-2-img"
-            class="camera-stream-img"
-            alt="Camera 2"
-          >
-
-          <div
-            id="camera-2-placeholder"
-            class="camera-placeholder"
-          >
-            📷
-            <span>
-              Camera 2 not connected
-            </span>
+        <section class="panel editor-panel" id="section-climate">
+          <div class="panel-heading">
+            <div>
+              <h2>Temperature &amp; Humidity</h2>
+              <p>Storage environment for this artefact.</p>
+            </div>
+            <span class="section-badge">SENSOR</span>
           </div>
 
+          <div class="climate-grid">
+            <div class="climate-card">
+              <div class="climate-icon blue">°C</div>
+              <div>
+                <span class="climate-label">Temperature</span>
+                <strong id="temperature-value">--</strong>
+              </div>
+            </div>
+            <div class="climate-card">
+              <div class="climate-icon green">%</div>
+              <div>
+                <span class="climate-label">Humidity</span>
+                <strong id="humidity-value">--</strong>
+              </div>
+            </div>
+            <div class="climate-card">
+              <div class="climate-icon purple">●</div>
+              <div>
+                <span class="climate-label">Status</span>
+                <strong class="climate-status" id="sensor-status">Disconnected</strong>
+              </div>
+            </div>
+          </div>
+
+          <p class="field-hint climate-hint" id="sensor-last-updated">No live sensor reading yet.</p>
+        </section>
+
+
+        <!-- ================= PROJECT INFORMATION ================= -->
+
+        <section class="panel editor-panel" id="section-artifact">
+          <div class="panel-heading">
+            <div>
+              <h2>Artefact Information</h2>
+              <p>Historical and preservation details.</p>
+            </div>
+          </div>
+
+          <div class="field full-width">
+            <label>Description</label>
+            <p class="detail-text" id="artifact-description">No description provided.</p>
+          </div>
+
+          <div class="artifact-grid">
+            <div class="detail">
+              <span>Historical Period</span>
+              <strong id="artifact-period">—</strong>
+            </div>
+            <div class="detail">
+              <span>Material</span>
+              <strong id="artifact-material">—</strong>
+            </div>
+            <div class="detail">
+              <span>Storage Location</span>
+              <strong id="artifact-location">—</strong>
+            </div>
+            <div class="detail">
+              <span>Condition</span>
+              <strong id="artifact-condition">—</strong>
+            </div>
+          </div>
+
+          <div class="field full-width">
+            <label>Notes</label>
+            <p class="detail-text" id="artifact-notes">No additional notes.</p>
+          </div>
+        </section>
+
+        <div class="create-footer">
+          <a href="index.html" class="back-link-btn">← Back to Dashboard</a>
         </div>
-
-      </article>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- ================= SENSOR DATA ================= -->
-
-  <section class="section">
-
-    <div class="section-heading">
-
-      <div>
-
-        <p class="eyebrow">
-          ENVIRONMENT
-        </p>
-
-        <h2>
-          Temperature & Humidity
-        </h2>
 
       </div>
-
-      <span
-        id="sensor-status"
-        class="sensor-status"
-      >
-        ● Disconnected
-      </span>
-
-    </div>
-
-
-    <div class="sensor-grid">
-
-
-      <!-- TEMPERATURE -->
-
-      <article class="monitor-card sensor-card">
-
-        <div class="sensor-icon">
-          🌡️
-        </div>
-
-        <div>
-
-          <p>
-            Temperature
-          </p>
-
-          <strong id="temperature-value">
-            --
-          </strong>
-
-          <span>
-            °C
-          </span>
-
-        </div>
-
-      </article>
-
-
-
-      <!-- HUMIDITY -->
-
-      <article class="monitor-card sensor-card">
-
-        <div class="sensor-icon">
-          💧
-        </div>
-
-        <div>
-
-          <p>
-            Humidity
-          </p>
-
-          <strong id="humidity-value">
-            --
-          </strong>
-
-          <span>
-            %
-          </span>
-
-        </div>
-
-      </article>
-
-    </div>
-
-
-    <p
-      id="sensor-last-updated"
-      class="last-updated"
-    >
-      No sensor reading yet.
-    </p>
-
-  </section>
-
-
-
-  <!-- ================= PROJECT INFORMATION ================= -->
-
-  <section class="section">
-
-    <div class="section-heading">
-
-      <div>
-
-        <p class="eyebrow">
-          ARTIFACT
-        </p>
-
-        <h2>
-          Project Information
-        </h2>
-
-      </div>
-
-    </div>
-
-
-    <div class="information-card">
-
-
-      <div class="description-area">
-
-        <h3>
-          Description
-        </h3>
-
-        <p id="artifact-description">
-          No description provided.
-        </p>
-
-      </div>
-
-
-      <div class="artifact-details">
-
-
-        <div class="detail">
-
-          <span>
-            Historical Period
-          </span>
-
-          <strong id="artifact-period">
-            —
-          </strong>
-
-        </div>
-
-
-        <div class="detail">
-
-          <span>
-            Material
-          </span>
-
-          <strong id="artifact-material">
-            —
-          </strong>
-
-        </div>
-
-
-        <div class="detail">
-
-          <span>
-            Storage Location
-          </span>
-
-          <strong id="artifact-location">
-            —
-          </strong>
-
-        </div>
-
-
-        <div class="detail">
-
-          <span>
-            Condition
-          </span>
-
-          <strong id="artifact-condition">
-            —
-          </strong>
-
-        </div>
-
-
-      </div>
-
-
-      <div class="notes-area">
-
-        <h3>
-          Notes
-        </h3>
-
-        <p id="artifact-notes">
-          No additional notes.
-        </p>
-
-      </div>
-
-    </div>
-
-  </section>
-
-</main>
-
+    </main>
+  </div>
 </body>
 </html>
