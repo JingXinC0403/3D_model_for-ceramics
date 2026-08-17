@@ -1,11 +1,28 @@
 /* =====================================================
    CARE PROJECT MONITOR
+   Aesthetic: soft dashboard — off-white canvas, white
+   cards, single deep-green accent, pill status badges.
 ===================================================== */
 
 #project-page {
+  --care-green: #1e6b4c;
+  --care-green-dark: #164f39;
+  --care-green-tint: #e6f2ea;
+  --care-green-tint-strong: #d3e9dc;
+  --care-canvas: #f6f5f1;
+  --care-card: #ffffff;
+  --care-border: rgba(20, 30, 25, 0.08);
+  --care-ink: #1b241f;
+  --care-muted: #6b756f;
+  --care-shadow: 0 10px 30px rgba(20, 40, 30, 0.06);
+  --care-shadow-hover: 0 16px 36px rgba(20, 40, 30, 0.10);
+
   max-width: 1400px;
   margin: 0 auto;
   padding: 110px 40px 60px;
+
+  background: var(--care-canvas);
+  color: var(--care-ink);
 }
 
 
@@ -19,16 +36,18 @@
 
   margin-bottom: 30px;
 
-  color: var(--text);
+  color: var(--care-muted);
   text-decoration: none;
 
   font-weight: 700;
+  font-size: 0.92rem;
 
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .back-button:hover {
   transform: translateX(-5px);
+  color: var(--care-green);
 }
 
 
@@ -43,7 +62,7 @@
 
   gap: 30px;
 
-  margin-bottom: 60px;
+  margin-bottom: 48px;
 }
 
 .project-heading {
@@ -53,27 +72,32 @@
 .eyebrow {
   margin: 0 0 8px;
 
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
 
-  letter-spacing: 0.15em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 
-  opacity: 0.55;
+  color: var(--care-green);
+  opacity: 1;
 }
 
 .project-header h1 {
   margin: 0 0 12px;
 
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  line-height: 0.95;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1.05;
+
+  color: var(--care-ink);
+  letter-spacing: -0.01em;
 }
 
 #project-description {
   margin: 0;
 
-  font-size: 1.15rem;
-  opacity: 0.7;
+  font-size: 1.05rem;
+  color: var(--care-muted);
+  opacity: 1;
 
   line-height: 1.6;
 }
@@ -89,31 +113,33 @@
   align-items: center;
   justify-content: center;
 
-  padding: 14px 24px;
+  padding: 13px 26px;
 
-  border-radius: 14px;
+  border-radius: 999px;
 
-  background: var(--purple);
+  background: var(--care-green);
   color: white;
 
   text-decoration: none;
 
   font-weight: 700;
+  font-size: 0.92rem;
 
   white-space: nowrap;
 
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(30, 107, 76, 0.28);
 
   transition:
     transform 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 .edit-project-btn:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
+  background: var(--care-green-dark);
 
-  box-shadow:
-    0 12px 25px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 26px rgba(30, 107, 76, 0.34);
 }
 
 
@@ -122,7 +148,7 @@
 ===================================================== */
 
 .section {
-  margin-bottom: 55px;
+  margin-bottom: 44px;
 }
 
 .section-heading {
@@ -130,26 +156,53 @@
   justify-content: space-between;
   align-items: flex-end;
 
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .section-heading h2 {
   margin: 0;
 
-  font-size: 2rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.section-heading .eyebrow {
+  margin-bottom: 4px;
 }
 
 
 /* =====================================================
-   STATUS
+   STATUS PILLS
 ===================================================== */
 
 .monitor-status,
-.sensor-status {
-  font-size: 0.85rem;
+.sensor-status,
+.camera-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 0.75rem;
   font-weight: 700;
 
-  opacity: 0.7;
+  padding: 6px 14px;
+  border-radius: 999px;
+
+  background: var(--care-green-tint);
+  color: var(--care-muted);
+
+  opacity: 1;
+}
+
+.monitor-status {
+  background: var(--care-green-tint);
+  color: var(--care-green-dark);
+}
+
+.sensor-status.is-live,
+.camera-status.is-live {
+  background: var(--care-green-tint-strong);
+  color: var(--care-green-dark);
 }
 
 
@@ -163,7 +216,7 @@
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
 
-  gap: 22px;
+  gap: 20px;
 }
 
 
@@ -173,16 +226,22 @@
 
 .monitor-card,
 .information-card {
-  background: var(--background);
+  background: var(--care-card);
 
-  border: 1px solid rgba(128, 128, 128, 0.2);
+  border: 1px solid var(--care-border);
 
-  border-radius: 24px;
+  border-radius: 22px;
 
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--care-shadow);
 
   overflow: hidden;
+
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.monitor-card:hover {
+  box-shadow: var(--care-shadow-hover);
+  transform: translateY(-2px);
 }
 
 
@@ -191,7 +250,7 @@
 ===================================================== */
 
 .camera-card {
-  padding: 18px;
+  padding: 16px;
 }
 
 .card-title {
@@ -200,20 +259,14 @@
   justify-content: space-between;
   align-items: center;
 
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .card-title h3 {
   margin: 0;
 
-  font-size: 1.2rem;
-}
-
-.camera-status {
-  font-size: 0.75rem;
+  font-size: 1.05rem;
   font-weight: 700;
-
-  opacity: 0.55;
 }
 
 .camera-display {
@@ -225,13 +278,13 @@
 
   overflow: hidden;
 
-  border-radius: 17px;
+  border-radius: 16px;
 
   background:
     linear-gradient(
       135deg,
-      var(--purple),
-      var(--pink)
+      var(--care-green),
+      #3a8f66
     );
 }
 
@@ -265,16 +318,16 @@
 
   color: white;
 
-  font-size: 2rem;
+  font-size: 1.8rem;
 
   text-align: center;
 }
 
 .camera-placeholder span {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
 
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 
@@ -288,7 +341,7 @@
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
 
-  gap: 22px;
+  gap: 20px;
 }
 
 .sensor-card {
@@ -296,41 +349,53 @@
 
   align-items: center;
 
-  gap: 22px;
+  gap: 20px;
 
-  padding: 28px;
+  padding: 26px;
 }
 
 .sensor-icon {
-  width: 65px;
-  height: 65px;
+  width: 58px;
+  height: 58px;
+
+  flex-shrink: 0;
 
   display: flex;
 
   align-items: center;
   justify-content: center;
 
-  border-radius: 18px;
+  border-radius: 16px;
 
-  background: var(--grid);
+  background: var(--care-green-tint);
 
-  font-size: 2rem;
+  font-size: 1.7rem;
 }
 
 .sensor-card p {
   margin: 0 0 3px;
 
-  opacity: 0.6;
+  color: var(--care-muted);
+  opacity: 1;
 
   font-weight: 700;
+  font-size: 0.85rem;
+
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .sensor-card strong {
-  font-size: 2.5rem;
+  font-size: 2.3rem;
+  font-weight: 800;
+
+  color: var(--care-ink);
+  letter-spacing: -0.02em;
 }
 
 .sensor-card span {
   font-weight: 700;
+  color: var(--care-muted);
 }
 
 .last-updated {
@@ -338,7 +403,8 @@
 
   font-size: 0.8rem;
 
-  opacity: 0.5;
+  color: var(--care-muted);
+  opacity: 1;
 }
 
 
@@ -353,13 +419,16 @@
 .description-area h3,
 .notes-area h3 {
   margin-top: 0;
+
+  font-size: 1.05rem;
 }
 
 .description-area p,
 .notes-area p {
   line-height: 1.7;
 
-  opacity: 0.75;
+  color: var(--care-muted);
+  opacity: 1;
 }
 
 .artifact-details {
@@ -368,17 +437,18 @@
   grid-template-columns:
     repeat(4, minmax(0, 1fr));
 
-  gap: 15px;
+  gap: 14px;
 
-  margin: 30px 0;
+  margin: 26px 0;
 }
 
 .detail {
-  padding: 18px;
+  padding: 16px 18px;
 
-  border-radius: 15px;
+  border-radius: 14px;
 
-  background: var(--grid);
+  background: var(--care-canvas);
+  border: 1px solid var(--care-border);
 }
 
 .detail span {
@@ -386,15 +456,21 @@
 
   margin-bottom: 5px;
 
-  font-size: 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 700;
 
-  opacity: 0.55;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  color: var(--care-green);
+  opacity: 1;
 }
 
 .detail strong {
   display: block;
 
   word-break: break-word;
+  color: var(--care-ink);
 }
 
 
@@ -432,7 +508,7 @@
 @media (max-width: 500px) {
 
   .project-header h1 {
-    font-size: 2.8rem;
+    font-size: 2.4rem;
   }
 
   .artifact-details {
@@ -444,7 +520,7 @@
   }
 
   .sensor-card strong {
-    font-size: 2rem;
+    font-size: 1.9rem;
   }
 
 }

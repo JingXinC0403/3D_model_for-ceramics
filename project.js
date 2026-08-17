@@ -251,13 +251,14 @@ function displayClimate(project) {
     status.textContent =
       "● LIVE";
 
-    status.style.opacity =
-      "1";
+    status.classList.add("is-live");
 
   } else {
 
     status.textContent =
       "● Disconnected";
+
+    status.classList.remove("is-live");
 
   }
 
@@ -423,8 +424,7 @@ async function startWebcam(
     status.textContent =
       "● LIVE";
 
-    status.style.opacity =
-      "1";
+    status.classList.add("is-live");
 
 
   } catch (error) {
@@ -492,6 +492,8 @@ function showIPCamera(
     status.textContent =
       "● LIVE";
 
+    status.classList.add("is-live");
+
   };
 
 
@@ -505,6 +507,8 @@ function showIPCamera(
 
     status.textContent =
       "Offline";
+
+    status.classList.remove("is-live");
 
   };
 
@@ -577,6 +581,8 @@ function setCameraOffline(
 
     status.textContent =
       "Offline";
+
+    status.classList.remove("is-live");
 
   }
 
