@@ -11,14 +11,10 @@
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="create.css">
 
-  <!-- Must run first, before Firebase, so a blocked/failed load shows a
-       clear message instead of leaving the page blank. -->
+  <!-- Loading helper. The backend is Google Apps Script + Sheets. -->
   <script src="boot.js"></script>
 
-  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-  <script defer src="firebase-config.js"></script>
+  <script defer src="sheets-config.js"></script>
   <script defer src="auth.js"></script>
   <script defer src="auth-guard.js"></script>
   <script defer src="storage.js"></script>

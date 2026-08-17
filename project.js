@@ -2,12 +2,9 @@
    CARE PROJECT PAGE
 ===================================================== */
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  auth.onAuthStateChanged((user) => {
-    if (user) loadProject();
-  });
-
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = await CareAuth.currentUser();
+  if (user) loadProject();
 });
 
 
@@ -61,7 +58,7 @@ async function loadProject() {
 
     if (window.CareBoot) {
       window.CareBoot.showFatal(
-        "Signed in, but couldn't load this artefact from Firestore.",
+        "Signed in, but couldn't load this artefact from Google Sheets.",
         (error && error.message) || String(error)
       );
     }

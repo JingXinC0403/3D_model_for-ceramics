@@ -129,9 +129,9 @@
   document.addEventListener("DOMContentLoaded", () => {
     setupSearch();
 
-    auth.onAuthStateChanged(async (user) => {
+    CareAuth.currentUser().then(async (user) => {
       if (!user) return;
-      $("dashboard-user").textContent = user.displayName || user.email || "Account";
+      $("dashboard-user").textContent = user.name || user.email || "Account";
 
       if (unsubscribe) unsubscribe();
 

@@ -11,14 +11,11 @@
   <link rel="stylesheet" href="font.css">
   <link rel="stylesheet" href="home.css">
 
-  <!-- Must run first, before Firebase, so a blocked/failed load shows a
+  <!-- Must run first, before the backend, so a blocked/failed load shows a
        clear message instead of leaving the page blank. -->
   <script src="boot.js"></script>
 
-  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-  <script defer src="firebase-config.js"></script>
+  <script defer src="sheets-config.js"></script>
   <script defer src="auth.js"></script>
   <script defer src="auth-guard.js"></script>
   <script defer src="storage.js"></script>
@@ -123,7 +120,7 @@
           <div class="panel-heading"><div><h2>Quick Actions</h2><p>Common CARE tasks</p></div></div>
           <a class="action-row" href="create.html"><span class="action-icon">＋</span><div><b>Create an artefact</b><small>Add a new museum record</small></div><span>›</span></a>
           <a class="action-row" href="#recent"><span class="action-icon">▣</span><div><b>Review recent records</b><small>Open your latest artefacts</small></div><span>›</span></a>
-          <div class="shared-note"><span>☁</span><div><b>Cloud synced</b><small>Changes are saved to Firebase and appear on other logged-in devices.</small></div></div>
+          <div class="shared-note"><span>☁</span><div><b>Cloud synced</b><small>Changes are saved to Google Sheets and appear on other logged-in devices.</small></div></div>
         </article>
       </section>
     </main>
