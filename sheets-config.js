@@ -4,4 +4,4 @@
    Google Apps Script backend URL goes here after deployment.
    ============================================================ */
 
-const CARE_API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+const CARE_API_URL = "https://script.google.com/macros/s/AKfycbyUynyUydpAAmFmFQAyajNb2O9Ui_bxdlrr6SeA0nhobuWKlTPcG-1g2UpfJ1DpKbTPfA/exec";
