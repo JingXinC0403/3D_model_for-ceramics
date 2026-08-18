@@ -365,3 +365,16 @@ body.dark-mode .theme-toggle {
   color: #ffffff !important;
   border-color: #414753 !important;
 }
+body.dark-mode .primary-btn {
+  background: #1d9a55 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .panel-heading a {
+  color: #61d990 !important;
+}
+
+body.dark-mode .sync-pill {
+  background: #193b2a !important;
+  color: #61d990 !important;
+}
