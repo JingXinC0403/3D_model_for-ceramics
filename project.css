@@ -201,6 +201,26 @@ a { color: inherit; }
   margin-right: 5px;
 }
 
+/* -------------------- Theme toggle -------------------- */
+
+.theme-toggle {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #667085;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.theme-toggle:hover { background: #f5f6f8; }
+
 .user-name {
   color: #667085;
   max-width: 230px;
@@ -607,3 +627,137 @@ a { color: inherit; }
   .page-heading h1 { font-size: 27px; }
   .editor-panel { padding: 16px; }
 }
+
+/* ================================
+   CARE DARK MODE
+   (matches home.css dark mode system)
+   ================================ */
+
+body.dark-mode {
+  background: #111318 !important;
+  color: #f1f3f7 !important;
+}
+
+body.dark-mode .project-dashboard {
+  background: #111318 !important;
+}
+
+/* Sidebar */
+body.dark-mode .sidebar {
+  background: #181b22 !important;
+  border-color: #30343d !important;
+}
+
+body.dark-mode .brand strong { color: #ffffff !important; }
+body.dark-mode .brand span { color: #9da4b1 !important; }
+
+body.dark-mode .side-nav a { color: #b8beca !important; }
+body.dark-mode .side-nav a:hover,
+body.dark-mode .side-nav a.active {
+  background: #292e38 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .side-section-label { color: #8d95a3 !important; }
+
+body.dark-mode .mini-help {
+  background: #222730 !important;
+  color: #b7beca !important;
+}
+
+body.dark-mode .logout-side {
+  background: #292e38 !important;
+  color: #ffffff !important;
+}
+
+/* Top bar */
+body.dark-mode .breadcrumb { color: #8d95a3 !important; }
+body.dark-mode .breadcrumb strong { color: #ffffff !important; }
+body.dark-mode .breadcrumb a:hover { color: #61d990 !important; }
+
+body.dark-mode .sync-pill {
+  background: #193b2a !important;
+  color: #61d990 !important;
+}
+
+body.dark-mode .user-name { color: #d0d4dc !important; }
+
+body.dark-mode .theme-toggle {
+  background: #292e38 !important;
+  color: #ffffff !important;
+  border-color: #414753 !important;
+}
+
+/* Page heading */
+body.dark-mode .eyebrow { color: #8d95a3 !important; }
+body.dark-mode .page-heading h1 { color: #ffffff !important; }
+body.dark-mode .page-heading > div:first-child > p:last-child { color: #a5acb8 !important; }
+body.dark-mode .primary-btn { background: #1d9a55 !important; color: #ffffff !important; }
+body.dark-mode .primary-btn:hover { background: #168348 !important; }
+
+/* Panels */
+body.dark-mode .editor-panel {
+  background: #1b1e26 !important;
+  border-color: #30343d !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,.3) !important;
+}
+
+body.dark-mode .panel-heading h2 { color: #ffffff !important; }
+body.dark-mode .panel-heading p { color: #9299a6 !important; }
+body.dark-mode .section-badge {
+  background: #292e38 !important;
+  color: #b8beca !important;
+}
+
+/* Cameras */
+body.dark-mode .camera-card {
+  background: #181b22 !important;
+  border-color: #30343d !important;
+}
+body.dark-mode .card-title h3 { color: #ffffff !important; }
+body.dark-mode .camera-status-label { color: #858c99 !important; }
+body.dark-mode .camera-preview { background: #20242c !important; }
+body.dark-mode .camera-placeholder { color: #858c99 !important; }
+
+body.dark-mode .camera-status { color: #858c99 !important; }
+body.dark-mode .status-dot { background: #4a5058 !important; }
+body.dark-mode .camera-status.is-connected .status-dot { background: #22a35a !important; }
+body.dark-mode .camera-status.is-error .status-dot { background: #f59e0b !important; }
+
+/* Climate */
+body.dark-mode .climate-card {
+  background: #181b22 !important;
+  border-color: #30343d !important;
+}
+body.dark-mode .climate-icon.blue { background: rgba(37,99,235,.18) !important; color: #7fa8ff !important; }
+body.dark-mode .climate-icon.green { background: rgba(22,163,74,.18) !important; color: #61d990 !important; }
+body.dark-mode .climate-icon.purple { background: rgba(124,58,237,.20) !important; color: #c4a6ff !important; }
+body.dark-mode .climate-label { color: #858c99 !important; }
+body.dark-mode .climate-card strong { color: #ffffff !important; }
+body.dark-mode .climate-status { color: #61d990 !important; }
+body.dark-mode .field-hint { color: #858c99 !important; }
+
+/* Artefact information */
+body.dark-mode .field label { color: #b8beca !important; }
+body.dark-mode .detail-text { color: #f1f3f7 !important; }
+
+body.dark-mode .detail {
+  background: #181b22 !important;
+  border-color: #30343d !important;
+}
+body.dark-mode .detail span { color: #858c99 !important; }
+body.dark-mode .detail strong { color: #ffffff !important; }
+
+/* Footer */
+body.dark-mode .back-link-btn { color: #b8beca !important; }
+body.dark-mode .back-link-btn:hover { color: #61d990 !important; }
+
+/* Empty state */
+body.dark-mode .empty-state {
+  background: #1b1e26 !important;
+  border-color: #30343d !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,.3) !important;
+}
+body.dark-mode .empty-icon { background: rgba(37,99,235,.18) !important; color: #7fa8ff !important; }
+body.dark-mode .empty-state h1 { color: #ffffff !important; }
+body.dark-mode .empty-state p { color: #a5acb8 !important; }
