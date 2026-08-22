@@ -1,0 +1,311 @@
+/* =====================================================
+   CARE HUNTSMAN LOADING SCREEN
+===================================================== */
+
+
+#loading-screen {
+
+    position: fixed;
+    inset: 0;
+
+    background: white;
+
+    display:flex;
+    flex-direction:column;
+
+    justify-content:center;
+    align-items:center;
+
+    z-index:99999;
+
+    transition:
+    opacity 0.8s ease;
+
+}
+
+
+
+/* LOGO AREA */
+
+.logo-container {
+
+    position:relative;
+
+    width:180px;
+    height:180px;
+
+    display:flex;
+
+    justify-content:center;
+    align-items:center;
+
+}
+
+
+#huntsman-logo {
+
+    width:100%;
+    height:100%;
+
+    object-fit:contain;
+
+    filter:brightness(0);
+
+    position:absolute;
+
+    z-index:2;
+
+}
+
+
+
+/* BLACK FILL INSIDE LOGO */
+
+#black-fill {
+
+
+    position:absolute;
+
+    inset:0;
+
+
+    background:#000;
+
+
+    mask-image:url("../assets/huntsman.svg");
+    mask-size:contain;
+    mask-repeat:no-repeat;
+    mask-position:center;
+
+
+    -webkit-mask-image:url("../assets/huntsman.svg");
+    -webkit-mask-size:contain;
+    -webkit-mask-repeat:no-repeat;
+    -webkit-mask-position:center;
+
+
+
+    transform:scaleY(0);
+
+    transform-origin:bottom;
+
+
+    animation:
+
+    logoFill 2.5s ease forwards;
+
+
+}
+
+
+
+
+@keyframes logoFill {
+
+
+    from{
+
+        transform:scaleY(0);
+
+    }
+
+
+    to{
+
+        transform:scaleY(1);
+
+    }
+
+}
+
+
+
+
+
+/* TEXT */
+
+#loading-text {
+
+
+    margin-top:35px;
+
+
+    font-family:
+
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+
+    font-size:28px;
+
+
+    letter-spacing:8px;
+
+
+    color:#111;
+
+
+    animation:
+
+    textPulse 1.5s infinite;
+
+
+}
+
+
+
+@keyframes textPulse {
+
+
+    50%{
+
+        opacity:0.5;
+
+    }
+
+}
+
+
+
+
+
+/* LOGO EXPLOSION */
+
+
+.logo-explode {
+
+
+    animation:
+
+    logoExplosion 1s forwards;
+
+
+}
+
+
+
+@keyframes logoExplosion {
+
+
+    0%{
+
+        transform:scale(1);
+
+        opacity:1;
+
+    }
+
+
+    100%{
+
+        transform:scale(4);
+
+        opacity:0;
+
+        filter:
+
+        drop-shadow(
+        0 0 50px #b469ff
+        );
+
+    }
+
+}
+
+
+
+
+
+
+
+/* LAVENDER PARTICLES */
+
+
+.huntsman-particle {
+
+
+    position:fixed;
+
+
+    width:10px;
+    height:10px;
+
+
+    background:#b469ff;
+
+
+    border-radius:50%;
+
+
+    pointer-events:none;
+
+
+    z-index:100000;
+
+
+    animation:
+
+    particleExplosion 1s ease forwards;
+
+
+}
+
+
+
+
+@keyframes particleExplosion {
+
+
+    from{
+
+
+        transform:
+
+        translate(0,0)
+        scale(1);
+
+
+        opacity:1;
+
+
+    }
+
+
+    to{
+
+
+        transform:
+
+        translate(
+        var(--x),
+        var(--y)
+        )
+        scale(0);
+
+
+        opacity:0;
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+/* SCREEN DISAPPEAR */
+
+
+.loading-hide {
+
+
+    opacity:0;
+
+    pointer-events:none;
+
+}
