@@ -63,70 +63,65 @@ javascript
   }
 
 
-  /* ---------------- LOGIN ---------------- */
+// ---------------- Log in ----------------
 
-  forms.login.addEventListener("submit", async (e) => {
+forms.login.addEventListener("submit", async (e) => {
 
-    e.preventDefault();
+  e.preventDefault();
 
-    const errorEl = document.getElementById("login-error");
+  const errorEl = document.getElementById("login-error");
+  errorEl.textContent = "";
 
-    errorEl.textContent = "";
+  setBusy(forms.login, true);
 
-    const email =
-      document.getElementById("login-email").value.trim();
+  try {
 
-    const password =
-      document.getElementById("login-password").value;
+    await CareAuth.logIn(
+      document.getElementById("login-email").value.trim(),
+      document.getElementById("login-password").value
+    );
 
+    window.location.href = redirectTarget();
 
-    /* Check fields BEFORE calling backend */
+  } catch (err) {
 
-    if (!email || !password) {
+    errorEl.textContent = CareAuth.friendlyError(err);
+    setBusy(forms.login, false);
 
-      errorEl.textContent =
-        "Please enter your email and password.";
+  }
 
-      return;
-
-    }
-
-
-    setBusy(forms.login, true);
+});
 
 
-    try {
+// ---------------- Sign up ----------------
 
-      await CareAuth.logIn(email, password);
+forms.signup.addEventListener("submit", async (e) => {
 
-      /* Existing users go directly to dashboard */
+  e.preventDefault();
 
-      window.location.href = "index.html";
+  const errorEl = document.getElementById("signup-error");
+  errorEl.textContent = "";
 
-    }
+  setBusy(forms.signup, true);
 
-    catch (err) {
+  try {
 
-      errorEl.textContent =
-        CareAuth.friendlyError(err);
+    await CareAuth.signUp(
+      document.getElementById("signup-name").value.trim(),
+      document.getElementById("signup-email").value.trim(),
+      document.getElementById("signup-password").value
+    );
 
-      setBusy(forms.login, false);
+    window.location.href = "welcome.html";
 
-    }
+  } catch (err) {
 
-  });
+    errorEl.textContent = CareAuth.friendlyError(err);
+    setBusy(forms.signup, false);
 
+  }
 
-  /* ---------------- SIGN UP ---------------- */
-
-  forms.signup.addEventListener("submit", async (e) => {
-
-    e.preventDefault();
-
-    const errorEl =
-      document.getElementById("signup-error");
-
-    errorEl.textContent = "";
+});
 
 
     /* Get the THREE signup fields */
