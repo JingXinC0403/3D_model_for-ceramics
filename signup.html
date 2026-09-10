@@ -43,6 +43,36 @@
     <p class="auth-switch">Already have an account? <a href="login.html">Log in</a></p>
   </div>
 </main>
+<!-- SIGN-UP SUCCESS VIDEO -->
+<div id="signup-success-video">
+  <video id="success-video" playsinline>
+    <source src="signup-success.mp4" type="video/mp4">
+  </video>
+</div>
 
+<style>
+  #signup-success-video {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: 99999;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #signup-success-video.show {
+    display: flex;
+  }
+
+  #signup-success-video video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+</style>
 </body>
 </html>
