@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>CARE — Welcome</title>
+
+  <link rel="stylesheet" href="font.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f5f5f5;
+      font-family: "Atkinson Hyperlegible", sans-serif;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .welcome-container {
+      width: min(1000px, 92vw);
+      text-align: center;
+    }
+
+    .welcome-title {
+      font-size: 42px;
+      margin-bottom: 10px;
+      color: #1a2376;
+    }
+
+    .welcome-text {
+      font-size: 20px;
+      margin-bottom: 25px;
+      color: #555;
+    }
+
+    .video-wrapper {
+      width: 100%;
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      max-height: 600px;
+    }
+
+    .continue-btn {
+      margin-top: 25px;
+      padding: 14px 30px;
+
+      border: none;
+      border-radius: 12px;
+
+      background: #6397ff;
+      color: white;
+
+      font-size: 18px;
+      font-weight: bold;
+
+      cursor: pointer;
+    }
+
+    .continue-btn:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="welcome-container">
+
+    <h1 class="welcome-title">Welcome to C.A.R.E.</h1>
+
+    <p class="welcome-text">
+      Here's a quick introduction to C.A.R.E.
+    </p>
+
+    <div class="video-wrapper">
+
+      <video
+        id="welcome-video"
+        controls
+        playsinline
+        preload="metadata"
+      >
+        <source src="assets/signup-video.mp4" type="video/mp4">
+        Your browser does not support video playback.
+      </video>
+
+    </div>
+
+    <button
+      class="continue-btn"
+      id="continue-btn"
+    >
+      Continue to C.A.R.E. →
+    </button>
+
+  </main>
+
+  <script>
+    const video = document.getElementById("welcome-video");
+    const continueBtn = document.getElementById("continue-btn");
+
+    continueBtn.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+
+    video.addEventListener("ended", () => {
+      continueBtn.textContent = "Enter C.A.R.E. →";
+    });
+  </script>
+
+</body>
+</html>
