@@ -82,23 +82,71 @@
   const successVideo =
     document.getElementById("success-video");
 
-  function playSignupSuccessVideo() {
-    successVideoOverlay.classList.add("show");
+  const signupForm =
+    document.getElementById("signup-form");
 
-    successVideo.currentTime = 0;
+  signupForm.addEventListener("submit", async function (event) {
 
-    successVideo.play().catch(error => {
-      console.error("Could not play signup video:", error);
+    event.preventDefault();
 
-      // If playback fails, continue anyway
-      window.location.href = "index.html";
-    });
-  }
+    const email =
+      document.getElementById("signup-email").value.trim();
 
-  successVideo.addEventListener("ended", () => {
+    const password =
+      document.getElementById("signup-password").value;
+
+    const message =
+      document.getElementById("signup-message");
+
+    const button =
+      document.getElementById("signup-submit-btn");
+
+    button.disabled = true;
+    message.textContent = "Creating account...";
+
+    try {
+
+      /*
+       * Your current auth.js requires a name.
+       * Since your current form doesn't have a name field,
+       * we'll temporarily use the email as the name.
+       */
+      const user = await CareAuth.signUp(
+        email,
+        email,
+        password
+      );
+
+      /*
+       * ACCOUNT CREATED SUCCESSFULLY
+       * Now show your video.
+       */
+      message.textContent = "";
+
+      successVideoOverlay.classList.add("show");
+
+      successVideo.currentTime = 0;
+
+      await successVideo.play();
+
+    } catch (error) {
+
+      message.textContent =
+        CareAuth.friendlyError(error);
+
+      button.disabled = false;
+    }
+  });
+
+
+  /*
+   * When the video finishes,
+   * send the user to the dashboard.
+   */
+  successVideo.addEventListener("ended", function () {
     window.location.href = "index.html";
   });
 </script>
-  
+
 </body>
 </html>
