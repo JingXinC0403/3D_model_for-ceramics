@@ -3,125 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>CARE — Welcome</title>
-
-  <link rel="stylesheet" href="font.css">
+  <title>Welcome to C.A.R.E.</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f5f5f5;
-      font-family: "Atkinson Hyperlegible", sans-serif;
-
       display: flex;
-      align-items: center;
       justify-content: center;
-    }
-
-    .welcome-container {
-      width: min(1000px, 92vw);
+      align-items: center;
+      background: #f5f5f5;
+      font-family: Arial, sans-serif;
       text-align: center;
     }
 
-    .welcome-title {
-      font-size: 42px;
-      margin-bottom: 10px;
+    .welcome-container {
+      width: 90%;
+      max-width: 900px;
+    }
+
+    h1 {
       color: #1a2376;
+      font-size: 40px;
     }
 
-    .welcome-text {
-      font-size: 20px;
-      margin-bottom: 25px;
+    p {
       color: #555;
-    }
-
-    .video-wrapper {
-      width: 100%;
-      background: #000;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+      font-size: 18px;
     }
 
     video {
-      display: block;
       width: 100%;
-      max-height: 600px;
+      max-width: 850px;
+      border-radius: 15px;
+      margin: 25px 0;
     }
 
-    .continue-btn {
-      margin-top: 25px;
-      padding: 14px 30px;
-
+    button {
+      padding: 14px 28px;
       border: none;
-      border-radius: 12px;
-
+      border-radius: 10px;
       background: #6397ff;
       color: white;
-
-      font-size: 18px;
-      font-weight: bold;
-
+      font-size: 17px;
       cursor: pointer;
     }
 
-    .continue-btn:hover {
-      transform: translateY(-2px);
+    button:hover {
+      opacity: 0.85;
     }
   </style>
 </head>
 
 <body>
 
-  <main class="welcome-container">
+  <div class="welcome-container">
 
-    <h1 class="welcome-title">Welcome to C.A.R.E.</h1>
+    <h1>Welcome to C.A.R.E.!</h1>
 
-    <p class="welcome-text">
-      Here's a quick introduction to C.A.R.E.
-    </p>
+    <p>Here's a quick introduction to C.A.R.E.</p>
 
-    <div class="video-wrapper">
+    <video controls playsinline>
+      <source src="assets/signup-video.mp4" type="video/mp4">
+      Your browser does not support video playback.
+    </video>
 
-      <video
-        id="welcome-video"
-        controls
-        playsinline
-        preload="metadata"
-      >
-        <source src="assets/signup-video.mp4" type="video/mp4">
-        Your browser does not support video playback.
-      </video>
+    <br>
 
-    </div>
-
-    <button
-      class="continue-btn"
-      id="continue-btn"
-    >
+    <button onclick="window.location.href='index.html'">
       Continue to C.A.R.E. →
     </button>
 
-  </main>
-
-  <script>
-    const video = document.getElementById("welcome-video");
-    const continueBtn = document.getElementById("continue-btn");
-
-    continueBtn.addEventListener("click", () => {
-      window.location.href = "index.html";
-    });
-
-    video.addEventListener("ended", () => {
-      continueBtn.textContent = "Enter C.A.R.E. →";
-    });
-  </script>
+  </div>
 
 </body>
 </html>
