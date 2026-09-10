@@ -74,5 +74,31 @@
     object-fit: cover;
   }
 </style>
+
+<script>
+  const successVideoOverlay =
+    document.getElementById("signup-success-video");
+
+  const successVideo =
+    document.getElementById("success-video");
+
+  function playSignupSuccessVideo() {
+    successVideoOverlay.classList.add("show");
+
+    successVideo.currentTime = 0;
+
+    successVideo.play().catch(error => {
+      console.error("Could not play signup video:", error);
+
+      // If playback fails, continue anyway
+      window.location.href = "index.html";
+    });
+  }
+
+  successVideo.addEventListener("ended", () => {
+    window.location.href = "index.html";
+  });
+</script>
+  
 </body>
 </html>
