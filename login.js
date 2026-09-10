@@ -51,11 +51,14 @@
     errorEl.textContent = "";
     setBusy(forms.login, true);
     try {
-      await CareAuth.logIn(
-        document.getElementById("login-email").value.trim(),
-        document.getElementById("login-password").value
+      await CareAuth.signUp(
+  document.getElementById("signup-name").value.trim(),
+  document.getElementById("signup-email").value.trim(),
+  document.getElementById("signup-password").value
       );
-      window.location.href = redirectTarget();
+      // Show the introduction video after creating the account
+window.location.href = "welcome.html";
+window.location.href = redirectTarget();
     } catch (err) {
       errorEl.textContent = CareAuth.friendlyError(err);
       setBusy(forms.login, false);
