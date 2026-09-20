@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "care",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 3000
+    },
+    {
+      "name": "care-mock",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "mock"],
+      "port": 3000
+    }
+  ]
+}

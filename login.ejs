@@ -1,0 +1,26 @@
+<%- include('_head', { bodyClass: 'gate' }) %>
+<section class="gate-card">
+  <div class="gate-brand">
+    <h1>Project <em>CARE</em></h1>
+    <p>Artifact environment monitor</p>
+  </div>
+
+  <form method="post" action="/login" class="stack">
+    <h2 class="gate-title">Sign in</h2>
+    <% if (error) { %><p class="form-error" role="alert"><%= error %></p><% } %>
+
+    <label class="field">
+      <span>Email</span>
+      <input type="email" name="email" value="<%= email %>" autocomplete="email" required autofocus />
+    </label>
+
+    <label class="field">
+      <span>Password</span>
+      <input type="password" name="password" autocomplete="current-password" required />
+    </label>
+
+    <button class="button button--primary" type="submit">Sign in</button>
+    <p class="muted center">No account yet? <a href="/signup">Create one</a></p>
+  </form>
+</section>
+<%- include('_foot') %>

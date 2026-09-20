@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= title %> · Project CARE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="<%= typeof bodyClass === 'undefined' ? '' : bodyClass %>">
+    <% if (user) { %>
+      <header class="topbar">
+        <a class="brand" href="/">Project <em>CARE</em></a>
+        <span class="brand-sub">Artifact environment monitor</span>
+        <form class="topbar-user" method="post" action="/logout">
+          <span class="topbar-email"><%= user.email %></span>
+          <input type="hidden" name="_csrf" value="<%= csrf %>" />
+          <button class="link-button" type="submit">Sign out</button>
+        </form>
+      </header>
+    <% } %>
+    <main class="page">

@@ -1,0 +1,71 @@
+<%- include('_head') %>
+<div class="page-head">
+  <div>
+    <h1 class="page-title"><%= box.name %></h1>
+    <p class="muted">
+      <%= artifacts.length %> artifact<%= artifacts.length === 1 ? '' : 's' %> monitored
+      <% if (isMock) { %> · <span class="tag tag--info">Sample data</span><% } %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <span class="status-pill status-pill--lg tone-unknown" id="box-status">
+      <span class="lamp" aria-hidden="true"></span>
+      <span data-field="label">Checking</span>
+      <span class="status-age" data-field="age">connecting…</span>
+    </span>
+    <a class="button button--primary" href="/artifacts/new">Record artifact</a>
+  </div>
+</div>
+
+<div id="banners" class="banners" hidden></div>
+
+<section class="section">
+  <h2 class="section-label">Artifacts</h2>
+
+  <% if (!artifacts.length) { %>
+    <div class="empty empty--inline">
+      <p class="muted">
+        No artifacts recorded yet. Until one exists, the box reports its readings
+        but has no ideal range to judge them against.
+      </p>
+      <a class="button button--primary" href="/artifacts/new">Record an artifact</a>
+    </div>
+  <% } else { %>
+    <div class="artifact-grid">
+      <% artifacts.forEach((a) => { %>
+        <a class="artifact artifact--link tone-unknown" href="/artifacts/<%= a.id %>" data-artifact="<%= a.id %>">
+          <header class="artifact-head">
+            <div>
+              <h3><%= a.name %></h3>
+              <p class="artifact-material"><%= a.material %></p>
+            </div>
+            <span class="status-pill">
+              <span class="lamp" aria-hidden="true"></span>
+              <span data-field="status">Checking</span>
+            </span>
+          </header>
+
+          <dl class="artifact-ranges">
+            <div><dt>Temp</dt><dd class="mono"><%= a.temp_min %>–<%= a.temp_max %> °C</dd></div>
+            <div><dt>RH</dt><dd class="mono"><%= a.rh_min %>–<%= a.rh_max %> %</dd></div>
+          </dl>
+
+          <p class="artifact-verdict" data-field="verdict">Waiting for a reading…</p>
+
+          <footer class="artifact-foot">
+            <span class="artifact-more">View conditions →</span>
+          </footer>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<footer class="page-foot">
+  <span>Polls Blynk every <%= Math.round(pollMs / 1000) %>s</span>
+  <span>Open an artifact to see the conditions around it</span>
+</footer>
+
+<script type="application/json" id="sensors"><%- JSON.stringify({ sensors, groups, pollMs }) %></script>
+<script type="module" src="/panel.js"></script>
+<%- include('_foot') %>

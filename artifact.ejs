@@ -1,0 +1,114 @@
+<%- include('_head') %>
+<div class="page-head">
+  <div>
+    <p class="crumb"><a href="/"><%= box.name %></a></p>
+    <h1 class="page-title"><%= artifact.name %></h1>
+    <p class="muted">
+      <%= material ? material.label : artifact.material %>
+      <% if (isMock) { %> · <span class="tag tag--info">Sample data</span><% } %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <span class="status-pill status-pill--lg tone-unknown" id="box-status">
+      <span class="lamp" aria-hidden="true"></span>
+      <span data-field="label">Checking</span>
+      <span class="status-age" data-field="age">connecting…</span>
+    </span>
+    <a class="button" href="/artifacts/<%= artifact.id %>/edit">Edit limits</a>
+  </div>
+</div>
+
+<div id="banners" class="banners" hidden></div>
+
+<section class="section">
+  <article class="artifact artifact--detail tone-unknown" data-artifact="<%= artifact.id %>">
+    <header class="artifact-head">
+      <dl class="artifact-ranges">
+        <div><dt>Ideal temp</dt><dd class="mono"><%= artifact.temp_min %>–<%= artifact.temp_max %> °C</dd></div>
+        <div><dt>Ideal RH</dt><dd class="mono"><%= artifact.rh_min %>–<%= artifact.rh_max %> %</dd></div>
+      </dl>
+      <span class="status-pill">
+        <span class="lamp" aria-hidden="true"></span>
+        <span data-field="status">Checking</span>
+      </span>
+    </header>
+
+    <p class="artifact-verdict" data-field="verdict">Waiting for a reading…</p>
+
+    <% if (artifact.notes) { %><p class="artifact-notes"><%= artifact.notes %></p><% } %>
+  </article>
+</section>
+
+<% if (controls.length) { %>
+  <section class="section">
+    <h2 class="section-label">Controls</h2>
+    <% controls.forEach((control) => { %>
+      <div class="control tone-unknown" data-control="<%= control.pin %>">
+        <div class="control-identity">
+          <span class="lamp" aria-hidden="true"></span>
+          <div>
+            <h3 class="control-name"><%= control.name %></h3>
+            <p class="control-state">
+              Currently <strong data-field="state">checking…</strong>
+            </p>
+          </div>
+          <span class="tile-pin"><%= control.pin.toUpperCase() %></span>
+        </div>
+
+        <div class="control-actions">
+          <!-- Two named buttons rather than one toggle: there is no state to read
+               wrongly, so a stale page cannot send the opposite of what you meant. -->
+          <form method="post" action="/controls/<%= control.pin %>">
+            <input type="hidden" name="_csrf" value="<%= csrf %>" />
+            <input type="hidden" name="value" value="1" />
+            <input type="hidden" name="return" value="/artifacts/<%= artifact.id %>" />
+            <button class="button button--primary" type="submit">Turn on</button>
+          </form>
+          <form method="post" action="/controls/<%= control.pin %>">
+            <input type="hidden" name="_csrf" value="<%= csrf %>" />
+            <input type="hidden" name="value" value="0" />
+            <input type="hidden" name="return" value="/artifacts/<%= artifact.id %>" />
+            <button class="button" type="submit">Turn off</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  </section>
+<% } %>
+
+<section class="section">
+  <h2 class="section-label">Conditions around this artifact</h2>
+  <div id="grid" class="sensor-groups"></div>
+</section>
+
+<section class="section">
+  <div class="card card--narrow danger-zone">
+    <h2>Remove this artifact</h2>
+    <p class="muted">
+      Deletes <strong><%= artifact.name %></strong> and its limits. The box keeps
+      monitoring, and nothing is sent to the hardware. This cannot be undone.
+    </p>
+    <!-- Two-step, in the page itself. A confirm() dialog is unreliable — some
+         browsers and embedded webviews dismiss it silently, which cancels the
+         submit and makes the button look dead. This needs no dialog. -->
+    <details class="confirm">
+      <summary class="button button--danger">Delete artifact</summary>
+      <div class="confirm-body">
+        <p>Press again to remove it permanently.</p>
+        <form method="post" action="/artifacts/<%= artifact.id %>/delete">
+          <input type="hidden" name="_csrf" value="<%= csrf %>" />
+          <button class="button button--danger" type="submit">Yes, delete <%= artifact.name %></button>
+        </form>
+      </div>
+    </details>
+  </div>
+</section>
+
+<footer class="page-foot">
+  <span>Polls Blynk every <%= Math.round(pollMs / 1000) %>s</span>
+  <span>Charts hold the last ~5 minutes and reset on reload</span>
+</footer>
+
+<script type="application/json" id="sensors"><%- JSON.stringify({ sensors, groups, pollMs, focusArtifact: artifact.id }) %></script>
+<script type="module" src="/panel.js"></script>
+<%- include('_foot') %>

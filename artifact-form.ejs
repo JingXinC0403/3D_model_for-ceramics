@@ -1,0 +1,76 @@
+<%- include('_head') %>
+<section class="card card--narrow">
+  <h1 class="page-title"><%= artifact.id ? 'Edit artifact' : 'Record an artifact' %></h1>
+
+  <form method="post" action="<%= artifact.id ? `/artifacts/${artifact.id}` : '/artifacts' %>" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrf %>" />
+    <% if (error) { %><p class="form-error" role="alert"><%= error %></p><% } %>
+
+    <label class="field">
+      <span>Name</span>
+      <input name="name" value="<%= artifact.name %>" maxlength="120"
+             placeholder="Ming dynasty bowl" required autofocus />
+    </label>
+
+    <label class="field">
+      <span>Material</span>
+      <select name="material" id="material">
+        <% presets.forEach((p) => { %>
+          <option value="<%= p.id %>" <%= artifact.material === p.id ? 'selected' : '' %>><%= p.label %></option>
+        <% }) %>
+      </select>
+      <small class="hint">Choosing a material fills in typical storage limits. Adjust them freely below.</small>
+    </label>
+
+    <fieldset class="range-set">
+      <legend>Ideal temperature</legend>
+      <div class="range-row">
+        <label class="field"><span>Min °C</span>
+          <input type="number" step="0.1" name="tempMin" id="tempMin" value="<%= artifact.temp_min %>" required /></label>
+        <label class="field"><span>Max °C</span>
+          <input type="number" step="0.1" name="tempMax" id="tempMax" value="<%= artifact.temp_max %>" required /></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="range-set">
+      <legend>Ideal relative humidity</legend>
+      <div class="range-row">
+        <label class="field"><span>Min %</span>
+          <input type="number" step="0.1" min="0" max="100" name="rhMin" id="rhMin" value="<%= artifact.rh_min %>" required /></label>
+        <label class="field"><span>Max %</span>
+          <input type="number" step="0.1" min="0" max="100" name="rhMax" id="rhMax" value="<%= artifact.rh_max %>" required /></label>
+      </div>
+    </fieldset>
+
+    <label class="field">
+      <span>Notes <small class="hint">optional</small></span>
+      <textarea name="notes" rows="3" maxlength="2000" placeholder="Accession number, condition, handling notes"><%= artifact.notes %></textarea>
+    </label>
+
+    <div class="form-actions">
+      <button class="button button--primary" type="submit"><%= artifact.id ? 'Save changes' : 'Record artifact' %></button>
+      <a class="button" href="/">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<% if (artifact.id) { %>
+  <section class="card card--narrow danger-zone">
+    <h2>Remove this artifact</h2>
+    <p class="muted">Deletes the record and its limits. The box keeps monitoring.</p>
+    <details class="confirm">
+      <summary class="button button--danger">Remove artifact</summary>
+      <div class="confirm-body">
+        <p>Press again to remove it permanently.</p>
+        <form method="post" action="/artifacts/<%= artifact.id %>/delete">
+          <input type="hidden" name="_csrf" value="<%= csrf %>" />
+          <button class="button button--danger" type="submit">Yes, remove <%= artifact.name %></button>
+        </form>
+      </div>
+    </details>
+  </section>
+<% } %>
+
+<script type="application/json" id="presets"><%- JSON.stringify(presets) %></script>
+<script type="module" src="/artifact-form.js"></script>
+<%- include('_foot') %>
